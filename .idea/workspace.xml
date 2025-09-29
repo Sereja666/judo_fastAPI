@@ -4,32 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ee547eef-2e63-46d4-8d9a-feffb711966c" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/api_Students_shedule.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/database/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/database/middleware.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/database/redis/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/database/redis/redis_config.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/database/redis/redis_storage.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/database/redis/test_redis.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/handlers/create_user_router.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/templates/index.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/templates/student_schedule.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/utils/create_new_student.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/utils/sekret_key_generator.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/utils/table_migrate.py" afterDir="false" />
+    <list default="true" id="ee547eef-2e63-46d4-8d9a-feffb711966c" name="Changes" comment="перед отправкой на сервер">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/aiogram_run.py" beforeDir="false" afterPath="$PROJECT_DIR$/aiogram_run.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/config.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/create_bot.py" beforeDir="false" afterPath="$PROJECT_DIR$/create_bot.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/database/database_module.py" beforeDir="false" afterPath="$PROJECT_DIR$/database/database_module.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/database/schemas.py" beforeDir="false" afterPath="$PROJECT_DIR$/database/schemas.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/db_handler/db_funk.py" beforeDir="false" afterPath="$PROJECT_DIR$/db_handler/db_funk.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/handlers/admin_panel.py" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/admin_panel.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/handlers/user_router.py" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/user_router.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/keyboards/kbs.py" beforeDir="false" afterPath="$PROJECT_DIR$/keyboards/kbs.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/run_bot.py" beforeDir="false" afterPath="$PROJECT_DIR$/run_bot.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/tools.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/tools.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -46,6 +23,18 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
+  "lastFilter": {
+    "state": "OPEN",
+    "assignee": "Sereja666"
+  }
+}]]></component>
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/Sereja666/judo_fastAPI.git",
+    "accountId": "6f7fd476-719d-4baa-bbb1-f0e19996ba6f"
+  }
+}]]></component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
   </component>
@@ -223,6 +212,19 @@
       <option name="presentableId" value="Default" />
       <updated>1741959141895</updated>
     </task>
+    <task id="LOCAL-00001" summary="перед отправкой на сервер">
+      <option name="closed" value="true" />
+      <created>1759152484758</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1759152484758</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="перед отправкой на сервер" />
+    <option name="LAST_COMMIT_MESSAGE" value="перед отправкой на сервер" />
   </component>
 </project>
