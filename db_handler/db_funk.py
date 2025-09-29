@@ -2,44 +2,72 @@
 
 from config import settings
 
-from create_bot import db_manager
+from create_bot import db_manager, logger
 
 import asyncpg
 
-
+from database.schemas import schema
 
 
 # функция, для получения информации по конкретному пользователю
-async def get_user_data(user_id: int, table_name='telegram_user'):
-    async with db_manager as client:
-        user_data = await client.select_data(table_name=table_name, where_dict={'telegram_id': user_id}, one_dict=True)
-    return user_data
+async def get_user_data(user_id: int, table_name=f'{schema}.telegram_user'):
+    conn = await asyncpg.connect(**settings.db.pg_link)
+    try:
+        print(f'пытаюсь получить инфу о {user_id}')
+        row = await conn.fetchrow(
+            f"SELECT * FROM {table_name} WHERE telegram_id = $1",
+            user_id
+        )
+        print(row)
+        return dict(row) if row else None
+    finally:
+        await conn.close()
 
 
+async def get_all_users(table_name='student', schema_name='schema', count=False):
+    conn = await asyncpg.connect(**settings.db.pg_link)
+    try:
+        # Формируем полное имя таблицы с учетом схемы
+        full_table_name = f"{schema_name}.{table_name}" if schema_name else table_name
 
-# функция, для получения всех пользователей (для админки)
-async def get_all_users(table_name='student', count=False):
-    async with db_manager as client:
-        all_users = await client.select_data(table_name=table_name)
-    if count:
-        return len(all_users)
-    else:
-        return all_users
+        if count:
+            # Запрос для получения количества записей
+            query = f"SELECT COUNT(*) FROM {full_table_name}"
+            result = await conn.fetchval(query)
+            return result
+        else:
+            # Запрос для получения всех данных
+            query = f"SELECT * FROM {full_table_name}"
+            rows = await conn.fetch(query)
+            return [dict(row) for row in rows]
+    finally:
+        await conn.close()
 
 
 #
 
-# функция, для добавления пользователя в базу данных
-async def insert_user(user_data: dict, table_name='users_reg'):
-    async with db_manager as client:
-        await client.insert_data_with_update(table_name=table_name, records_data=user_data, conflict_column='user_id')
-        if user_data.get('refer_id'):
-            refer_info = await client.select_data(table_name=table_name,
-                                                  where_dict={'user_id': user_data.get('refer_id')},
-                                                  one_dict=True, columns=['user_id', 'count_refer'])
-            await client.update_data(table_name=table_name,
-                                     where_dict={'user_id': refer_info.get('user_id')},
-                                     update_dict={'count_refer': refer_info.get('count_refer') + 1})
+async def insert_user(user_data: dict, table_name: str = f'{schema}.telegram_user'):
+    conn = await asyncpg.connect(**settings.db.pg_link)
+    try:
+        # Подготавливаем SQL-запрос
+        columns = ', '.join(user_data.keys())
+        placeholders = ', '.join([f'${i + 1}' for i in range(len(user_data))])
+
+        query = f"""
+        INSERT INTO {table_name} ({columns})
+        VALUES ({placeholders})
+        RETURNING *
+        """
+
+        # Выполняем запрос
+        row = await conn.fetchrow(query, *user_data.values())
+        return dict(row) if row else None
+    except Exception as e:
+        logger.error(f"Error inserting user: {e}")
+        return None
+    finally:
+        await conn.close()
+
 
 # asyncio.run(create_table_users())
 
@@ -119,22 +147,19 @@ async def insert_user(user_data: dict, table_name='users_reg'):
 
 
 
-async def execute_raw_sql(query: str):
-    # Установите соединение с базой данных
-    print('Начинаю соединение')
-    conn = await asyncpg.connect(
-        user=settings.db.user,
-        password=settings.db.password,
-        database=settings.db.db,  # Убедитесь, что это строка
-        host=settings.db.host,
-        port=settings.db.port
-    )
+async def execute_raw_sql(query: str, *params):
+    """Выполняет SQL запрос с параметрами и возвращает результат"""
+    conn = await asyncpg.connect(**settings.db.pg_link)
     try:
-        # Выполнение SQL запроса
-        result = await conn.fetch(query)
-        return result  # Возвращаем результат запроса
+        if params:
+            result = await conn.fetch(query, *params)
+        else:
+            result = await conn.fetch(query)
+        return result
+    except Exception as e:
+        print(f"Database error: {str(e)}")
+        raise  # Пробрасываем исключение дальше
     finally:
-        # Закрываем соединение
         await conn.close()
 
 
@@ -186,7 +211,7 @@ async def save_selection(schedule_id: int, student_ids: list, trainer_id: int, p
                 if existing_visit:
                     # Обновляем существующую запись
                     await execute_raw_sql(
-                        f"UPDATE public.visit SET "
+                        f"UPDATE {schema}.visit SET "
                         f"data = '{visit_datetime}', "
                         f"trainer = {trainer_id}, "
                         f"place = {place_id}, "
@@ -197,7 +222,7 @@ async def save_selection(schedule_id: int, student_ids: list, trainer_id: int, p
                 else:
                     # Создаем новую запись
                     await execute_raw_sql(
-                        f"INSERT INTO public.visit "
+                        f"INSERT INTO {schema}.visit "
                         f"(data, trainer, student, place, sport_discipline, shedule) "
                         f"VALUES ("
                         f"'{visit_datetime}', "

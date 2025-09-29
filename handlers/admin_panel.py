@@ -13,6 +13,7 @@ admin_router = Router()
 async def get_profile(message: Message):
     async with ChatActionSender.typing(bot=bot, chat_id=message.from_user.id):
         all_users_data = await get_all_users()
+        # all_users_data = await get_all_users()
 
         admin_text = (
             f'👥 В базе данных <b>{len(all_users_data)}</b> человек. Вот короткая информация по каждому:\n\n'

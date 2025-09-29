@@ -1,7 +1,10 @@
 import asyncio
 from create_bot import bot, dp, admins
+from database.database_module import setup_db
+from database.middleware import DBSessionMiddleware
 from db_handler.db_funk import get_all_users
 from handlers.admin_panel import admin_router
+from handlers.create_user_router import create_user_router
 from handlers.user_router import user_router
 from aiogram.types import BotCommand, BotCommandScopeDefault
 import logging
@@ -20,31 +23,36 @@ async def set_commands():
 # Функция, которая выполнится когда бот запустится
 async def start_bot():
     await set_commands()
-    count_users = await get_all_users(count=True)
-    try:
-        for admin_id in admins:
-            await bot.send_message(admin_id, f'Я запущен🥳. Сейчас в базе данных <b>{count_users}</b> пользователей.')
-    except:
-        pass
+    # count_users = await get_all_users(count=True)
+    # try:
+    #     for admin_id in admins:
+    #         await bot.send_message(admin_id, f'Я запущен🥳. Сейчас в базе данных <b>{count_users}</b> пользователей.')
+    # except:
+    #     pass
 
 
 # Функция, которая выполнится когда бот завершит свою работу
 async def stop_bot():
-    try:
-        for admin_id in admins:
-            await bot.send_message(admin_id, 'Бот остановлен!')
-    except:
-        pass
+    pass
+    # try:
+    #     for admin_id in admins:
+    #         await bot.send_message(admin_id, 'Бот остановлен!')
+    # except:
+    #     pass
 
 
 async def main():
+    async_session = await setup_db()
+    dp.update.middleware(DBSessionMiddleware(async_session))
     # регистрация роутеров
     dp.include_router(user_router)
+    dp.include_router(create_user_router)
     dp.include_router(admin_router)
 
     # регистрация функций
     dp.startup.register(start_bot)
     dp.shutdown.register(stop_bot)
+
 
     # запуск бота в режиме long polling при запуске бот очищает все обновления, которые были за его моменты бездействия
     try:
