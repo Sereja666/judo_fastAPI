@@ -17,7 +17,7 @@ from database.schemas import schema
 from database import redis_storage
 from db_handler.db_funk import get_user_data, insert_user, execute_raw_sql
 from keyboards.kbs import main_kb, home_page_kb, places_kb
-from utils.utils import get_refer_id, get_now_time, get_current_week_day
+from utils.utils import get_refer_id, get_now_time, get_current_week_day, get_belt_emoji
 from aiogram.utils.chat_action import ChatActionSender
 import logging
 from datetime import datetime, time
@@ -116,7 +116,7 @@ class TrainingStates(StatesGroup):
 async def get_trainer_name(trainer_id: int) -> str:
     """Получает имя тренера по ID"""
     trainer_data = await execute_raw_sql(
-        "SELECT name FROM big_db.trainer WHERE id = $1;",
+        f"SELECT name FROM {schema}.trainer WHERE id = $1;",
         trainer_id
     )
     return trainer_data[0]['name'] if trainer_data else f"Тренер #{trainer_id}"
@@ -239,7 +239,7 @@ async def handle_time_selection(callback: CallbackQuery, state: FSMContext):
             f"""SELECT st.id, st.name 
             FROM {schema}.student_schedule ss
             JOIN {schema}.student st ON ss.student = st.id
-            WHERE ss.schedule = $1;""",
+            WHERE ss.schedule = $1 AND st.active = true;""",
             int(schedule_id)
         )
 
@@ -262,6 +262,13 @@ async def handle_time_selection(callback: CallbackQuery, state: FSMContext):
             text="✅ Подтвердить посещение",
             callback_data=f"confirm:{schedule_id}:{trainer_id}:{data['place_id']}:{selected_training['sport_discipline']}"
         )
+
+        # ДОБАВЛЯЕМ КНОПКУ ДЛЯ ПРОСМОТРА СТАТУСА ПОСЕЩЕНИЯ
+        builder.button(
+            text="📊 Показать кто пришел",
+            callback_data=f"show_attendance:{schedule_id}"
+        )
+
         builder.adjust(1)
 
         # Форматируем время
@@ -426,3 +433,119 @@ async def confirm_attendance(callback: CallbackQuery):
         await callback.answer("⚠️ Ошибка системы", show_alert=True)
         print(f"Error in confirm_attendance: {str(e)}")
 
+
+@user_router.callback_query(F.data.startswith("show_attendance:"))
+async def show_attendance_status(callback: CallbackQuery):
+    """Показывает статус посещения с цветовым кодированием по поясам"""
+    try:
+        _, schedule_id = callback.data.split(":")
+        schedule_id = int(schedule_id)
+
+        current_date = datetime.now().date()
+
+        # Получаем информацию о тренировке
+        training_info = await execute_raw_sql(
+            f"""SELECT s.time_start, s.time_end, tp.name as place_name, 
+                sp.name as discipline_name
+            FROM {schema}.schedule s
+            JOIN {schema}.training_place tp ON s.training_place = tp.id
+            JOIN {schema}.sport sp ON s.sport_discipline = sp.id
+            WHERE s.id = $1;""",
+            schedule_id
+        )
+
+        if not training_info:
+            await callback.answer("Информация о тренировке не найдена", show_alert=True)
+            return
+
+        training = training_info[0]
+
+        # Получаем студентов с информацией о поясе
+        students = await execute_raw_sql(
+            f"""SELECT st.id, st.name, st.birthday, st.rang,
+                CASE 
+                    WHEN v.id IS NOT NULL THEN 'present'
+                    ELSE 'absent'
+                END as status
+            FROM {schema}.student_schedule ss
+            JOIN {schema}.student st ON ss.student = st.id
+            LEFT JOIN {schema}.visit v ON v.student = st.id 
+                AND v.shedule = $1 
+                AND DATE(v.data) = $2
+            WHERE ss.schedule = $1 AND st.active = true
+            ORDER BY 
+                CASE 
+                    WHEN st.rang IS NULL THEN 999
+                    WHEN st.rang ILIKE '%бел%' THEN 1
+                    WHEN st.rang ILIKE '%желт%' THEN 2
+                    WHEN st.rang ILIKE '%оранж%' THEN 3
+                    WHEN st.rang ILIKE '%зелен%' THEN 4
+                    WHEN st.rang ILIKE '%син%' THEN 5
+                    WHEN st.rang ILIKE '%коричн%' THEN 6
+                    WHEN st.rang ILIKE '%красн%' THEN 7
+                    WHEN st.rang ILIKE '%черн%' THEN 8
+                    ELSE 999
+                END, st.name;""",
+            schedule_id, current_date
+        )
+
+        if not students:
+            await callback.answer("На этой тренировке нет записанных студентов", show_alert=True)
+            return
+
+        # Форматируем время
+        start_time = training['time_start'].strftime("%H:%M") if isinstance(training['time_start'], time) else training[
+            'time_start']
+        end_time = training['time_end'].strftime("%H:%M") if isinstance(training['time_end'], time) else training[
+            'time_end']
+
+
+
+        # Создаем сообщение в формате как в примере
+        message_lines = [
+            f"{training['place_name']}",
+            f"Группа {start_time}-{end_time} ({training['discipline_name']})",
+            ""
+        ]
+
+        present_students = []
+        absent_students = []
+
+        for student in students:
+            birth_year = student['birthday'].year if student['birthday'] else "неизв."
+            belt_emoji = get_belt_emoji(student['rang'])
+
+            student_line = f"{belt_emoji}{student['name']} {birth_year}"
+
+            if student['status'] == 'present':
+                present_students.append(student_line)
+            else:
+                absent_students.append(student_line)
+
+        # Добавляем присутствующих
+        for student_line in present_students:
+            message_lines.append(student_line)
+
+        # Добавляем отсутствующих
+        if absent_students:
+            message_lines.extend([
+                "",
+                "Отсутствуют:"
+            ])
+            for student_line in absent_students:
+                message_lines.append(student_line)
+
+        # Статистика
+        message_lines.extend([
+            "",
+            f"Всего: {len(present_students) + len(absent_students)} чел.",
+            f"Присутствуют: {len(present_students)} чел.",
+            f"Отсутствуют: {len(absent_students)} чел."
+        ])
+
+        await callback.message.answer("\n".join(message_lines))
+        await callback.answer()
+
+    except Exception as e:
+        await callback.answer("Ошибка при получении статуса посещения", show_alert=True)
+        print(f"Error in show_attendance_status: {str(e)}")
