@@ -40,8 +40,14 @@ class Students(Base):
     reference1 = Column(Date())  # до какого числа действует справка
     reference2 = Column(Date())  # до какого числа действует справка
     reference3 = Column(Date())  # до какого числа действует справка
+    head_trainer_id = Column(Integer()) # айди главного тренера
+    second_trainer_id = Column(Integer()) # айди второго тренера
     price = Column(Integer())
     payment_day = Column(Integer())  # день месяца для оплаты (1-31)
+    classes_remaining = Column(Integer())  # сколько занятий на остатке в этом месяце
+    expected_payment_date = Column(Date())  # ожидаемая дата оплаты
+
+
     telephone = Column(String())
     parent1 = Column(Integer())
     parent2 = Column(Integer())
@@ -90,11 +96,15 @@ class Prices(Base):
     __table_args__ = {'schema': schema}
     id = Column(Integer(), primary_key=True, autoincrement=True)
     price = Column(Integer())
+    classes_in_price = Column(Integer())  # количество занятий по прайсу
     description = Column(String())
 
 
 # Факт оплаты
 class Payment(Base):
+    """
+    Факт оплаты
+    """
     __tablename__ = 'payment'
     __table_args__ = {'schema': schema}
     id = Column(Integer(), primary_key=True, autoincrement=True)
