@@ -7,7 +7,8 @@ from sqlalchemy.orm import sessionmaker, Session
 from typing import List, Optional
 import os
 from datetime import datetime
-
+from pydantic import BaseModel
+from typing import Optional
 from database.schemas import Students, Sport, Trainers, engine
 
 # Создаем сессию базы данных
@@ -99,68 +100,101 @@ async def get_student_data(student_id: int, db: Session = Depends(get_db)):
     return JSONResponse(student_data)
 
 
+    
+# Добавьте модель для валидации данных
+class StudentUpdate(BaseModel):
+    student_id: int
+    name: str
+    birthday: Optional[str] = None
+    sport_discipline: Optional[int] = None
+    rang: Optional[str] = None
+    sex: Optional[str] = None
+    weight: Optional[int] = None
+    reference1: Optional[str] = None
+    reference2: Optional[str] = None
+    reference3: Optional[str] = None
+    head_trainer_id: Optional[int] = None
+    second_trainer_id: Optional[int] = None
+    price: Optional[int] = None
+    payment_day: Optional[int] = None
+    classes_remaining: Optional[int] = None
+    expected_payment_date: Optional[str] = None
+    telephone: Optional[str] = None
+    parent1: Optional[int] = None
+    parent2: Optional[int] = None
+    date_start: Optional[str] = None
+    telegram_id: Optional[int] = None
+
 @app.post("/update-student")
-async def update_student(
-        student_id: int = Form(...),
-        name: str = Form(...),
-        birthday: str = Form(None),
-        sport_discipline: int = Form(None),
-        rang: str = Form(None),
-        sex: str = Form(None),
-        weight: int = Form(None),
-        reference1: str = Form(None),
-        reference2: str = Form(None),
-        reference3: str = Form(None),
-        head_trainer_id: int = Form(None),
-        second_trainer_id: int = Form(None),
-        price: int = Form(None),
-        payment_day: int = Form(None),
-        classes_remaining: int = Form(None),
-        expected_payment_date: str = Form(None),
-        telephone: str = Form(None),
-        parent1: int = Form(None),
-        parent2: int = Form(None),
-        date_start: str = Form(None),
-        telegram_id: int = Form(None),
-        db: Session = Depends(get_db)
-):
+async def update_student(student_data: StudentUpdate, db: Session = Depends(get_db)):
     """Обновление данных ученика"""
     try:
-        student = db.query(Students).filter(Students.id == student_id).first()
+        print(f"Получены данные для student_id: {student_data.student_id}")
+        print(f"Данные: {student_data.dict()}")
+        
+        student = db.query(Students).filter(Students.id == student_data.student_id).first()
         if not student:
             raise HTTPException(status_code=404, detail="Ученик не найден")
-
+        
         # Обновляем поля
-        student.name = name
-        student.birthday = datetime.fromisoformat(birthday) if birthday else None
-        student.sport_discipline = sport_discipline
-        student.rang = rang
-        student.sex = sex
-        student.weight = weight
-        student.reference1 = datetime.fromisoformat(reference1).date() if reference1 else None
-        student.reference2 = datetime.fromisoformat(reference2).date() if reference2 else None
-        student.reference3 = datetime.fromisoformat(reference3).date() if reference3 else None
-        student.head_trainer_id = head_trainer_id
-        student.second_trainer_id = second_trainer_id
-        student.price = price
-        student.payment_day = payment_day
-        student.classes_remaining = classes_remaining
-        student.expected_payment_date = datetime.fromisoformat(
-            expected_payment_date).date() if expected_payment_date else None
-        student.telephone = telephone
-        student.parent1 = parent1
-        student.parent2 = parent2
-        student.date_start = datetime.fromisoformat(date_start) if date_start else None
-        student.telegram_id = telegram_id
-
+        student.name = student_data.name
+        
+        # Обработка дат с проверкой
+        try:
+            student.birthday = datetime.fromisoformat(student_data.birthday.replace('Z', '+00:00')) if student_data.birthday else None
+        except:
+            student.birthday = None
+            
+        student.sport_discipline = student_data.sport_discipline
+        student.rang = student_data.rang
+        student.sex = student_data.sex
+        student.weight = student_data.weight
+        
+        try:
+            student.reference1 = datetime.fromisoformat(student_data.reference1).date() if student_data.reference1 else None
+        except:
+            student.reference1 = None
+            
+        try:
+            student.reference2 = datetime.fromisoformat(student_data.reference2).date() if student_data.reference2 else None
+        except:
+            student.reference2 = None
+            
+        try:
+            student.reference3 = datetime.fromisoformat(student_data.reference3).date() if student_data.reference3 else None
+        except:
+            student.reference3 = None
+            
+        student.head_trainer_id = student_data.head_trainer_id
+        student.second_trainer_id = student_data.second_trainer_id
+        student.price = student_data.price
+        student.payment_day = student_data.payment_day
+        student.classes_remaining = student_data.classes_remaining
+        
+        try:
+            student.expected_payment_date = datetime.fromisoformat(student_data.expected_payment_date).date() if student_data.expected_payment_date else None
+        except:
+            student.expected_payment_date = None
+            
+        student.telephone = student_data.telephone
+        student.parent1 = student_data.parent1
+        student.parent2 = student_data.parent2
+        
+        try:
+            student.date_start = datetime.fromisoformat(student_data.date_start.replace('Z', '+00:00')) if student_data.date_start else None
+        except:
+            student.date_start = None
+            
+        student.telegram_id = student_data.telegram_id
+        
         db.commit()
-
+        
         return JSONResponse({"status": "success", "message": "Данные ученика успешно обновлены"})
-
+    
     except Exception as e:
         db.rollback()
+        print(f"Ошибка при сохранении: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Ошибка обновления: {str(e)}")
-
 
 # Если запускаем этот файл отдельно
 if __name__ == "__main__":

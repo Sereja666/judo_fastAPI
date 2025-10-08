@@ -251,67 +251,85 @@ async def get_student_data(student_id: int, db: Session = Depends(get_db)):
 
     return JSONResponse(student_data)
 
+from typing import Optional
 
 @app.post("/update-student")
 async def update_student(
-        student_id: int = Form(...),
-        name: str = Form(...),
-        birthday: str = Form(None),
-        sport_discipline: int = Form(None),
-        rang: str = Form(None),
-        sex: str = Form(None),
-        weight: int = Form(None),
-        reference1: str = Form(None),
-        reference2: str = Form(None),
-        reference3: str = Form(None),
-        head_trainer_id: int = Form(None),
-        second_trainer_id: int = Form(None),
-        price: int = Form(None),
-        payment_day: int = Form(None),
-        classes_remaining: int = Form(None),
-        expected_payment_date: str = Form(None),
-        telephone: str = Form(None),
-        parent1: int = Form(None),
-        parent2: int = Form(None),
-        date_start: str = Form(None),
-        telegram_id: int = Form(None),
-        db: Session = Depends(get_db)
+    student_id: int = Form(...),
+    name: str = Form(...),
+    birthday: Optional[str] = Form(None),
+    sport_discipline: Optional[str] = Form(None),
+    rang: Optional[str] = Form(None),
+    sex: Optional[str] = Form(None),
+    weight: Optional[str] = Form(None),
+    reference1: Optional[str] = Form(None),
+    reference2: Optional[str] = Form(None),
+    reference3: Optional[str] = Form(None),
+    head_trainer_id: Optional[str] = Form(None),
+    second_trainer_id: Optional[str] = Form(None),
+    price: Optional[str] = Form(None),
+    payment_day: Optional[str] = Form(None),
+    classes_remaining: Optional[str] = Form(None),
+    expected_payment_date: Optional[str] = Form(None),
+    telephone: Optional[str] = Form(None),
+    parent1: Optional[str] = Form(None),
+    parent2: Optional[str] = Form(None),
+    date_start: Optional[str] = Form(None),
+    telegram_id: Optional[str] = Form(None),
+    db: Session = Depends(get_db)
 ):
     """Обновление данных ученика"""
     try:
+        print(f"Получены данные для student_id: {student_id}")
+        
         student = db.query(Students).filter(Students.id == student_id).first()
         if not student:
             raise HTTPException(status_code=404, detail="Ученик не найден")
-
+        
+        # Функция для безопасного преобразования пустых строк в None
+        def parse_value(value):
+            if value is None or value == "":
+                return None
+            return value
+        
+        # Функция для преобразования в int или None
+        def parse_int(value):
+            if value is None or value == "":
+                return None
+            try:
+                return int(value)
+            except (ValueError, TypeError):
+                return None
+        
         # Обновляем поля
         student.name = name
         student.birthday = datetime.fromisoformat(birthday) if birthday else None
-        student.sport_discipline = sport_discipline
-        student.rang = rang
-        student.sex = sex
-        student.weight = weight
+        student.sport_discipline = parse_int(sport_discipline)
+        student.rang = parse_value(rang)
+        student.sex = parse_value(sex)
+        student.weight = parse_int(weight)
         student.reference1 = datetime.fromisoformat(reference1).date() if reference1 else None
         student.reference2 = datetime.fromisoformat(reference2).date() if reference2 else None
         student.reference3 = datetime.fromisoformat(reference3).date() if reference3 else None
-        student.head_trainer_id = head_trainer_id
-        student.second_trainer_id = second_trainer_id
-        student.price = price
-        student.payment_day = payment_day
-        student.classes_remaining = classes_remaining
-        student.expected_payment_date = datetime.fromisoformat(
-            expected_payment_date).date() if expected_payment_date else None
-        student.telephone = telephone
-        student.parent1 = parent1
-        student.parent2 = parent2
+        student.head_trainer_id = parse_int(head_trainer_id)
+        student.second_trainer_id = parse_int(second_trainer_id)
+        student.price = parse_int(price)
+        student.payment_day = parse_int(payment_day)
+        student.classes_remaining = parse_int(classes_remaining)
+        student.expected_payment_date = datetime.fromisoformat(expected_payment_date).date() if expected_payment_date else None
+        student.telephone = parse_value(telephone)
+        student.parent1 = parse_int(parent1)
+        student.parent2 = parse_int(parent2)
         student.date_start = datetime.fromisoformat(date_start) if date_start else None
-        student.telegram_id = telegram_id
-
+        student.telegram_id = parse_int(telegram_id)
+        
         db.commit()
-
+        
         return JSONResponse({"status": "success", "message": "Данные ученика успешно обновлены"})
-
+    
     except Exception as e:
         db.rollback()
+        print(f"Ошибка при сохранении: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Ошибка обновления: {str(e)}")
 
 if __name__ == "__main__":

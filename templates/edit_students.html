@@ -266,28 +266,38 @@
             });
         }
 
-        function updateStudent() {
-            const formData = new FormData(document.getElementById('studentForm'));
-
-            fetch('/update-student', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                showMessage(data.message, 'success');
-                // Обновляем список учеников
-                const studentSelect = $('#studentSelect');
-                const currentStudentId = $('#studentId').val();
-                const currentStudentName = $('#name').val();
-
-                // Обновляем имя в выпадающем списке
-                studentSelect.find(`option[value="${currentStudentId}"]`).text(currentStudentName);
-            })
-            .catch(error => {
-                showMessage('Ошибка сохранения: ' + error, 'danger');
+   function updateStudent() {
+    const formData = new FormData(document.getElementById('studentForm'));
+    
+    console.log('Отправка данных:');
+    for (let [key, value] of formData.entries()) {
+        console.log(`${key}: ${value}`);
+    }
+    
+    fetch('/update-student', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.text().then(text => {
+                throw new Error(`HTTP error! status: ${response.status}, message: ${text}`);
             });
         }
+        return response.json();
+    })
+    .then(data => {
+        showMessage(data.message, 'success');
+        const studentSelect = $('#studentSelect');
+        const currentStudentId = $('#studentId').val();
+        const currentStudentName = $('#name').val();
+        studentSelect.find(`option[value="${currentStudentId}"]`).text(currentStudentName);
+    })
+    .catch(error => {
+        console.error('Ошибка:', error);
+        showMessage('Ошибка сохранения: ' + error.message, 'danger');
+    });
+}
 
         function showMessage(text, type) {
             $('#message').html(`

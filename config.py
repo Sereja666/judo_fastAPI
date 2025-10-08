@@ -8,7 +8,7 @@ from typing import Dict, Any
 
 config = configparser.ConfigParser()
 config.sections()
-config.read('C:\Python\Judo_aiogram_superset\config.ini', encoding='utf-8')
+config.read('config.ini', encoding='utf-8')
 
 load_dotenv()
 
