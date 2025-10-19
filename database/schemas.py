@@ -78,6 +78,7 @@ class Trainers(Base):
     sport_discipline = Column(Integer())
     telephone = Column(String())
     telegram_id = Column(Integer())
+    active = Column(Boolean(), default=True, server_default='true')
 
 
 # Родители

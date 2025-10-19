@@ -8,6 +8,14 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
     <style>
+        .btn-success {
+            background-color: #28a745;
+            border-color: #28a745;
+        }
+        .btn-success:hover {
+            background-color: #218838;
+            border-color: #1e7e34;
+        }
         .student-card {
             border: 2px solid #007bff;
             border-radius: 10px;
@@ -50,6 +58,13 @@
                         </select>
                         <div class="form-text">Начните вводить имя для поиска</div>
                     </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-end h-100">
+                            <button type="button" class="btn btn-success" onclick="createNewStudent()">
+                                ＋ Создать нового ученика
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -70,6 +85,15 @@
                         <div class="col-md-6 mb-3">
                             <label for="birthday" class="form-label">Дата рождения</label>
                             <input type="date" class="form-control" id="birthday" name="birthday">
+                        </div>
+                        <div class="col-md-12 mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="active" name="active" checked>
+                                <label class="form-check-label" for="active">
+                                    Активный ученик
+                                </label>
+                            </div>
+                            <div class="form-text">Если снять галочку, ученик будет скрыт из списков</div>
                         </div>
                     </div>
                     <div class="row">
@@ -132,34 +156,51 @@
                     </div>
                 </div>
 
-                <!-- Оплата -->
-                <div class="form-section">
-                    <h5 class="section-title">Оплата и занятия</h5>
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label for="price" class="form-label">Цена</label>
-                            <input type="number" class="form-control" id="price" name="price" min="0">
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="payment_day" class="form-label">День оплаты</label>
-                            <input type="number" class="form-control" id="payment_day" name="payment_day" min="1" max="31">
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="classes_remaining" class="form-label">Осталось занятий</label>
-                            <input type="number" class="form-control" id="classes_remaining" name="classes_remaining" min="0">
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="expected_payment_date" class="form-label">Ожидаемая дата оплаты</label>
-                            <input type="date" class="form-control" id="expected_payment_date" name="expected_payment_date">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="date_start" class="form-label">Дата начала тренировок</label>
-                            <input type="datetime-local" class="form-control" id="date_start" name="date_start">
-                        </div>
-                    </div>
-                </div>
+<!-- Оплата -->
+<div class="form-section">
+    <h5 class="section-title">Оплата и занятия</h5>
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <label for="price" class="form-label">Тариф</label>
+            <select class="form-select" id="price" name="price">
+                <option value="">-- Выберите тариф --</option>
+                {% for price in prices %}
+                <option value="{{ price.id }}"
+                        data-price-amount="{{ price.price }}"
+                        data-classes-count="{{ price.classes_in_price or 0 }}">
+                    {% if price.description %}
+                        {{ price.description }} - {{ price.price }} руб.
+                    {% else %}
+                        Тариф {{ price.id }} - {{ price.price }} руб.
+                    {% endif %}
+                    {% if price.classes_in_price %}
+                        ({{ price.classes_in_price }} занятий)
+                    {% endif %}
+                </option>
+                {% endfor %}
+            </select>
+            <div class="form-text" id="priceInfo"></div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <label for="payment_day" class="form-label">День оплаты</label>
+            <input type="number" class="form-control" id="payment_day" name="payment_day" min="1" max="31">
+        </div>
+        <div class="col-md-4 mb-3">
+            <label for="classes_remaining" class="form-label">Осталось занятий</label>
+            <input type="number" class="form-control" id="classes_remaining" name="classes_remaining" min="0">
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label for="expected_payment_date" class="form-label">Ожидаемая дата оплаты</label>
+            <input type="date" class="form-control" id="expected_payment_date" name="expected_payment_date">
+        </div>
+        <div class="col-md-6 mb-3">
+            <label for="date_start" class="form-label">Дата начала тренировок</label>
+            <input type="datetime-local" class="form-control" id="date_start" name="date_start">
+        </div>
+    </div>
+</div>
 
                 <!-- Медицинские справки -->
                 <div class="form-section">
@@ -220,18 +261,20 @@
             });
 
             // Загрузка данных ученика при выборе
-            $('#studentSelect').change(function() {
-                const studentId = $(this).val();
-                if (studentId) {
-                    loadStudentData(studentId);
-                    $('#studentCard').removeClass('hidden');
-                } else {
-                    $('#studentCard').addClass('hidden');
-                }
-            });
+        $('#studentSelect').change(function() {
+            const studentId = $(this).val();
+            if (studentId) {
+                loadStudentData(studentId);
+                $('#studentCard').removeClass('hidden');
+                $('#studentCard h3').text('Карточка ученика');
+                $('#studentForm button[type="submit"]').text('Сохранить изменения');
+            } else {
+                $('#studentCard').addClass('hidden');
+            }
+        });
 
             // Обработка отправки формы
-            $('#studentForm').submit(function(e) {
+        $('#studentForm').submit(function(e) {
                 e.preventDefault();
                 updateStudent();
             });
@@ -261,6 +304,27 @@
                 $('#parent2').val(student.parent2 || '');
                 $('#date_start').val(student.date_start ? student.date_start.replace('Z', '').substring(0, 16) : '');
                 $('#telegram_id').val(student.telegram_id || '');
+                // ДОБАВИТЬ ЭТУ СТРОКУ:
+                $('#active').prop('checked', student.active !== false);
+
+                // Обновляем информацию о выбранном тарифе
+                if (student.price) {
+                    const selectedOption = $('#price').find(`option[value="${student.price}"]`);
+                    if (selectedOption.length) {
+                        const priceAmount = selectedOption.data('price-amount');
+                        const classesCount = selectedOption.data('classes-count');
+
+                        let infoText = '';
+                        if (priceAmount) {
+                            infoText += `Стоимость: ${priceAmount} руб. `;
+                        }
+                        if (classesCount) {
+                            infoText += `Занятий в тарифе: ${classesCount}`;
+                        }
+
+                        $('#priceInfo').text(infoText);
+                    }
+                }
             }).fail(function() {
                 showMessage('Ошибка загрузки данных ученика', 'danger');
             });
@@ -268,14 +332,17 @@
 
    function updateStudent() {
     const formData = new FormData(document.getElementById('studentForm'));
-    
-    console.log('Отправка данных:');
-    for (let [key, value] of formData.entries()) {
-        console.log(`${key}: ${value}`);
-    }
-    
-    fetch('/update-student', {
-        method: 'POST',
+    const studentId = $('#studentId').val();
+
+    console.log('Отправка данных:', Object.fromEntries(formData));
+    console.log('Student ID:', studentId);
+
+    // Определяем URL и метод в зависимости от того, новый это ученик или существующий
+    const url = studentId === 'new' ? '/create-student' : '/update-student';
+    const method = 'POST';
+
+    fetch(url, {
+        method: method,
         body: formData
     })
     .then(response => {
@@ -288,10 +355,25 @@
     })
     .then(data => {
         showMessage(data.message, 'success');
-        const studentSelect = $('#studentSelect');
-        const currentStudentId = $('#studentId').val();
-        const currentStudentName = $('#name').val();
-        studentSelect.find(`option[value="${currentStudentId}"]`).text(currentStudentName);
+
+        if (studentId === 'new') {
+            // После создания нового ученика
+            $('#studentId').val(data.student_id); // Устанавливаем реальный ID
+            $('#studentCard h3').text('Карточка ученика');
+            $('#studentForm button[type="submit"]').text('Сохранить изменения');
+
+            // Добавляем нового ученика в выпадающий список
+            const newStudentName = $('#name').val();
+            const newStudentId = data.student_id;
+            $('#studentSelect').append(new Option(newStudentName, newStudentId));
+            $('#studentSelect').val(newStudentId).trigger('change');
+        } else {
+            // Обновляем имя в выпадающем списке для существующего ученика
+            const studentSelect = $('#studentSelect');
+            const currentStudentId = $('#studentId').val();
+            const currentStudentName = $('#name').val();
+            studentSelect.find(`option[value="${currentStudentId}"]`).text(currentStudentName);
+        }
     })
     .catch(error => {
         console.error('Ошибка:', error);
@@ -311,6 +393,109 @@
                 $('.alert').alert('close');
             }, 5000);
         }
+
+
+// Обновите функцию loadStudentData
+function loadStudentData(studentId) {
+    $.get(`/get-student-data/${studentId}`, function(student) {
+        // Заполняем форму данными ученика
+        $('#studentId').val(student.id);
+        $('#name').val(student.name || '');
+        $('#birthday').val(student.birthday ? student.birthday.split('T')[0] : '');
+        $('#sport_discipline').val(student.sport_discipline || '');
+        $('#rang').val(student.rang || '');
+        $('#sex').val(student.sex || '');
+        $('#weight').val(student.weight || '');
+        $('#telephone').val(student.telephone || '');
+        $('#head_trainer_id').val(student.head_trainer_id || '');
+        $('#second_trainer_id').val(student.second_trainer_id || '');
+        $('#price').val(student.price || ''); // Устанавливаем выбранный тариф
+        $('#payment_day').val(student.payment_day || '');
+        $('#classes_remaining').val(student.classes_remaining || '');
+        $('#expected_payment_date').val(student.expected_payment_date ? student.expected_payment_date.split('T')[0] : '');
+        $('#reference1').val(student.reference1 ? student.reference1.split('T')[0] : '');
+        $('#reference2').val(student.reference2 ? student.reference2.split('T')[0] : '');
+        $('#reference3').val(student.reference3 ? student.reference3.split('T')[0] : '');
+        $('#parent1').val(student.parent1 || '');
+        $('#parent2').val(student.parent2 || '');
+        $('#date_start').val(student.date_start ? student.date_start.replace('Z', '').substring(0, 16) : '');
+        $('#telegram_id').val(student.telegram_id || '');
+
+        // Обновляем информацию о выбранном тарифе
+        if (student.price) {
+            const selectedOption = $('#price').find(`option[value="${student.price}"]`);
+            if (selectedOption.length) {
+                const priceAmount = selectedOption.data('price-amount');
+                const classesCount = selectedOption.data('classes-count');
+
+                let infoText = '';
+                if (priceAmount) {
+                    infoText += `Стоимость: ${priceAmount} руб. `;
+                }
+                if (classesCount) {
+                    infoText += `Занятий в тарифе: ${classesCount}`;
+                }
+
+                $('#priceInfo').text(infoText);
+            }
+        }
+    }).fail(function() {
+        showMessage('Ошибка загрузки данных ученика', 'danger');
+    });
+}
+// Обработчик изменения выбора тарифа
+$('#price').change(function() {
+    const selectedOption = $(this).find('option:selected');
+    const priceAmount = selectedOption.data('price-amount');
+    const classesCount = selectedOption.data('classes-count');
+
+    let infoText = '';
+    if (priceAmount) {
+        infoText += `Стоимость: ${priceAmount} руб. `;
+    }
+    if (classesCount) {
+        infoText += `Занятий в тарифе: ${classesCount}`;
+    }
+
+    $('#priceInfo').text(infoText);
+
+    // Автоматически заполняем количество занятий если поле пустое
+    if (classesCount && !$('#classes_remaining').val()) {
+        $('#classes_remaining').val(classesCount);
+    }
+});
+function createNewStudent() {
+    // Скрываем карточку текущего ученика
+    $('#studentCard').addClass('hidden');
+
+    // Очищаем форму
+    $('#studentForm')[0].reset();
+
+    // Убираем выбранного ученика из select
+    $('#studentSelect').val('').trigger('change');
+
+    // Устанавливаем текущую дату в поле "Дата начала тренировок"
+    const now = new Date();
+    const localDateTime = now.toISOString().slice(0, 16);
+    $('#date_start').val(localDateTime);
+
+    // Устанавливаем активный статус (галочка включена)
+    $('#active').prop('checked', true);
+
+    // Устанавливаем специальное значение для нового ученика
+    $('#studentId').val('new');
+
+    // Показываем карточку с пустой формой
+    $('#studentCard').removeClass('hidden');
+
+    // Меняем заголовок
+    $('#studentCard h3').text('Новый ученик');
+
+    // Меняем текст кнопки сохранения
+    $('#studentForm button[type="submit"]').text('Создать ученика');
+
+    showMessage('Заполните данные для нового ученика', 'info');
+}
     </script>
 </body>
 </html>

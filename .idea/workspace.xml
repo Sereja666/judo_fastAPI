@@ -5,10 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="ee547eef-2e63-46d4-8d9a-feffb711966c" name="Changes" comment="1">
-      <change afterPath="$PROJECT_DIR$/utils/utils.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/database/schemas.py" beforeDir="false" afterPath="$PROJECT_DIR$/database/schemas.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/handlers/user_router.py" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/user_router.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/edit_students.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/edit_students.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -19,6 +18,7 @@
     <option name="RECENT_TEMPLATES">
       <list>
         <option value="Python Script" />
+        <option value="HTML File" />
       </list>
     </option>
   </component>
@@ -50,6 +50,7 @@
   </component>
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
+    &quot;DefaultHtmlFileTemplate&quot;: &quot;HTML File&quot;,
     &quot;Python.aiogram_run.executor&quot;: &quot;Run&quot;,
     &quot;Python.api_Students_shedule.executor&quot;: &quot;Run&quot;,
     &quot;Python.eqweqw.executor&quot;: &quot;Run&quot;,
@@ -193,9 +194,9 @@
       <list>
         <item itemvalue="Python.aiogram_run" />
         <item itemvalue="Python.qwe" />
+        <item itemvalue="Python.api_Students_shedule" />
         <item itemvalue="Python.sekret_key_generator" />
         <item itemvalue="Python.fff" />
-        <item itemvalue="Python.api_Students_shedule" />
       </list>
     </recent_temporary>
   </component>
