@@ -7,8 +7,8 @@ from sqlalchemy.orm import sessionmaker, Session
 from typing import List, Optional
 import json
 import os
+from database.schemas import Students, Sport, Schedule, Students_schedule, Trainers, Prices, engine
 
-from database.schemas import Students, Sport, Schedule, Students_schedule, engine
 
 # Создаем сессию базы данных
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -207,12 +207,14 @@ async def edit_students_page(request: Request, db: Session = Depends(get_db)):
     students = db.query(Students).filter(Students.active == True).all()
     sports = db.query(Sport).all()
     trainers = db.query(Trainers).all()
-
+    prices = db.query(Prices).all()  # ← ДОБАВИТЬ ЭТУ СТРОКУ
+    
     return templates.TemplateResponse("edit_students.html", {
         "request": request,
         "students": students,
         "sports": sports,
-        "trainers": trainers
+        "trainers": trainers,
+        "prices": prices  # ← ДОБАВИТЬ ЭТУ СТРОКУ
     })
 
 
@@ -276,6 +278,7 @@ async def update_student(
     parent2: Optional[str] = Form(None),
     date_start: Optional[str] = Form(None),
     telegram_id: Optional[str] = Form(None),
+     active: Optional[str] = Form(None),  # ДОБАВИТЬ ЭТОТ ПАРАМЕТР
     db: Session = Depends(get_db)
 ):
     """Обновление данных ученика"""
@@ -300,6 +303,10 @@ async def update_student(
                 return int(value)
             except (ValueError, TypeError):
                 return None
+
+          # Функция для преобразования checkbox в boolean
+        def parse_bool(value):
+            return value == "on"
         
         # Обновляем поля
         student.name = name
@@ -322,6 +329,7 @@ async def update_student(
         student.parent2 = parse_int(parent2)
         student.date_start = datetime.fromisoformat(date_start) if date_start else None
         student.telegram_id = parse_int(telegram_id)
+        student.active = parse_bool(active)  
         
         db.commit()
         
@@ -332,6 +340,115 @@ async def update_student(
         print(f"Ошибка при сохранении: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Ошибка обновления: {str(e)}")
 
+    
+
+@app.get("/get-prices")
+async def get_prices(db: Session = Depends(get_db)):
+    """Получение списка всех цен"""
+    prices = db.query(Prices).all()
+    
+    result = []
+    for price in prices:
+        result.append({
+            "id": price.id,
+            "price": price.price,
+            "description": price.description or "",
+            "classes_in_price": price.classes_in_price or 0
+        })
+    
+    return JSONResponse(result)
+
+
+
+@app.post("/create-student")
+async def create_student(
+    name: str = Form(...),
+    birthday: Optional[str] = Form(None),
+    sport_discipline: Optional[str] = Form(None),
+    rang: Optional[str] = Form(None),
+    sex: Optional[str] = Form(None),
+    weight: Optional[str] = Form(None),
+    reference1: Optional[str] = Form(None),
+    reference2: Optional[str] = Form(None),
+    reference3: Optional[str] = Form(None),
+    head_trainer_id: Optional[str] = Form(None),
+    second_trainer_id: Optional[str] = Form(None),
+    price: Optional[str] = Form(None),
+    payment_day: Optional[str] = Form(None),
+    classes_remaining: Optional[str] = Form(None),
+    expected_payment_date: Optional[str] = Form(None),
+    telephone: Optional[str] = Form(None),
+    parent1: Optional[str] = Form(None),
+    parent2: Optional[str] = Form(None),
+    date_start: Optional[str] = Form(None),
+    telegram_id: Optional[str] = Form(None),
+    db: Session = Depends(get_db)
+):
+    """Создание нового ученика"""
+    try:
+        print("Создание нового ученика")
+        
+        # Функция для безопасного преобразования пустых строк в None
+        def parse_value(value):
+            if value is None or value == "":
+                return None
+            return value
+        
+        # Функция для преобразования в int или None
+        def parse_int(value):
+            if value is None or value == "":
+                return None
+            try:
+                return int(value)
+            except (ValueError, TypeError):
+                return None
+
+          # Функция для преобразования checkbox в boolean
+        def parse_bool(value):
+            return value == "on"
+
+        # Создаем нового ученика
+        new_student = Students(
+            name=name,
+            birthday=datetime.fromisoformat(birthday) if birthday else None,
+            sport_discipline=parse_int(sport_discipline),
+            rang=parse_value(rang),
+            sex=parse_value(sex),
+            weight=parse_int(weight),
+            reference1=datetime.fromisoformat(reference1).date() if reference1 else None,
+            reference2=datetime.fromisoformat(reference2).date() if reference2 else None,
+            reference3=datetime.fromisoformat(reference3).date() if reference3 else None,
+            head_trainer_id=parse_int(head_trainer_id),
+            second_trainer_id=parse_int(second_trainer_id),
+            price=parse_int(price),
+            payment_day=parse_int(payment_day),
+            classes_remaining=parse_int(classes_remaining),
+            expected_payment_date=datetime.fromisoformat(expected_payment_date).date() if expected_payment_date else None,
+            telephone=parse_value(telephone),
+            parent1=parse_int(parent1),
+            parent2=parse_int(parent2),
+            date_start=datetime.fromisoformat(date_start) if date_start else None,
+            telegram_id=parse_int(telegram_id),
+             active=parse_bool(active) if active is not None else True  # ДОБАВИТЬ ЭТУ СТРОКУ
+        )
+        
+        db.add(new_student)
+        db.commit()
+        db.refresh(new_student)  # Чтобы получить ID нового ученика
+        
+        print(f"Создан новый ученик с ID: {new_student.id}")
+        
+        return JSONResponse({
+            "status": "success", 
+            "message": "Ученик успешно создан",
+            "student_id": new_student.id
+        })
+    
+    except Exception as e:
+        db.rollback()
+        print(f"Ошибка при создании ученика: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Ошибка создания: {str(e)}")
+        
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
