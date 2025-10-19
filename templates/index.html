@@ -93,19 +93,29 @@
         });
 
         // Обработка отправки формы
-        $('#scheduleForm').submit(function(e) {
-            e.preventDefault();
+        // Обработка отправки формы
+$('#scheduleForm').submit(function(e) {
+    e.preventDefault();
 
-            const studentId = $('#studentSelect').val();
-            const sportId = $('#sportSelect').val();
-            const selectedSchedules = [];
+    const studentId = $('#studentSelect').val();
+    const sportId = $('#sportSelect').val();
+    const selectedSchedules = [];
 
-            $('.schedule-checkbox:checked').each(function() {
+    console.log('Выбранные чекбоксы:', $('.schedule-checkbox:checked').length);
+
+    $('.schedule-checkbox:checked').each(function() {
                 selectedSchedules.push($(this).val());
             });
 
+            console.log('Выбранные расписания:', selectedSchedules);
+
             if (selectedSchedules.length === 0) {
                 showMessage('Пожалуйста, выберите хотя бы одно расписание', 'danger');
+                return;
+            }
+
+            if (!studentId || !sportId) {
+                showMessage('Пожалуйста, выберите ученика и дисциплину', 'danger');
                 return;
             }
 
@@ -123,10 +133,10 @@
     function loadSchedules(sportId, studentId) {
         $('#scheduleList').html('<div class="text-center"><div class="spinner-border" role="status"></div></div>');
 
-        // Загружаем доступное расписание
-        $.get(`/get-schedules?sport_id=${sportId}`, function(schedules) {
-            // Загружаем текущее расписание ученика
-            $.get(`/get-student-schedules?student_id=${studentId}`, function(studentSchedules) {
+        // Загружаем доступное расписание - ИСПРАВЛЕННЫЙ URL
+        $.get(`/schedule/get-schedules?sport_id=${sportId}`, function(schedules) {
+            // Загружаем текущее расписание ученика - ИСПРАВЛЕННЫЙ URL
+            $.get(`/schedule/get-student-schedules?student_id=${studentId}`, function(studentSchedules)  {
                 let html = '';
 
                 if (schedules.length === 0) {
@@ -183,23 +193,39 @@
     }
 
     function saveSchedule(studentId, sportId, scheduleIds) {
-        const formData = new FormData();
-        formData.append('student_id', studentId);
-        formData.append('sport_id', sportId);
-        scheduleIds.forEach(id => formData.append('schedule_ids', id));
+    console.log('Сохранение расписания:', { studentId, sportId, scheduleIds });
 
-        fetch('/save-schedule', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            showMessage(data.message, 'success');
-        })
-        .catch(error => {
-            showMessage('Ошибка сохранения: ' + error, 'danger');
-        });
-    }
+    const formData = new FormData();
+    formData.append('student_id', studentId);
+    formData.append('sport_id', sportId);
+    
+    // Добавляем каждый schedule_id отдельно
+    scheduleIds.forEach(id => {
+        formData.append('schedule_ids', id.toString());
+    });
+
+    fetch('/schedule/save-schedule', {  // Добавлен префикс /schedule/
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        console.log('Статус ответа:', response.status);
+        if (!response.ok) {
+            return response.text().then(text => {
+                throw new Error(`HTTP error! status: ${response.status}, message: ${text}`);
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Успешный ответ:', data);
+        showMessage(data.message || 'Расписание успешно сохранено', 'success');
+    })
+    .catch(error => {
+        console.error('Ошибка сохранения:', error);
+        showMessage('Ошибка сохранения: ' + error.message, 'danger');
+    });
+}
 
     function showMessage(text, type) {
         $('#message').html(`

@@ -12,8 +12,8 @@
     </div>
     <div class="card-body">
         <div class="row">
-            <div class="col-md-6">
-                <label for="studentSelect" class="form-label">Выберите ученика:</label>
+    <div class="col-md-6">
+        <label for="studentSelect" class="form-label">Выберите ученика:</label>
                 <select id="studentSelect" class="form-select" required>
                     <option value="">-- Выберите ученика --</option>
                     {% for student in students %}
@@ -22,12 +22,11 @@
                 </select>
                 <div class="form-text">Начните вводить имя для поиска</div>
             </div>
-            <div class="col-md-6">
-                <div class="d-flex align-items-end h-100">
-                    <button type="button" class="btn btn-success" onclick="createNewStudent()">
-                        ＋ Создать нового ученика
-                    </button>
-                </div>
+            <div class="col-md-6 d-flex align-items-center">
+                <button type="button" class="btn btn-primary" onclick="createNewStudent()">
+                    <i class="fas fa-plus"></i>
+                    Создать нового ученика
+                </button>
             </div>
         </div>
     </div>
@@ -204,8 +203,11 @@
             </div>
         </div>
 
-        <button type="submit" class="btn btn-success btn-lg">Сохранить изменения</button>
-        <a href="/" class="btn btn-secondary">← Назад к расписанию</a>
+     <button type="submit" class="btn btn-primary btn-lg">
+    <i class="fas fa-save"></i>
+    Сохранить изменения
+</button>
+<a href="/" class="btn btn-secondary">← Назад к расписанию</a>
     </form>
 </div>
 
@@ -229,7 +231,7 @@
                 loadStudentData(studentId);
                 $('#studentCard').removeClass('hidden');
                 $('#studentCard h3').text('Карточка ученика');
-                $('#studentForm button[type="submit"]').text('Сохранить изменения');
+                $('#studentForm button[type="submit"]').html('<i class="fas fa-save"></i> Сохранить изменения');
             } else {
                 $('#studentCard').addClass('hidden');
             }
@@ -243,7 +245,7 @@
     });
 
     function loadStudentData(studentId) {
-        $.get(`/get-student-data/${studentId}`, function(student) {
+        $.get(`/edit-students/get-student-data/${studentId}`, function(student) {
             // Заполняем форму данными ученика
             $('#studentId').val(student.id);
             $('#name').val(student.name || '');
@@ -299,7 +301,7 @@
         console.log('Student ID:', studentId);
 
         // Определяем URL и метод в зависимости от того, новый это ученик или существующий
-        const url = studentId === 'new' ? '/create-student' : '/update-student';
+        const url = studentId === 'new' ? '/edit-students/create-student' : '/edit-students/update-student';
         const method = 'POST';
 
         fetch(url, {
@@ -405,7 +407,7 @@
         $('#studentCard h3').text('Новый ученик');
 
         // Меняем текст кнопки сохранения
-        $('#studentForm button[type="submit"]').text('Создать ученика');
+        $('#studentForm button[type="submit"]').html('<i class="fas fa-user-plus"></i> Сохранить анкету');
 
         showMessage('Заполните данные для нового ученика', 'info');
     }
