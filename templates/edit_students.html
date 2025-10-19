@@ -165,8 +165,8 @@
             <select class="form-select" id="price" name="price">
                 <option value="">-- Выберите тариф --</option>
                 {% for price in prices %}
-                <option value="{{ price.id }}" 
-                        data-price-amount="{{ price.price }}" 
+                <option value="{{ price.id }}"
+                        data-price-amount="{{ price.price }}"
                         data-classes-count="{{ price.classes_in_price or 0 }}">
                     {% if price.description %}
                         {{ price.description }} - {{ price.price }} руб.
@@ -306,14 +306,14 @@
                 $('#telegram_id').val(student.telegram_id || '');
                 // ДОБАВИТЬ ЭТУ СТРОКУ:
                 $('#active').prop('checked', student.active !== false);
-                
+
                 // Обновляем информацию о выбранном тарифе
                 if (student.price) {
                     const selectedOption = $('#price').find(`option[value="${student.price}"]`);
                     if (selectedOption.length) {
                         const priceAmount = selectedOption.data('price-amount');
                         const classesCount = selectedOption.data('classes-count');
-                        
+
                         let infoText = '';
                         if (priceAmount) {
                             infoText += `Стоимость: ${priceAmount} руб. `;
@@ -321,7 +321,7 @@
                         if (classesCount) {
                             infoText += `Занятий в тарифе: ${classesCount}`;
                         }
-                        
+
                         $('#priceInfo').text(infoText);
                     }
                 }
@@ -333,14 +333,14 @@
    function updateStudent() {
     const formData = new FormData(document.getElementById('studentForm'));
     const studentId = $('#studentId').val();
-    
+
     console.log('Отправка данных:', Object.fromEntries(formData));
     console.log('Student ID:', studentId);
-    
+
     // Определяем URL и метод в зависимости от того, новый это ученик или существующий
     const url = studentId === 'new' ? '/create-student' : '/update-student';
     const method = 'POST';
-    
+
     fetch(url, {
         method: method,
         body: formData
@@ -355,13 +355,13 @@
     })
     .then(data => {
         showMessage(data.message, 'success');
-        
+
         if (studentId === 'new') {
             // После создания нового ученика
             $('#studentId').val(data.student_id); // Устанавливаем реальный ID
             $('#studentCard h3').text('Карточка ученика');
             $('#studentForm button[type="submit"]').text('Сохранить изменения');
-            
+
             // Добавляем нового ученика в выпадающий список
             const newStudentName = $('#name').val();
             const newStudentId = data.student_id;
@@ -394,7 +394,7 @@
             }, 5000);
         }
 
-  
+
 // Обновите функцию loadStudentData
 function loadStudentData(studentId) {
     $.get(`/get-student-data/${studentId}`, function(student) {
@@ -420,14 +420,14 @@ function loadStudentData(studentId) {
         $('#parent2').val(student.parent2 || '');
         $('#date_start').val(student.date_start ? student.date_start.replace('Z', '').substring(0, 16) : '');
         $('#telegram_id').val(student.telegram_id || '');
-        
+
         // Обновляем информацию о выбранном тарифе
         if (student.price) {
             const selectedOption = $('#price').find(`option[value="${student.price}"]`);
             if (selectedOption.length) {
                 const priceAmount = selectedOption.data('price-amount');
                 const classesCount = selectedOption.data('classes-count');
-                
+
                 let infoText = '';
                 if (priceAmount) {
                     infoText += `Стоимость: ${priceAmount} руб. `;
@@ -435,7 +435,7 @@ function loadStudentData(studentId) {
                 if (classesCount) {
                     infoText += `Занятий в тарифе: ${classesCount}`;
                 }
-                
+
                 $('#priceInfo').text(infoText);
             }
         }
@@ -448,7 +448,7 @@ $('#price').change(function() {
     const selectedOption = $(this).find('option:selected');
     const priceAmount = selectedOption.data('price-amount');
     const classesCount = selectedOption.data('classes-count');
-    
+
     let infoText = '';
     if (priceAmount) {
         infoText += `Стоимость: ${priceAmount} руб. `;
@@ -456,9 +456,9 @@ $('#price').change(function() {
     if (classesCount) {
         infoText += `Занятий в тарифе: ${classesCount}`;
     }
-    
+
     $('#priceInfo').text(infoText);
-    
+
     // Автоматически заполняем количество занятий если поле пустое
     if (classesCount && !$('#classes_remaining').val()) {
         $('#classes_remaining').val(classesCount);
@@ -467,33 +467,33 @@ $('#price').change(function() {
 function createNewStudent() {
     // Скрываем карточку текущего ученика
     $('#studentCard').addClass('hidden');
-    
+
     // Очищаем форму
     $('#studentForm')[0].reset();
-    
+
     // Убираем выбранного ученика из select
     $('#studentSelect').val('').trigger('change');
-    
+
     // Устанавливаем текущую дату в поле "Дата начала тренировок"
     const now = new Date();
     const localDateTime = now.toISOString().slice(0, 16);
     $('#date_start').val(localDateTime);
-    
+
     // Устанавливаем активный статус (галочка включена)
     $('#active').prop('checked', true);
-    
+
     // Устанавливаем специальное значение для нового ученика
     $('#studentId').val('new');
-    
+
     // Показываем карточку с пустой формой
     $('#studentCard').removeClass('hidden');
-    
+
     // Меняем заголовок
     $('#studentCard h3').text('Новый ученик');
-    
+
     // Меняем текст кнопки сохранения
     $('#studentForm button[type="submit"]').text('Создать ученика');
-    
+
     showMessage('Заполните данные для нового ученика', 'info');
 }
     </script>
