@@ -1,237 +1,217 @@
 <!-- templates/index.html -->
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Управление расписанием учеников</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
-    <style>
-        .schedule-item {
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            padding: 10px;
-            margin: 5px 0;
-            cursor: pointer;
-        }
-        .schedule-item:hover {
-            background-color: #f8f9fa;
-        }
-        .schedule-item.selected {
-            background-color: #d1ecf1;
-            border-color: #bee5eb;
-        }
-        .hidden {
-            display: none;
-        }
-    </style>
-</head>
-<body>
-    <div class="container mt-4">
-        <h1>Управление расписанием учеников</h1>
+{% extends "base.html" %}
 
-        <div class="card mt-4">
-            <div class="card-header">
-                <h5 class="mb-0">Выбор ученика и расписания</h5>
-            </div>
-            <div class="card-body">
-                <form id="scheduleForm">
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="studentSelect" class="form-label">Выберите ученика:</label>
-                            <select id="studentSelect" class="form-select" required>
-                                <option value="">-- Выберите ученика --</option>
-                                {% for student in students %}
-                                <option value="{{ student.id }}">{{ student.name }}</option>
-                                {% endfor %}
-                            </select>
-                            <div class="form-text">Начните вводить имя для поиска</div>
-                        </div>
+{% block title %}Управление расписанием учеников{% endblock %}
 
-                        <div class="col-md-6">
-                            <label for="sportSelect" class="form-label">Выберите дисциплину:</label>
-                            <select id="sportSelect" class="form-select" required>
-                                <option value="">-- Выберите дисциплину --</option>
-                                {% for sport in sports %}
-                                <option value="{{ sport.id }}">{{ sport.name }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
+{% block content %}
+<h1>Управление расписанием учеников</h1>
 
-                    <div id="scheduleSection" class="hidden">
-                        <h5>Доступное расписание:</h5>
-                        <div id="scheduleList" class="mb-3">
-                            <!-- Сюда будет загружаться расписание -->
-                        </div>
-
-                        <button type="submit" class="btn btn-primary">Сохранить расписание</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <div id="message" class="mt-3"></div>
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="mb-0">Выбор ученика и расписания</h5>
     </div>
+    <div class="card-body">
+        <form id="scheduleForm">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="studentSelect" class="form-label">Выберите ученика:</label>
+                    <select id="studentSelect" class="form-select" required>
+                        <option value="">-- Выберите ученика --</option>
+                        {% for student in students %}
+                        <option value="{{ student.id }}">{{ student.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="form-text">Начните вводить имя для поиска</div>
+                </div>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/ru.js"></script>
-    <script>
-        $(document).ready(function() {
-            // Инициализация Select2 для поиска учеников
-            $('#studentSelect').select2({
-                language: "ru",
-                placeholder: "Начните вводить имя ученика",
-                allowClear: true
-            });
+                <div class="col-md-6">
+                    <label for="sportSelect" class="form-label">Выберите дисциплину:</label>
+                    <select id="sportSelect" class="form-select" required>
+                        <option value="">-- Выберите дисциплину --</option>
+                        {% for sport in sports %}
+                        <option value="{{ sport.id }}">{{ sport.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
 
-            // Поиск учеников при вводе
-            $('#studentSelect').on('select2:open', function() {
-                $('.select2-search__field').attr('placeholder', 'Введите имя ученика...');
-            });
+            <div id="scheduleSection" class="hidden">
+                <h5>Доступное расписание:</h5>
+                <div id="scheduleList" class="mb-3">
+                    <!-- Сюда будет загружаться расписание -->
+                </div>
 
-            // Загрузка расписания при выборе дисциплины
-            $('#sportSelect').change(function() {
-                const sportId = $(this).val();
-                const studentId = $('#studentSelect').val();
+                <button type="submit" class="btn btn-primary">Сохранить расписание</button>
+                <a href="/edit-students" class="btn btn-outline-secondary">Редактировать данные ученика</a>
+            </div>
+        </form>
+    </div>
+</div>
 
-                if (sportId && studentId) {
-                    loadSchedules(sportId, studentId);
-                    $('#scheduleSection').removeClass('hidden');
-                } else {
-                    $('#scheduleSection').addClass('hidden');
-                }
-            });
+<div id="message" class="mt-3"></div>
+{% endblock %}
 
-            // Обновление расписания при изменении ученика
-            $('#studentSelect').change(function() {
-                const studentId = $(this).val();
-                const sportId = $('#sportSelect').val();
-
-                if (sportId && studentId) {
-                    loadSchedules(sportId, studentId);
-                    $('#scheduleSection').removeClass('hidden');
-                } else {
-                    $('#scheduleSection').addClass('hidden');
-                }
-            });
-
-            // Обработка отправки формы
-            $('#scheduleForm').submit(function(e) {
-                e.preventDefault();
-
-                const studentId = $('#studentSelect').val();
-                const sportId = $('#sportSelect').val();
-                const selectedSchedules = [];
-
-                $('.schedule-checkbox:checked').each(function() {
-                    selectedSchedules.push($(this).val());
-                });
-
-                if (selectedSchedules.length === 0) {
-                    showMessage('Пожалуйста, выберите хотя бы одно расписание', 'danger');
-                    return;
-                }
-
-                saveSchedule(studentId, sportId, selectedSchedules);
-            });
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // Инициализация Select2 для поиска учеников
+        $('#studentSelect').select2({
+            language: "ru",
+            placeholder: "Начните вводить имя ученика",
+            allowClear: true
         });
 
-        function loadSchedules(sportId, studentId) {
-    $('#scheduleList').html('<div class="text-center"><div class="spinner-border" role="status"></div></div>');
+        // Поиск учеников при вводе
+        $('#studentSelect').on('select2:open', function() {
+            $('.select2-search__field').attr('placeholder', 'Введите имя ученика...');
+        });
 
-    // Загружаем доступное расписание
-    $.get(`/get-schedules?sport_id=${sportId}`, function(schedules) {
-        // Загружаем текущее расписание ученика
-        $.get(`/get-student-schedules?student_id=${studentId}`, function(studentSchedules) {
-            let html = '';
+        // Загрузка расписания при выборе дисциплины
+        $('#sportSelect').change(function() {
+            const sportId = $(this).val();
+            const studentId = $('#studentSelect').val();
 
-            if (schedules.length === 0) {
-                html = '<div class="alert alert-warning">Нет доступного расписания для выбранной дисциплины</div>';
+            if (sportId && studentId) {
+                loadSchedules(sportId, studentId);
+                $('#scheduleSection').removeClass('hidden');
             } else {
-                // Группируем по описанию для лучшего отображения
-                const grouped = {};
-                schedules.forEach(function(schedule) {
-                    const desc = schedule.description || 'Общее расписание';
-                    if (!grouped[desc]) {
-                        grouped[desc] = [];
-                    }
-                    grouped[desc].push(schedule);
-                });
+                $('#scheduleSection').addClass('hidden');
+            }
+        });
 
-                // Выводим сгруппированное расписание
-                Object.keys(grouped).forEach(function(description) {
-                    html += `<h6 class="mt-3 text-primary">${description}</h6>`;
+        // Обновление расписания при изменении ученика
+        $('#studentSelect').change(function() {
+            const studentId = $(this).val();
+            const sportId = $('#sportSelect').val();
 
-                    grouped[description].forEach(function(schedule) {
-                        const isChecked = studentSchedules.includes(schedule.id);
-                        html += `
-                            <div class="form-check schedule-item ${isChecked ? 'selected' : ''}">
-                                <input class="form-check-input schedule-checkbox" type="checkbox"
-                                       value="${schedule.id}" id="schedule_${schedule.id}"
-                                       ${isChecked ? 'checked' : ''}>
-                                <label class="form-check-label w-100" for="schedule_${schedule.id}">
-                                    <strong>${schedule.day_week}</strong>
-                                    ${schedule.time_start} - ${schedule.time_end}
-                                </label>
-                            </div>
-                        `;
-                    });
-                });
+            if (sportId && studentId) {
+                loadSchedules(sportId, studentId);
+                $('#scheduleSection').removeClass('hidden');
+            } else {
+                $('#scheduleSection').addClass('hidden');
+            }
+        });
+
+        // Обработка отправки формы
+        $('#scheduleForm').submit(function(e) {
+            e.preventDefault();
+
+            const studentId = $('#studentSelect').val();
+            const sportId = $('#sportSelect').val();
+            const selectedSchedules = [];
+
+            $('.schedule-checkbox:checked').each(function() {
+                selectedSchedules.push($(this).val());
+            });
+
+            if (selectedSchedules.length === 0) {
+                showMessage('Пожалуйста, выберите хотя бы одно расписание', 'danger');
+                return;
             }
 
-            $('#scheduleList').html(html);
+            saveSchedule(studentId, sportId, selectedSchedules);
+        });
 
-            // Обработка клика по элементу расписания
-            $('.schedule-item').click(function(e) {
-                if (!$(e.target).is('input')) {
-                    const checkbox = $(this).find('.schedule-checkbox');
-                    checkbox.prop('checked', !checkbox.prop('checked'));
-                    $(this).toggleClass('selected', checkbox.prop('checked'));
+        // Если в URL есть student_id, выбираем этого ученика автоматически
+        const urlParams = new URLSearchParams(window.location.search);
+        const studentIdFromUrl = urlParams.get('student_id');
+        if (studentIdFromUrl) {
+            $('#studentSelect').val(studentIdFromUrl).trigger('change');
+        }
+    });
+
+    function loadSchedules(sportId, studentId) {
+        $('#scheduleList').html('<div class="text-center"><div class="spinner-border" role="status"></div></div>');
+
+        // Загружаем доступное расписание
+        $.get(`/get-schedules?sport_id=${sportId}`, function(schedules) {
+            // Загружаем текущее расписание ученика
+            $.get(`/get-student-schedules?student_id=${studentId}`, function(studentSchedules) {
+                let html = '';
+
+                if (schedules.length === 0) {
+                    html = '<div class="alert alert-warning">Нет доступного расписания для выбранной дисциплины</div>';
+                } else {
+                    // Группируем по описанию для лучшего отображения
+                    const grouped = {};
+                    schedules.forEach(function(schedule) {
+                        const desc = schedule.description || 'Общее расписание';
+                        if (!grouped[desc]) {
+                            grouped[desc] = [];
+                        }
+                        grouped[desc].push(schedule);
+                    });
+
+                    // Выводим сгруппированное расписание
+                    Object.keys(grouped).forEach(function(description) {
+                        html += `<h6 class="mt-3 text-primary">${description}</h6>`;
+
+                        grouped[description].forEach(function(schedule) {
+                            const isChecked = studentSchedules.includes(schedule.id);
+                            html += `
+                                <div class="form-check schedule-item ${isChecked ? 'selected' : ''}">
+                                    <input class="form-check-input schedule-checkbox" type="checkbox"
+                                           value="${schedule.id}" id="schedule_${schedule.id}"
+                                           ${isChecked ? 'checked' : ''}>
+                                    <label class="form-check-label w-100" for="schedule_${schedule.id}">
+                                        <strong>${schedule.day_week}</strong>
+                                        ${schedule.time_start} - ${schedule.time_end}
+                                    </label>
+                                </div>
+                            `;
+                        });
+                    });
                 }
-            });
 
-            // Обработка изменения checkbox
-            $('.schedule-checkbox').change(function() {
-                $(this).closest('.schedule-item').toggleClass('selected', $(this).prop('checked'));
+                $('#scheduleList').html(html);
+
+                // Обработка клика по элементу расписания
+                $('.schedule-item').click(function(e) {
+                    if (!$(e.target).is('input')) {
+                        const checkbox = $(this).find('.schedule-checkbox');
+                        checkbox.prop('checked', !checkbox.prop('checked'));
+                        $(this).toggleClass('selected', checkbox.prop('checked'));
+                    }
+                });
+
+                // Обработка изменения checkbox
+                $('.schedule-checkbox').change(function() {
+                    $(this).closest('.schedule-item').toggleClass('selected', $(this).prop('checked'));
+                });
             });
         });
-    });
-}
+    }
 
-        function saveSchedule(studentId, sportId, scheduleIds) {
-            const formData = new FormData();
-            formData.append('student_id', studentId);
-            formData.append('sport_id', sportId);
-            scheduleIds.forEach(id => formData.append('schedule_ids', id));
+    function saveSchedule(studentId, sportId, scheduleIds) {
+        const formData = new FormData();
+        formData.append('student_id', studentId);
+        formData.append('sport_id', sportId);
+        scheduleIds.forEach(id => formData.append('schedule_ids', id));
 
-            fetch('/save-schedule', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                showMessage(data.message, 'success');
-            })
-            .catch(error => {
-                showMessage('Ошибка сохранения: ' + error, 'danger');
-            });
-        }
+        fetch('/save-schedule', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            showMessage(data.message, 'success');
+        })
+        .catch(error => {
+            showMessage('Ошибка сохранения: ' + error, 'danger');
+        });
+    }
 
-        function showMessage(text, type) {
-            $('#message').html(`
-                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
-                    ${text}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            `);
+    function showMessage(text, type) {
+        $('#message').html(`
+            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${text}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `);
 
-            setTimeout(() => {
-                $('.alert').alert('close');
-            }, 5000);
-        }
-    </script>
-</body>
-</html>
+        setTimeout(() => {
+            $('.alert').alert('close');
+        }, 5000);
+    }
+</script>
+{% endblock %}
