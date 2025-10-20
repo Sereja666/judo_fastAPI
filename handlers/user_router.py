@@ -478,6 +478,7 @@ async def show_attendance_status(callback: CallbackQuery):
                     WHEN st.rang IS NULL THEN 999
                     WHEN st.rang ILIKE '%бел%' THEN 1
                     WHEN st.rang ILIKE '%желт%' THEN 2
+                    WHEN st.rang ILIKE '%жёлт%' THEN 2 
                     WHEN st.rang ILIKE '%оранж%' THEN 3
                     WHEN st.rang ILIKE '%зелен%' THEN 4
                     WHEN st.rang ILIKE '%син%' THEN 5
@@ -512,7 +513,7 @@ async def show_attendance_status(callback: CallbackQuery):
         absent_students = []
 
         for student in students:
-            birth_year = student['birthday'].year if student['birthday'] else "неизв."
+            birth_year = student['birthday'].year if student['birthday'] else " "
             belt_emoji = get_belt_emoji(student['rang'])
 
             student_line = f"{belt_emoji}{student['name']} {birth_year}"
