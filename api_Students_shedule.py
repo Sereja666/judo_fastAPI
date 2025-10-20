@@ -8,6 +8,8 @@ from typing import List, Optional
 import json
 import os
 from datetime import datetime
+
+from config import settings
 from database.schemas import Students, Sport, Schedule, Students_schedule, Trainers, Prices, engine
 
 # Создаем сессию базы данных
@@ -16,7 +18,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 app = FastAPI(title="Student Management System")
 
 # URL вашего Superset
-SUPERSET_BASE_URL = "http://185.35.192.169/superset"
+SUPERSET_BASE_URL = settings.superset_base_url
 
 # Создаем папку templates если её нет
 if not os.path.exists("templates"):

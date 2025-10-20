@@ -52,6 +52,7 @@ class Redis_conf(BaseSettings):
 class Settings(BaseSettings):
     db: DB = DB()
     redis_conf: Redis_conf = Redis_conf()
+    superset_base_url = config['superset']["SUPERSET_BASE_URL"]
 
 
 settings = Settings()
