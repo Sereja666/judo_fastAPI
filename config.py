@@ -48,11 +48,15 @@ class Redis_conf(BaseSettings):
     REDIS_PORT: str = config['redis']['REDIS_PORT']
     REDIS_DB: int = int(config['redis']['REDIS_DB'])
 
+class Superset_conf(BaseSettings):
+    # Добавьте настройки Redis
+    base_url: str = config['superset']["SUPERSET_BASE_URL"]
+
 
 class Settings(BaseSettings):
     db: DB = DB()
     redis_conf: Redis_conf = Redis_conf()
-    superset_base_url = config['superset']["SUPERSET_BASE_URL"]
+    superset_conf : Superset_conf = Superset_conf()
 
 
 settings = Settings()

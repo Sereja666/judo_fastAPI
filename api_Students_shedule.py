@@ -18,7 +18,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 app = FastAPI(title="Student Management System")
 
 # URL вашего Superset
-SUPERSET_BASE_URL = settings.superset_base_url
+SUPERSET_BASE_URL = settings.superset_conf.base_url
 
 # Создаем папку templates если её нет
 if not os.path.exists("templates"):
