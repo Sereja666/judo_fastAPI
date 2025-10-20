@@ -12,7 +12,7 @@
     </div>
     <div class="card-body">
         <div class="row">
-            <div class="col-md-6">
+            <div class="col-md-12">
                 <label for="trainerSelect" class="form-label">Выберите тренера:</label>
                 <select id="trainerSelect" class="form-select" required>
                     <option value="">-- Выберите тренера --</option>
@@ -21,13 +21,6 @@
                     {% endfor %}
                 </select>
                 <div class="form-text">Начните вводить имя для поиска</div>
-            </div>
-            <div class="col-md-6">
-                <div class="d-flex align-items-end h-100">
-                    <button type="button" class="btn btn-success" onclick="createNewTrainer()">
-                        ＋ Создать нового тренера
-                    </button>
-                </div>
             </div>
         </div>
     </div>
@@ -207,63 +200,63 @@
             if (trainerId) {
                 loadTrainerData(trainerId);
                 $('#trainerCard').removeClass('hidden');
-                $('#trainerCard h3').text('Карточка тренера');
-                $('#trainerForm button[type="submit"]').text('Сохранить изменения');
             } else {
                 $('#trainerCard').addClass('hidden');
             }
         });
 
-function loadTrainerData(trainerId) {
-    console.log('Загрузка данных тренера с ID:', trainerId);
-    
-    $.get(`/get-trainer-data/${trainerId}`, function(trainer) {
-        console.log('Получены данные тренера:', trainer);
-        
-        // Заполняем форму данными тренера
-        $('#trainerId').val(trainer.id);
-        $('#name').val(trainer.name || '');
-        $('#birthday').val(trainer.birthday ? trainer.birthday.split('T')[0] : '');
-        $('#sport_discipline').val(trainer.sport_discipline || '');
-        $('#qualification').val(trainer.qualification || '');
-        $('#sex').val(trainer.sex || '');
-        $('#experience').val(trainer.experience || '');
-        $('#telephone').val(trainer.telephone || '');
-        $('#email').val(trainer.email || '');
-        $('#telegram_id').val(trainer.telegram_id || '');
-        $('#address').val(trainer.address || '');
-        $('#salary').val(trainer.salary || '');
-        $('#payment_day').val(trainer.payment_day || '');
-        $('#work_hours').val(trainer.work_hours || '');
-        $('#date_start').val(trainer.date_start ? trainer.date_start.replace('Z', '').substring(0, 16) : '');
-        $('#contract_type').val(trainer.contract_type || '');
-        $('#passport').val(trainer.passport || '');
-        $('#inn').val(trainer.inn || '');
-        $('#snils').val(trainer.snils || '');
-        $('#notes').val(trainer.notes || '');
-        $('#active').prop('checked', trainer.active !== false);
-        
-        console.log('Форма заполнена данными тренера');
-        
-    }).fail(function(jqXHR, textStatus, errorThrown) {
-        console.error('Ошибка загрузки данных тренера:', textStatus, errorThrown);
-        showMessage('Ошибка загрузки данных тренера: ' + textStatus, 'danger');
+        // Обработка отправки формы
+        $('#trainerForm').submit(function(e) {
+            e.preventDefault();
+            updateTrainer();
+        });
     });
-}
+
+    function loadTrainerData(trainerId) {
+        console.log('Загрузка данных тренера с ID:', trainerId);
+        
+        $.get(`/get-trainer-data/${trainerId}`, function(trainer) {
+            console.log('Получены данные тренера:', trainer);
+            
+            // Заполняем форму данными тренера
+            $('#trainerId').val(trainer.id);
+            $('#name').val(trainer.name || '');
+            $('#birthday').val(trainer.birthday ? trainer.birthday.split('T')[0] : '');
+            $('#sport_discipline').val(trainer.sport_discipline || '');
+            $('#qualification').val(trainer.qualification || '');
+            $('#sex').val(trainer.sex || '');
+            $('#experience').val(trainer.experience || '');
+            $('#telephone').val(trainer.telephone || '');
+            $('#email').val(trainer.email || '');
+            $('#telegram_id').val(trainer.telegram_id || '');
+            $('#address').val(trainer.address || '');
+            $('#salary').val(trainer.salary || '');
+            $('#payment_day').val(trainer.payment_day || '');
+            $('#work_hours').val(trainer.work_hours || '');
+            $('#date_start').val(trainer.date_start ? trainer.date_start.replace('Z', '').substring(0, 16) : '');
+            $('#contract_type').val(trainer.contract_type || '');
+            $('#passport').val(trainer.passport || '');
+            $('#inn').val(trainer.inn || '');
+            $('#snils').val(trainer.snils || '');
+            $('#notes').val(trainer.notes || '');
+            $('#active').prop('checked', trainer.active !== false);
+            
+            console.log('Форма заполнена данными тренера');
+            
+        }).fail(function(jqXHR, textStatus, errorThrown) {
+            console.error('Ошибка загрузки данных тренера:', textStatus, errorThrown);
+            showMessage('Ошибка загрузки данных тренера: ' + textStatus, 'danger');
+        });
+    }
 
     function updateTrainer() {
         const formData = new FormData(document.getElementById('trainerForm'));
         const trainerId = $('#trainerId').val();
 
         console.log('Отправка данных тренера:', Object.fromEntries(formData));
-        console.log('Trainer ID:', trainerId);
 
-        // Определяем URL и метод в зависимости от того, новый это тренер или существующий
-        const url = trainerId === 'new' ? '/create-trainer' : '/update-trainer';
-        const method = 'POST';
-
-        fetch(url, {
-            method: method,
+        fetch('/update-trainer', {
+            method: 'POST',
             body: formData
         })
         .then(response => {
@@ -276,25 +269,11 @@ function loadTrainerData(trainerId) {
         })
         .then(data => {
             showMessage(data.message, 'success');
-
-            if (trainerId === 'new') {
-                // После создания нового тренера
-                $('#trainerId').val(data.trainer_id);
-                $('#trainerCard h3').text('Карточка тренера');
-                $('#trainerForm button[type="submit"]').text('Сохранить изменения');
-
-                // Добавляем нового тренера в выпадающий список
-                const newTrainerName = $('#name').val();
-                const newTrainerId = data.trainer_id;
-                $('#trainerSelect').append(new Option(newTrainerName, newTrainerId));
-                $('#trainerSelect').val(newTrainerId).trigger('change');
-            } else {
-                // Обновляем имя в выпадающем списке для существующего тренера
-                const trainerSelect = $('#trainerSelect');
-                const currentTrainerId = $('#trainerId').val();
-                const currentTrainerName = $('#name').val();
-                trainerSelect.find(`option[value="${currentTrainerId}"]`).text(currentTrainerName);
-            }
+            
+            // Обновляем имя в выпадающем списке
+            const trainerSelect = $('#trainerSelect');
+            const currentTrainerName = $('#name').val();
+            trainerSelect.find(`option[value="${trainerId}"]`).text(currentTrainerName);
         })
         .catch(error => {
             console.error('Ошибка:', error);
@@ -313,39 +292,6 @@ function loadTrainerData(trainerId) {
         setTimeout(() => {
             $('.alert').alert('close');
         }, 5000);
-    }
-
-    function createNewTrainer() {
-        // Скрываем карточку текущего тренера
-        $('#trainerCard').addClass('hidden');
-
-        // Очищаем форму
-        $('#trainerForm')[0].reset();
-
-        // Убираем выбранного тренера из select
-        $('#trainerSelect').val('').trigger('change');
-
-        // Устанавливаем текущую дату в поле "Дата начала работы"
-        const now = new Date();
-        const localDateTime = now.toISOString().slice(0, 16);
-        $('#date_start').val(localDateTime);
-
-        // Устанавливаем активный статус (галочка включена)
-        $('#active').prop('checked', true);
-
-        // Устанавливаем специальное значение для нового тренера
-        $('#trainerId').val('new');
-
-        // Показываем карточку с пустой формой
-        $('#trainerCard').removeClass('hidden');
-
-        // Меняем заголовок
-        $('#trainerCard h3').text('Новый тренер');
-
-        // Меняем текст кнопки сохранения
-        $('#trainerForm button[type="submit"]').text('Создать тренера');
-
-        showMessage('Заполните данные для нового тренера', 'info');
     }
 </script>
 {% endblock %}
