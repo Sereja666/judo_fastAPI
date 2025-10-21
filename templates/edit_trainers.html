@@ -43,15 +43,6 @@
                     <label for="birthday" class="form-label">Дата рождения</label>
                     <input type="date" class="form-control" id="birthday" name="birthday">
                 </div>
-                <div class="col-md-12 mb-3">
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="active" name="active" checked>
-                        <label class="form-check-label" for="active">
-                            Активный тренер
-                        </label>
-                    </div>
-                    <div class="form-text">Если снять галочку, тренер будет скрыт из списков</div>
-                </div>
             </div>
             <div class="row">
                 <div class="col-md-4 mb-3">
@@ -64,10 +55,6 @@
                     </select>
                 </div>
                 <div class="col-md-4 mb-3">
-                    <label for="qualification" class="form-label">Квалификация</label>
-                    <input type="text" class="form-control" id="qualification" name="qualification">
-                </div>
-                <div class="col-md-4 mb-3">
                     <label for="sex" class="form-label">Пол</label>
                     <select class="form-select" id="sex" name="sex">
                         <option value="">-- Выберите пол --</option>
@@ -75,106 +62,28 @@
                         <option value="Ж">Женский</option>
                     </select>
                 </div>
-            </div>
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label for="experience" class="form-label">Опыт работы (лет)</label>
-                    <input type="number" class="form-control" id="experience" name="experience" min="0">
-                </div>
-                <div class="col-md-6 mb-3">
+                <div class="col-md-4 mb-3">
                     <label for="telephone" class="form-label">Телефон</label>
                     <input type="tel" class="form-control" id="telephone" name="telephone">
                 </div>
             </div>
-        </div>
-
-        <!-- Контактная информация -->
-        <div class="form-section">
-            <h5 class="section-title">Контактная информация</h5>
             <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label for="email" class="form-label">Email</label>
-                    <input type="email" class="form-control" id="email" name="email">
-                </div>
                 <div class="col-md-6 mb-3">
                     <label for="telegram_id" class="form-label">Telegram ID</label>
                     <input type="number" class="form-control" id="telegram_id" name="telegram_id">
                 </div>
-            </div>
-            <div class="row">
-                <div class="col-md-12 mb-3">
-                    <label for="address" class="form-label">Адрес</label>
-                    <input type="text" class="form-control" id="address" name="address">
-                </div>
-            </div>
-        </div>
-
-        <!-- Работа и оплата -->
-        <div class="form-section">
-            <h5 class="section-title">Работа и оплата</h5>
-            <div class="row">
-                <div class="col-md-4 mb-3">
-                    <label for="salary" class="form-label">Зарплата</label>
-                    <input type="number" class="form-control" id="salary" name="salary" min="0" step="0.01">
-                </div>
-                <div class="col-md-4 mb-3">
-                    <label for="payment_day" class="form-label">День выплаты</label>
-                    <input type="number" class="form-control" id="payment_day" name="payment_day" min="1" max="31">
-                </div>
-                <div class="col-md-4 mb-3">
-                    <label for="work_hours" class="form-label">Часы работы в неделю</label>
-                    <input type="number" class="form-control" id="work_hours" name="work_hours" min="0" max="168">
-                </div>
-            </div>
-            <div class="row">
                 <div class="col-md-6 mb-3">
-                    <label for="date_start" class="form-label">Дата начала работы</label>
-                    <input type="datetime-local" class="form-control" id="date_start" name="date_start">
-                </div>
-                <div class="col-md-6 mb-3">
-                    <label for="contract_type" class="form-label">Тип договора</label>
-                    <select class="form-select" id="contract_type" name="contract_type">
-                        <option value="">-- Выберите тип --</option>
-                        <option value="Трудовой">Трудовой договор</option>
-                        <option value="ГПХ">ГПХ</option>
-                        <option value="Самозанятый">Самозанятый</option>
-                        <option value="ИП">Индивидуальный предприниматель</option>
-                    </select>
+                    <div class="form-check form-switch mt-4">
+                        <input class="form-check-input" type="checkbox" id="active" name="active" checked>
+                        <label class="form-check-label" for="active">
+                            Активный тренер
+                        </label>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Документы -->
-        <div class="form-section">
-            <h5 class="section-title">Документы</h5>
-            <div class="row">
-                <div class="col-md-4 mb-3">
-                    <label for="passport" class="form-label">Паспортные данные</label>
-                    <input type="text" class="form-control" id="passport" name="passport">
-                </div>
-                <div class="col-md-4 mb-3">
-                    <label for="inn" class="form-label">ИНН</label>
-                    <input type="text" class="form-control" id="inn" name="inn">
-                </div>
-                <div class="col-md-4 mb-3">
-                    <label for="snils" class="form-label">СНИЛС</label>
-                    <input type="text" class="form-control" id="snils" name="snils">
-                </div>
-            </div>
-        </div>
-
-        <!-- Дополнительно -->
-        <div class="form-section">
-            <h5 class="section-title">Дополнительно</h5>
-            <div class="row">
-                <div class="col-md-12 mb-3">
-                    <label for="notes" class="form-label">Примечания</label>
-                    <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
-                </div>
-            </div>
-        </div>
-
-        <button type="submit" class="btn btn-success btn-lg">Сохранить изменения</button>
+        <button type="submit" class="btn btn-primary btn-lg">Сохранить изменения</button>
         <a href="/" class="btn btn-secondary">← Назад к расписанию</a>
     </form>
 </div>
@@ -185,6 +94,8 @@
 {% block scripts %}
 <script>
     $(document).ready(function() {
+        console.log('🔹 DOM загружен, инициализация Select2');
+        
         // Инициализация Select2 для поиска тренеров
         $('#trainerSelect').select2({
             language: "ru",
@@ -195,57 +106,58 @@
         // Загрузка данных тренера при выборе
         $('#trainerSelect').change(function() {
             const trainerId = $(this).val();
-            console.log('Выбран тренер ID:', trainerId);
+            console.log('🔹 Выбран тренер ID:', trainerId);
             
             if (trainerId) {
+                console.log('🔹 Загружаем данные тренера...');
                 loadTrainerData(trainerId);
                 $('#trainerCard').removeClass('hidden');
             } else {
+                console.log('🔹 Скрываем карточку тренера');
                 $('#trainerCard').addClass('hidden');
+                $('#trainerForm')[0].reset();
             }
         });
 
         // Обработка отправки формы
         $('#trainerForm').submit(function(e) {
             e.preventDefault();
+            console.log('🔹 Отправка формы тренера');
             updateTrainer();
         });
+        
+        console.log('🔹 Инициализация завершена');
     });
 
     function loadTrainerData(trainerId) {
-        console.log('Загрузка данных тренера с ID:', trainerId);
+        console.log('🔹 Функция loadTrainerData вызвана с ID:', trainerId);
         
-        $.get(`/get-trainer-data/${trainerId}`, function(trainer) {
-            console.log('Получены данные тренера:', trainer);
+        const url = `/get-trainer-data/${trainerId}`;
+        console.log('🔹 URL запроса:', url);
+        
+        $.get(url, function(trainer) {
+            console.log('✅ Данные тренера получены:', trainer);
             
             // Заполняем форму данными тренера
             $('#trainerId').val(trainer.id);
             $('#name').val(trainer.name || '');
             $('#birthday').val(trainer.birthday ? trainer.birthday.split('T')[0] : '');
             $('#sport_discipline').val(trainer.sport_discipline || '');
-            $('#qualification').val(trainer.qualification || '');
             $('#sex').val(trainer.sex || '');
-            $('#experience').val(trainer.experience || '');
             $('#telephone').val(trainer.telephone || '');
-            $('#email').val(trainer.email || '');
             $('#telegram_id').val(trainer.telegram_id || '');
-            $('#address').val(trainer.address || '');
-            $('#salary').val(trainer.salary || '');
-            $('#payment_day').val(trainer.payment_day || '');
-            $('#work_hours').val(trainer.work_hours || '');
-            $('#date_start').val(trainer.date_start ? trainer.date_start.replace('Z', '').substring(0, 16) : '');
-            $('#contract_type').val(trainer.contract_type || '');
-            $('#passport').val(trainer.passport || '');
-            $('#inn').val(trainer.inn || '');
-            $('#snils').val(trainer.snils || '');
-            $('#notes').val(trainer.notes || '');
             $('#active').prop('checked', trainer.active !== false);
             
-            console.log('Форма заполнена данными тренера');
+            console.log('✅ Форма заполнена всеми данными тренера');
             
         }).fail(function(jqXHR, textStatus, errorThrown) {
-            console.error('Ошибка загрузки данных тренера:', textStatus, errorThrown);
-            showMessage('Ошибка загрузки данных тренера: ' + textStatus, 'danger');
+            console.error('❌ Ошибка загрузки данных тренера:');
+            console.error('❌ Status:', textStatus);
+            console.error('❌ Error:', errorThrown);
+            console.error('❌ Response:', jqXHR.responseText);
+            console.error('❌ Status code:', jqXHR.status);
+            
+            showMessage('Ошибка загрузки данных тренера: ' + textStatus + '. Проверьте консоль для деталей.', 'danger');
         });
     }
 
@@ -253,7 +165,7 @@
         const formData = new FormData(document.getElementById('trainerForm'));
         const trainerId = $('#trainerId').val();
 
-        console.log('Отправка данных тренера:', Object.fromEntries(formData));
+        console.log('🔹 Отправка данных тренера:', Object.fromEntries(formData));
 
         fetch('/update-trainer', {
             method: 'POST',
@@ -276,12 +188,13 @@
             trainerSelect.find(`option[value="${trainerId}"]`).text(currentTrainerName);
         })
         .catch(error => {
-            console.error('Ошибка:', error);
+            console.error('❌ Ошибка:', error);
             showMessage('Ошибка сохранения: ' + error.message, 'danger');
         });
     }
 
     function showMessage(text, type) {
+        console.log('🔹 Показ сообщения:', text, type);
         $('#message').html(`
             <div class="alert alert-${type} alert-dismissible fade show" role="alert">
                 ${text}
