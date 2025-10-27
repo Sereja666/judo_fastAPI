@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 
-from sqlalchemy import create_engine, Column, Integer, String, MetaData, Date, Boolean, ForeignKey, DateTime, Time
+from sqlalchemy import create_engine, Column, Integer, String, MetaData, Date, Boolean, ForeignKey, DateTime, Time, \
+    BigInteger
 from sqlalchemy.orm import declarative_base, relationship
 
 from config import settings
@@ -77,7 +78,7 @@ class Trainers(Base):
     birthday = Column(DateTime())
     sport_discipline = Column(Integer())
     telephone = Column(String())
-    telegram_id = Column(Integer())
+    telegram_id = Column(BigInteger())
     active = Column(Boolean(), default=True, server_default='true')
 
 
@@ -155,7 +156,8 @@ class Sport(Base):
 class Telegram_user(Base):
     __tablename__ = 'telegram_user'
     __table_args__ = {'schema': schema}
-    telegram_id = Column(Integer(), primary_key=True)
+    # id = Column(Integer(), primary_key=True, autoincrement=True)
+    telegram_id = Column(BigInteger(), primary_key=True)
     permissions = Column(Integer())
     telegram_username = Column(String())
     refer_id = Column(Integer())
