@@ -427,71 +427,73 @@ async def get_prices(db: Session = Depends(get_db)):
     
     return JSONResponse(result)
 
-
 # ===== РЕДАКТИРОВАНИЕ ТРЕНЕРОВ =====
+
+# Оставьте только эти endpoints для тренеров:
 
 @app.get("/edit-trainers", response_class=HTMLResponse)
 async def edit_trainers_page(request: Request, db: Session = Depends(get_db)):
     """Главная страница редактирования тренеров"""
     trainers = db.query(Trainers).filter(Trainers.active == True).all()
     sports = db.query(Sport).all()
-
+    
     return templates.TemplateResponse("edit_trainers.html", {
         "request": request,
         "trainers": trainers,
         "sports": sports
     })
 
-
-@app.get("/edit-trainers/get-trainer-data/{trainer_id}")
+@app.get("/get-trainer-data/{trainer_id}")
 async def get_trainer_data(trainer_id: int, db: Session = Depends(get_db)):
-    """Получение полных данных тренера"""
-    trainer = db.query(Trainers).filter(Trainers.id == trainer_id).first()
-    if not trainer:
-        raise HTTPException(status_code=404, detail="Тренер не найден")
+    """Получение данных тренера - полная версия"""
+    try:
+        print(f"🔹 Запрос тренера ID: {trainer_id}")
+        
+        trainer = db.query(Trainers).filter(Trainers.id == trainer_id).first()
+        if not trainer:
+            return JSONResponse({"error": "Тренер не найден"}, status_code=404)
 
-    # Преобразуем данные для JSON
-    trainer_data = {
-        "id": trainer.id,
-        "name": trainer.name,
-        "birthday": trainer.birthday.isoformat() if trainer.birthday else None,
-        "sport_discipline": trainer.sport_discipline,
-        "sex": trainer.sex or "",
-        "telephone": trainer.telephone or "",
-        "telegram_id": trainer.telegram_id,
-        "active": trainer.active
-    }
+        # Полный набор полей из таблицы Trainers
+        response_data = {
+            "id": trainer.id,
+            "name": trainer.name or "",
+            "telephone": trainer.telephone or "",
+            "telegram_id": trainer.telegram_id,
+            "sport_discipline": trainer.sport_discipline,
+            "sex": trainer.sex or "",
+            "birthday": trainer.birthday.isoformat() if trainer.birthday else None,
+            "active": trainer.active
+        }
+        
+        print(f"✅ Отправляем полные данные тренера: {response_data}")
+        return JSONResponse(response_data)
+        
+    except Exception as e:
+        print(f"❌ Ошибка: {str(e)}")
+        return JSONResponse({"error": str(e)}, status_code=500)
 
-    return JSONResponse(trainer_data)
-
-
-@app.post("/edit-trainers/update-trainer")
+@app.post("/update-trainer")
 async def update_trainer(
-        trainer_id: int = Form(...),
-        name: str = Form(...),
-        birthday: Optional[str] = Form(None),
-        sport_discipline: Optional[str] = Form(None),
-        sex: Optional[str] = Form(None),
-        telephone: Optional[str] = Form(None),
-        telegram_id: Optional[str] = Form(None),
-        active: Optional[str] = Form(None),
-        db: Session = Depends(get_db)
+    trainer_id: int = Form(...),
+    name: str = Form(...),
+    birthday: Optional[str] = Form(None),
+    sport_discipline: Optional[str] = Form(None),
+    sex: Optional[str] = Form(None),
+    telephone: Optional[str] = Form(None),
+    telegram_id: Optional[str] = Form(None),
+    active: Optional[str] = Form(None),
+    db: Session = Depends(get_db)
 ):
     """Обновление данных тренера"""
     try:
-        print(f"Получены данные для trainer_id: {trainer_id}")
-
-        trainer = db.query(Trainers).filter(Trainers.id == trainer_id).first()
-        if not trainer:
-            raise HTTPException(status_code=404, detail="Тренер не найден")
-
-        # Функция для безопасного преобразования пустых строк в None
+        print(f"Обновление тренера ID: {trainer_id}")
+        
+        # Вспомогательные функции для обработки данных
         def parse_value(value):
             if value is None or value == "":
                 return None
             return value
-
-        # Функция для преобразования в int или None
+        
         def parse_int(value):
             if value is None or value == "":
                 return None
@@ -500,11 +502,14 @@ async def update_trainer(
             except (ValueError, TypeError):
                 return None
 
-        # Функция для преобразования checkbox в boolean
         def parse_bool(value):
             return value == "on"
-
-        # Обновляем поля
+        
+        trainer = db.query(Trainers).filter(Trainers.id == trainer_id).first()
+        if not trainer:
+            raise HTTPException(status_code=404, detail="Тренер не найден")
+        
+        # Обновляем все поля
         trainer.name = name
         trainer.birthday = datetime.fromisoformat(birthday) if birthday else None
         trainer.sport_discipline = parse_int(sport_discipline)
@@ -512,80 +517,53 @@ async def update_trainer(
         trainer.telephone = parse_value(telephone)
         trainer.telegram_id = parse_int(telegram_id)
         trainer.active = parse_bool(active)
-
+        
         db.commit()
-
+        
+        print(f"Тренер {trainer_id} успешно обновлен")
         return JSONResponse({"status": "success", "message": "Данные тренера успешно обновлены"})
-
+    
     except Exception as e:
         db.rollback()
-        print(f"Ошибка при сохранении тренера: {str(e)}")
+        print(f"Ошибка при обновлении тренера: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Ошибка обновления: {str(e)}")
 
-
-@app.post("/edit-trainers/create-trainer")
-async def create_trainer(
-        name: str = Form(...),
-        birthday: Optional[str] = Form(None),
-        sport_discipline: Optional[str] = Form(None),
-        sex: Optional[str] = Form(None),
-        telephone: Optional[str] = Form(None),
-        telegram_id: Optional[str] = Form(None),
-        active: Optional[str] = Form(None),
-        db: Session = Depends(get_db)
-):
-    """Создание нового тренера"""
-    try:
-        print("Создание нового тренера")
-
-        # Функция для безопасного преобразования пустых строк в None
-        def parse_value(value):
-            if value is None or value == "":
-                return None
-            return value
-
-        # Функция для преобразования в int или None
-        def parse_int(value):
-            if value is None or value == "":
-                return None
-            try:
-                return int(value)
-            except (ValueError, TypeError):
-                return None
-
-        # Функция для преобразования checkbox в boolean
-        def parse_bool(value):
-            return value == "on"
-
-        # Создаем нового тренера
-        new_trainer = Trainers(
-            name=name,
-            birthday=datetime.fromisoformat(birthday) if birthday else None,
-            sport_discipline=parse_int(sport_discipline),
-            sex=parse_value(sex),
-            telephone=parse_value(telephone),
-            telegram_id=parse_int(telegram_id),
-            active=parse_bool(active) if active is not None else True
-        )
-
-        db.add(new_trainer)
-        db.commit()
-        db.refresh(new_trainer)
-
-        print(f"Создан новый тренер с ID: {new_trainer.id}")
-
-        return JSONResponse({
-            "status": "success",
-            "message": "Тренер успешно создан",
-            "trainer_id": new_trainer.id
-        })
-
-    except Exception as e:
-        db.rollback()
-        print(f"Ошибка при создании тренера: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Ошибка создания: {str(e)}")
-
 # ===== СЛУЖЕБНЫЕ ЭНДПОИНТЫ =====
+@app.get("/debug-trainers")
+async def debug_trainers(db: Session = Depends(get_db)):
+    """Отладочный endpoint для проверки тренеров в БД"""
+    trainers = db.query(Trainers).all()
+    
+    result = []
+    for trainer in trainers:
+        result.append({
+            "id": trainer.id,
+            "name": trainer.name,
+            "active": trainer.active
+        })
+    
+    return JSONResponse(result)
+
+@app.get("/debug-trainer-structure")
+async def debug_trainer_structure(db: Session = Depends(get_db)):
+    """Отладочный endpoint для проверки структуры таблицы тренеров"""
+    # Получим первого тренера чтобы увидеть все поля
+    trainer = db.query(Trainers).first()
+    
+    if not trainer:
+        return JSONResponse({"error": "Нет тренеров в базе данных"})
+    
+    # Получим все атрибуты тренера
+    result = {}
+    for column in Trainers.__table__.columns:
+        column_name = column.name
+        column_value = getattr(trainer, column_name)
+        result[column_name] = {
+            "value": str(column_value) if column_value is not None else None,
+            "type": str(type(column_value))
+        }
+    
+    return JSONResponse(result)
 
 @app.get("/health")
 async def health_check():
@@ -604,6 +582,18 @@ async def debug_auth(request: Request):
         "all_cookies": list(cookies.keys()),
         "superset_login_url": f"{SUPERSET_BASE_URL}/login/"
     }
+
+@app.get("/debug-routes")
+async def debug_routes():
+    """Отладочный endpoint для просмотра всех зарегистрированных маршрутов"""
+    routes = []
+    for route in app.routes:
+        routes.append({
+            "path": getattr(route, "path", None),
+            "methods": getattr(route, "methods", None),
+            "name": getattr(route, "name", None)
+        })
+    return JSONResponse(routes)     
 
 @app.get("/logout")
 async def logout():

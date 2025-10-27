@@ -32,55 +32,9 @@ pytz
 pip install -r requirements.txt
 ```
 
-Создайте файл .env в корне проекта и добавьте в него следующие переменные:
+Комманды
+для гит
+git pull
 
-``` textmate
-TOKEN=your_bot_token
-ADMINS=admin1,admin2
-ROOT_PASS=dasfg531KKK331xklaS
-PG_LINK=postgresql://username:password@host:port/dbname
-``` 
+python api_Students_shedule.py
 
-Замените данные на свои. Предварительно не забудьте узнать свой телеграмм ID, развернуть базу данных и создать токен
-бота.
-
-## Запустите бота:
-
-``` bash
-python aiogram_run.py
-``` 
-
-## Структура проекта
-
-```markdown
-- db_handler
-    - __init__.py: Инициализация модуля.
-    - db_funk.py: Функции для взаимодействия с PostgreSQL.
-
-- handlers
-    - __init__.py: Инициализация модуля.
-    - admin_panel.py: Роутер для админ-панели.
-    - user_router.py: Роутер для пользовательской части.
-
-- keyboards
-    - __init__.py: Инициализация модуля.
-    - kbs.py: Файл со всеми клавиатурами.
-
-- utils
-    - __init__.py: Инициализация модуля.
-    - utils.py: Файл с утилитами.
-```
-
-### Корневые файлы проекта
-
-```markdown
-- .env: Файл с переменными окружения для конфигурации.
-- aiogram_run.py: Главный файл для запуска бота.
-- create_bot.py: Файл с настройками бота.
-- requirements.txt: Файл с зависимостями проекта.
-- run_bot.py: Файл для запуска бота через systemd.
-```
-
-# Лицензия
-
-Этот проект лицензирован под MIT License.
