@@ -24,7 +24,7 @@ async def get_user_data(user_id: int, table_name=f'{schema}.telegram_user'):
         await conn.close()
 
 
-async def get_all_users(table_name='student', schema_name='schema', count=False):
+async def get_all_users(table_name='student', schema_name=schema, count=False):
     conn = await asyncpg.connect(**settings.db.pg_link)
     try:
         # Формируем полное имя таблицы с учетом схемы
@@ -69,81 +69,23 @@ async def insert_user(user_data: dict, table_name: str = f'{schema}.telegram_use
         await conn.close()
 
 
-# asyncio.run(create_table_users())
-
-
-# async def get_current_scheduler(user_id: int, name: str, ):
-#
-#     # Преобразуем текущее время в формат HH:MM
-#     cur_time = datetime.datetime.now().strftime("%H:%M")
-#     print(cur_time)
-#     week_day = get_current_week_day()
-#
-#     async with db_manager as client:
-#         # Получаем ID места тренировки по имени
-#         training_place_id_query = select(Training_place).where(Training_place.name == name)
-#
-#         training_place = await client.execute(training_place_id_query)
-#         training_place_id = training_place.scalar_one_or_none()
-#
-#         if training_place_id is None:
-#             return None  # Если место не найдено, возвращаем None или обрабатываем ошибку
-#
-#         # Выполняем запрос к таблице Schedule
-#         user_data = await client.select_data(
-#             table_name='schedule',
-#             where_dict={
-#                 'day_week': week_day,
-#                 'time_start <= ': cur_time,  # Условие для начала времени
-#                 'time_end >= ': cur_time,  # Условие для окончания времени
-#                 'training_place': training_place_id.id  # Условие для ID места тренировки
-#             },
-#             one_dict=True
-#         )
-#     print(user_data)
-#     return user_data
-
-
-# async def get_current_scheduler(user_id: int, name: str):
-#     cur_time = datetime.now().strftime("%H:%M")
-#     week_day = get_current_week_day()
-#     name = name.replace('_', '')
-#
-#     async with db_manager as client:
-#         # Получаем ID места тренировки по имени
-#         training_place_data = await client.select_data(
-#             table_name='training_place',
-#             where_dict={'name': name},
-#             one_dict=True
-#         )
-#
-#         if training_place_data is None or len(training_place_data) == 0:
-#             return None  # Если место не найдено, возвращаем None
-#
-#         print("training_place_data", training_place_data)
-#         print("cur_time", cur_time)
-#         training_place_id = training_place_data['id']
-#
-#         # Здесь вы можете добавить логику для получения расписания на основе training_place_id
-#         # Используем where_dict для простых условий
-#         where_dict = {
-#             'day_week': week_day,
-#             'training_place': training_place_id
-#         }
-#
-#         # Получаем расписание, добавляя условия для времени
-#         schedule_data = await client.select_data(
-#             table_name='schedule',
-#             where_dict=where_dict,
-#             additional_conditions=[
-#                 ('time_start', '<=', cur_time),
-#                 ('time_end', '>=', cur_time)
-#             ],
-#             one_dict=True
-#         )
-#
-#         return schedule_data  # Возвращаем данные расписания
-
+async def get_user_permissions(user_telegram_id: int) -> int:
+    """
+    Получает права пользователя из базы данных
+    Возвращает permissions или 0 (гость) если пользователь не найден
+    """
+    try:
+        result = await execute_raw_sql(
+            f"SELECT permissions FROM public.telegram_user WHERE telegram_id = $1;",
+            user_telegram_id
+        )
+        if result:
+            return result[0]['permissions']
+        else:
+            return 0  # Гость по умолчанию
+    except Exception as e:
+        print(f"Error getting user permissions: {str(e)}")
+        return 0  # Гость в случае ошибки
 
 
 
@@ -252,3 +194,134 @@ async def save_selection(schedule_id: int, student_ids: list, trainer_id: int, p
     except Exception as e:
         print(f"Ошибка в save_selection: {e}")
         return False, f"Системная ошибка: {str(e)}"
+
+
+async def process_payment(student_name: str, amount: int) -> dict:
+    """
+    Обрабатывает оплату для ученика
+    Возвращает словарь с результатом операции
+    """
+    try:
+        # Улучшенный поиск ученика - ищем по разным вариантам имени
+        student_data = await execute_raw_sql(
+            f"""SELECT id, name, classes_remaining, price 
+            FROM public.student 
+            WHERE active = true 
+            AND (
+                name ILIKE $1 
+                OR name ILIKE $2
+                OR name ILIKE $3
+                OR $4 ILIKE '%' || split_part(name, ' ', 1) || '%'
+                OR $4 ILIKE '%' || split_part(name, ' ', 1) || ' ' || split_part(name, ' ', 2) || '%'
+            )
+            ORDER BY 
+                CASE 
+                    WHEN name ILIKE $1 THEN 1
+                    WHEN name ILIKE $2 THEN 2
+                    WHEN name ILIKE $3 THEN 3
+                    ELSE 4
+                END
+            LIMIT 1;""",
+            student_name,
+            f"{student_name}%",
+            f"%{student_name}%",
+            student_name
+        )
+
+        if not student_data:
+            # Try to find by surname and name (first two words)
+            name_parts = student_name.split()
+            if len(name_parts) >= 2:
+                surname_name = f"{name_parts[0]} {name_parts[1]}"
+                student_data = await execute_raw_sql(
+                    f"""SELECT id, name, classes_remaining, price 
+                    FROM public.student 
+                    WHERE active = true 
+                    AND name ILIKE $1
+                    LIMIT 1;""",
+                    f"{surname_name}%"
+                )
+
+        if not student_data:
+            return {"success": False, "error": f"Ученик '{student_name}' не найден"}
+
+        student = student_data[0]
+        student_id = student['id']
+        old_price_id = student['price']  # Теперь это ID тарифа, а не сумма
+
+        # Ищем цену в таблице price
+        price_data = await execute_raw_sql(
+            f"SELECT id, price, classes_in_price, description FROM public.price WHERE price = $1;",
+            amount
+        )
+
+        if not price_data:
+            return {"success": False, "error": f"Тариф с суммой {amount} руб. не найден"}
+
+        price = price_data[0]
+        price_id = price['id']
+        classes_to_add = price['classes_in_price']
+
+        # Получаем информацию о старом тарифе для сравнения
+        old_price_info = None
+        if old_price_id:
+            old_price_data = await execute_raw_sql(
+                f"SELECT price, description FROM public.price WHERE id = $1;",
+                old_price_id
+            )
+            if old_price_data:
+                old_price_info = old_price_data[0]
+
+        # Проверяем и устанавливаем значения по умолчанию
+        current_balance = student['classes_remaining'] if student['classes_remaining'] is not None else 0
+        classes_to_add = classes_to_add if classes_to_add is not None else 0
+
+        # Начинаем транзакцию
+        # 1. Добавляем запись в payment
+        payment_result = await execute_raw_sql(
+            f"""INSERT INTO public.payment 
+                (student_id, price_id, payment_amount, payment_date) 
+            VALUES ($1, $2, $3, CURRENT_DATE) 
+            RETURNING id;""",
+            student_id, price_id, amount
+        )
+
+        if not payment_result:
+            return {"success": False, "error": "Ошибка при записи платежа"}
+
+        # 2. Обновляем баланс занятий и price_id у ученика
+        new_balance = current_balance + classes_to_add
+        update_result = await execute_raw_sql(
+            f"UPDATE public.student SET classes_remaining = $1, price = $2 WHERE id = $3;",
+            new_balance, price_id, student_id  # Теперь записываем price_id вместо amount
+        )
+
+        # Получаем текущую дату для ответа
+        current_date_data = await execute_raw_sql(f"SELECT CURRENT_DATE as today;")
+        payment_date = current_date_data[0]['today'].strftime("%d.%m.%Y") if current_date_data else "сегодня"
+
+        # Формируем информацию об изменении тарифа
+        price_change_info = ""
+        if old_price_info and old_price_id != price_id:
+            price_change_info = f"\n💰 Изменен тариф: <b>{old_price_info['description']} ({old_price_info['price']} руб.) → {price['description']} ({price['price']} руб.)</b>"
+        elif old_price_id == price_id:
+            price_change_info = f"\n💰 Тариф остался прежним: <b>{price['description']} ({price['price']} руб.)</b>"
+        else:
+            price_change_info = f"\n💰 Установлен тариф: <b>{price['description']} ({price['price']} руб.)</b>"
+
+        return {
+            "success": True,
+            "student_name": student['name'],
+            "amount": amount,
+            "price_description": price['description'],
+            "classes_added": classes_to_add,
+            "new_balance": new_balance,
+            "payment_date": payment_date,
+            "old_price": old_price_info['price'] if old_price_info else None,
+            "new_price": price['price'],
+            "price_change_info": price_change_info
+        }
+
+    except Exception as e:
+        print(f"Error processing payment: {str(e)}")
+        return {"success": False, "error": f"Системная ошибка: {str(e)}"}

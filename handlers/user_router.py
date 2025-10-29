@@ -54,12 +54,12 @@ async def cmd_start(message: Message, command: CommandObject):
             await insert_user(user_data)
             response_text = f'{message.from_user.full_name}, вы зарегистрированы в боте {universe_text}'
 
-        await message.answer(text=response_text, reply_markup=main_kb(message.from_user.id))
+        await message.answer(text=response_text, reply_markup=await main_kb(message.from_user.id))
 
 @user_router.message(F.text.contains('Назад'))
 async def cmd_start(message: Message):
     await message.answer(f'{message.from_user.first_name}, Вижу что вы уже в моей базе данных. {universe_text}',
-                         reply_markup=main_kb(message.from_user.id))
+                         reply_markup=await main_kb(message.from_user.id))
 
 
 # хендлер профиля
@@ -76,7 +76,7 @@ async def get_profile(message: Message):
 
             text = (f'👉 Ваш телеграм ID: <code><b>{message.from_user.id}</b></code> , права {permissions} \n')
 
-    await message.answer(text, reply_markup=home_page_kb(message.from_user.id))
+    await message.answer(text, reply_markup=await main_kb(message.from_user.id))
 
 
 # Словарь для хранения выбранных студентов {id: name}

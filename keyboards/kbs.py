@@ -1,28 +1,26 @@
 from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from create_bot import admins
-
-# main_kb = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text='СКУД')],
-#                                         # [KeyboardButton(text='Корзина')],
-#                                         # [KeyboardButton(text='Контакты')],
-#                                         # [KeyboardButton(text='О нас')],
-#                                         [KeyboardButton(text='Броски')],
-#                                         ],
-#                               resize_keyboard=True,
-#                               input_field_placeholder='Выберите пункт меню'
-#                               )
+from db_handler.db_funk import get_user_permissions
 
 
-def main_kb(user_telegram_id: int):
+
+
+
+async def main_kb(user_telegram_id: int):
     kb_list = [[KeyboardButton(text="👤 Мой профиль")]]
-    # if user_telegram_id in admins:
-    #     kb_list.append([KeyboardButton(text="⚙️ Админ панель"),
-    #                    KeyboardButton(text="Посещения")])
-    # else:
-    kb_list.append([KeyboardButton(text="⚙️ Админ панель"),
-                    KeyboardButton(text="⚙️ Посещения"),
-                    KeyboardButton(text="🥋 Новый ученик"),])
+
+    # Проверяем права пользователя через базу данных
+    user_permissions = await get_user_permissions(user_telegram_id)
+
+    if user_permissions == 99:  # Админ
+        kb_list.append([KeyboardButton(text="⚙️ Админ панель"),
+                        KeyboardButton(text="⚙️ Посещения"),
+                        KeyboardButton(text="🥋 Новый ученик")])
+    else:
+        kb_list.append([KeyboardButton(text="⚙️ Посещения"),
+                        KeyboardButton(text="🥋 Новый ученик")])
+
     return ReplyKeyboardMarkup(
         keyboard=kb_list,
         resize_keyboard=True,
@@ -30,8 +28,8 @@ def main_kb(user_telegram_id: int):
         input_field_placeholder="Воспользуйтесь меню:"
     )
 
-def places_kb():
 
+def places_kb():
     kb_list = [
         [KeyboardButton(text="🥋 ГМР")],
         [KeyboardButton(text="🥋 Сормовская"), KeyboardButton(text="🥋 Ставрапольская")],
@@ -45,10 +43,16 @@ def places_kb():
         input_field_placeholder="Выберите место:"
     )
 
-def home_page_kb(user_telegram_id: int):
+
+async def home_page_kb(user_telegram_id: int):
     kb_list = [[KeyboardButton(text="🔙 Назад")]]
-    if user_telegram_id in admins:
+
+    # Проверяем права пользователя через базу данных
+    user_permissions = await get_user_permissions(user_telegram_id)
+
+    if user_permissions == 99:  # Админ
         kb_list.append([KeyboardButton(text="⚙️ Админ панель")])
+
     return ReplyKeyboardMarkup(
         keyboard=kb_list,
         resize_keyboard=True,
@@ -56,3 +60,20 @@ def home_page_kb(user_telegram_id: int):
         input_field_placeholder="Воспользуйтесь меню:"
     )
 
+
+async def admin_page_kb(user_telegram_id: int):
+    kb_list = [[KeyboardButton(text="🔙 Назад")],
+               [KeyboardButton(text="💳 оплата")]]
+
+    # Проверяем права пользователя через базу данных
+    user_permissions = await get_user_permissions(user_telegram_id)
+
+    if user_permissions == 99:  # Админ
+        kb_list.append([KeyboardButton(text="⚙️ Админ панель")])
+
+    return ReplyKeyboardMarkup(
+        keyboard=kb_list,
+        resize_keyboard=True,
+        one_time_keyboard=True,
+        input_field_placeholder="Воспользуйтесь меню:"
+    )

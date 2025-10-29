@@ -5,8 +5,13 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="ee547eef-2e63-46d4-8d9a-feffb711966c" name="Changes" comment="добавляю редактор тренеров">
+      <change afterPath="$PROJECT_DIR$/handlers/daily_attendance.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/database/schemas.py" beforeDir="false" afterPath="$PROJECT_DIR$/database/schemas.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/db_handler/db_funk.py" beforeDir="false" afterPath="$PROJECT_DIR$/db_handler/db_funk.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/handlers/admin_panel.py" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/admin_panel.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/handlers/user_router.py" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/user_router.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/keyboards/kbs.py" beforeDir="false" afterPath="$PROJECT_DIR$/keyboards/kbs.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -16,8 +21,8 @@
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
-        <option value="Python Script" />
         <option value="HTML File" />
+        <option value="Python Script" />
       </list>
     </option>
   </component>
@@ -82,7 +87,7 @@
       <recent name="C:\Python\Judo_aiogram_superset\database" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.qqqq">
+  <component name="RunManager" selected="Python.aiogram_run">
     <configuration name="aiogram_run" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="Judo_aiogram_superset" />
       <option name="ENV_FILES" value="" />
@@ -195,9 +200,9 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.aiogram_run" />
         <item itemvalue="Python.qqqq" />
         <item itemvalue="Python.kill_dublicates (1)" />
-        <item itemvalue="Python.aiogram_run" />
         <item itemvalue="Python.kill_dublicates" />
         <item itemvalue="Python.tools" />
       </list>
@@ -267,7 +272,15 @@
       <option name="project" value="LOCAL" />
       <updated>1760988801818</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="добавляю редактор тренеров">
+      <option name="closed" value="true" />
+      <created>1761302427328</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1761302427328</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
