@@ -8,7 +8,7 @@ from typing import List, Optional
 import json
 import os
 from datetime import datetime
-
+from database.middleware import SupersetAuthMiddleware
 from config import settings
 from database.schemas import Students, Sport, Schedule, Students_schedule, Trainers, Prices, engine
 
@@ -19,6 +19,8 @@ app = FastAPI(title="Student Management System")
 
 # URL вашего Superset
 SUPERSET_BASE_URL = settings.superset_conf.base_url
+
+# app.add_middleware(SupersetAuthMiddleware, superset_base_url=SUPERSET_BASE_URL)
 
 # Создаем папку templates если её нет
 if not os.path.exists("templates"):
