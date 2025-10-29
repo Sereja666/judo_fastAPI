@@ -4,6 +4,30 @@ from fastapi.responses import RedirectResponse
 import httpx
 import json
 
+from aiogram import BaseMiddleware
+from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Callable, Dict, Any, Awaitable
+from aiogram.types import TelegramObject
+
+class DBSessionMiddleware(BaseMiddleware):
+    """Middleware для управления сессиями базы данных"""
+
+    def __init__(self, session_pool):
+        super().__init__()
+        self.session_pool = session_pool
+
+    async def __call__(
+            self,
+            handler: Callable[[TelegramObject, Dict[str, Any]], Awaitable[Any]],
+            event: TelegramObject,
+            data: Dict[str, Any],
+    ) -> Any:
+        """Обрабатывает каждый запрос, предоставляя сессию БД"""
+        async with self.session_pool() as session:
+            data["db_session"] = session
+            return await handler(event, data)
+
+
 class SupersetAuthMiddleware:
     def __init__(self, app, superset_base_url: str):
         self.app = app

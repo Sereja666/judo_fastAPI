@@ -13,7 +13,7 @@ async def main_kb(user_telegram_id: int):
     # Проверяем права пользователя через базу данных
     user_permissions = await get_user_permissions(user_telegram_id)
 
-    if user_permissions == 99:  # Админ
+    if user_permissions in [99, 2]:  # Админ
         kb_list.append([KeyboardButton(text="⚙️ Админ панель"),
                         KeyboardButton(text="⚙️ Посещения"),
                         KeyboardButton(text="🥋 Новый ученик")])
@@ -62,8 +62,10 @@ async def home_page_kb(user_telegram_id: int):
 
 
 async def admin_page_kb(user_telegram_id: int):
-    kb_list = [[KeyboardButton(text="🔙 Назад")],
-               [KeyboardButton(text="💳 оплата")]]
+    kb_list = [
+        [KeyboardButton(text="🔙 Назад")],
+        [KeyboardButton(text="💳 оплата"), KeyboardButton(text="🏥 справка по болезни")]  # Кнопки в одном ряду
+    ]
 
     # Проверяем права пользователя через базу данных
     user_permissions = await get_user_permissions(user_telegram_id)

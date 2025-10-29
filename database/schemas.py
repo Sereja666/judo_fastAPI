@@ -239,5 +239,19 @@ class MedCertificat_received(Base):
     active = Column(Boolean(), default=True, server_default='true') # актуальность справки
 
 
+class MedicalCertificates(Base):
+    """
+    История справок по болезни
+    """
+    __tablename__ = 'medical_certificates'
+    __table_args__ = {'schema': schema}
+    id = Column(Integer(), primary_key=True, autoincrement=True)
+    student_id = Column(Integer())
+    start_date = Column(Date())
+    end_date = Column(Date())
+    missed_classes = Column(Integer())
+    added_classes = Column(Integer())
+    processed_date = Column(Date())
+
 if __name__ == "__main__":
     Base.metadata.create_all(engine)
