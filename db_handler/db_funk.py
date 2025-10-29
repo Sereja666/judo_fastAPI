@@ -1,5 +1,5 @@
 
-
+from math import ceil
 from config import settings
 
 from create_bot import db_manager, logger
@@ -276,6 +276,39 @@ async def process_payment(student_name: str, amount: int) -> dict:
         current_balance = student['classes_remaining'] if student['classes_remaining'] is not None else 0
         classes_to_add = classes_to_add if classes_to_add is not None else 0
 
+        # Рассчитываем новую дату оплаты
+        from datetime import datetime, timedelta
+        
+        # Получаем расписание студента для расчета дней в неделю
+        schedule_data = await execute_raw_sql(
+            f"""SELECT COUNT(DISTINCT ss.schedule) as training_days_per_week
+            FROM {schema}.student_schedule ss
+            JOIN {schema}.schedule sched ON ss.schedule = sched.id
+            WHERE ss.student = $1""",
+            student_id
+        )
+        
+        days_per_week = schedule_data[0]['training_days_per_week'] if schedule_data and schedule_data[0]['training_days_per_week'] else 1
+        
+        # Рассчитываем, на сколько недель хватит нового баланса
+        new_balance = current_balance + classes_to_add
+        
+        if days_per_week > 0 and new_balance > 0:
+            # Рассчитываем количество недель, на которое хватит занятий
+            weeks_remaining = new_balance / days_per_week
+            
+            # Если студент ходит реже, чем 1 раз в неделю, берем минимум 1 неделю
+            if weeks_remaining < 1:
+                weeks_remaining = 1
+            else:
+                weeks_remaining = ceil(weeks_remaining)
+            
+            # Устанавливаем дату оплаты через рассчитанное количество недель + буфер 3 дня
+            new_payment_date = datetime.now().date() + timedelta(days=weeks_remaining * 7 + 3)
+        else:
+            # Если нет расписания или нулевой баланс - ставим дату через 30 дней
+            new_payment_date = datetime.now().date() + timedelta(days=30)
+
         # Начинаем транзакцию
         # 1. Добавляем запись в payment
         payment_result = await execute_raw_sql(
@@ -289,11 +322,10 @@ async def process_payment(student_name: str, amount: int) -> dict:
         if not payment_result:
             return {"success": False, "error": "Ошибка при записи платежа"}
 
-        # 2. Обновляем баланс занятий и price_id у ученика
-        new_balance = current_balance + classes_to_add
+        # 2. Обновляем баланс занятий, price_id и дату оплаты у ученика
         update_result = await execute_raw_sql(
-            f"UPDATE public.student SET classes_remaining = $1, price = $2 WHERE id = $3;",
-            new_balance, price_id, student_id  # Теперь записываем price_id вместо amount
+            f"UPDATE public.student SET classes_remaining = $1, price = $2, expected_payment_date = $3 WHERE id = $4;",
+            new_balance, price_id, new_payment_date, student_id
         )
 
         # Получаем текущую дату для ответа
@@ -309,6 +341,9 @@ async def process_payment(student_name: str, amount: int) -> dict:
         else:
             price_change_info = f"\n💰 Установлен тариф: <b>{price['description']} ({price['price']} руб.)</b>"
 
+        # Добавляем информацию о дате оплаты
+        payment_date_info = f"\n📅 Следующая оплата: <b>{new_payment_date.strftime('%d.%m.%Y')}</b>"
+
         return {
             "success": True,
             "student_name": student['name'],
@@ -317,9 +352,11 @@ async def process_payment(student_name: str, amount: int) -> dict:
             "classes_added": classes_to_add,
             "new_balance": new_balance,
             "payment_date": payment_date,
+            "next_payment_date": new_payment_date.strftime("%d.%m.%Y"),
             "old_price": old_price_info['price'] if old_price_info else None,
             "new_price": price['price'],
-            "price_change_info": price_change_info
+            "price_change_info": price_change_info,
+            "payment_date_info": payment_date_info
         }
 
     except Exception as e:
