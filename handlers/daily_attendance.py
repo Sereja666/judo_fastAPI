@@ -165,7 +165,8 @@ async def subtract_classes_and_update_payment_dates():
     """
     Ежедневная функция для:
     1. Вычитания занятий у студентов по расписанию
-    2. Обновления дат следующей оплаты
+    2. Учитывает особые тарифы (2 занятия по субботам для price_id = 3 или 4)
+    3. Обновления дат следующей оплаты
     """
     try:
         # Получаем текущий день недели на русском
@@ -182,27 +183,53 @@ async def subtract_classes_and_update_payment_dates():
         today = datetime.now()
         today_weekday_ru = weekdays_ru[today.weekday()]
         today_date = today.date()
+        is_saturday = today.weekday() == 5  # 5 = суббота
         
         logger.info(f"🚀 Запуск вычитания занятий за {today_date} ({today_weekday_ru})")
         
-        # ШАГ 1: Вычитаем занятия у студентов
-        result = await execute_raw_sql(
-            f"""UPDATE {schema}.student 
-            SET classes_remaining = classes_remaining - 1 
-            WHERE id IN (
-                SELECT DISTINCT ss.student
-                FROM {schema}.student_schedule ss
-                JOIN {schema}.schedule sched ON ss.schedule = sched.id
-                JOIN {schema}.student s ON ss.student = s.id
-                WHERE sched.day_week = $1
-                AND s.active = true
-                AND s.classes_remaining > 0
+        # ШАГ 1: Вычитаем занятия у студентов с учетом особых тарифов
+        if is_saturday:
+            # Для субботы: особые условия для price_id = 3 или 4
+            result = await execute_raw_sql(
+                f"""UPDATE {schema}.student 
+                SET classes_remaining = classes_remaining - 
+                    CASE 
+                        WHEN price IN (3, 4) THEN 2  # 2 занятия для особых тарифов
+                        ELSE 1                       # 1 занятие для остальных
+                    END
+                WHERE id IN (
+                    SELECT DISTINCT ss.student
+                    FROM {schema}.student_schedule ss
+                    JOIN {schema}.schedule sched ON ss.schedule = sched.id
+                    JOIN {schema}.student s ON ss.student = s.id
+                    WHERE sched.day_week = $1
+                    AND s.active = true
+                    AND s.classes_remaining > 0
+                )
+                AND active = true
+                AND classes_remaining > 0
+                RETURNING id, name, classes_remaining, price;""",
+                today_weekday_ru
             )
-            AND active = true
-            AND classes_remaining > 0
-            RETURNING id, name, classes_remaining;""",
-            today_weekday_ru
-        )
+        else:
+            # Для остальных дней: стандартное списание 1 занятия
+            result = await execute_raw_sql(
+                f"""UPDATE {schema}.student 
+                SET classes_remaining = classes_remaining - 1 
+                WHERE id IN (
+                    SELECT DISTINCT ss.student
+                    FROM {schema}.student_schedule ss
+                    JOIN {schema}.schedule sched ON ss.schedule = sched.id
+                    JOIN {schema}.student s ON ss.student = s.id
+                    WHERE sched.day_week = $1
+                    AND s.active = true
+                    AND s.classes_remaining > 0
+                )
+                AND active = true
+                AND classes_remaining > 0
+                RETURNING id, name, classes_remaining, price;""",
+                today_weekday_ru
+            )
         
         updated_count = len(result)
         
@@ -217,25 +244,57 @@ async def subtract_classes_and_update_payment_dates():
                 "weekday": today_weekday_ru
             }
         
+        # Анализируем результаты списания
+        special_tariff_count = 0
+        regular_count = 0
+        
+        for student in result:
+            if is_saturday and student['price'] in [3, 4]:
+                special_tariff_count += 1
+            else:
+                regular_count += 1
+        
         logger.info(f"✅ Списано занятий у {updated_count} студентов")
+        
+        if is_saturday:
+            logger.info(f"🎯 По субботам: {special_tariff_count} студентов списано по 2 занятия, {regular_count} студентов по 1 занятию")
         
         # ШАГ 2: Обновляем даты оплаты для всех активных студентов
         payment_updates = 0
         all_active_students = await execute_raw_sql(
-            f"""SELECT s.id, s.name, s.classes_remaining, COUNT(DISTINCT ss.schedule) as training_days_per_week
+            f"""SELECT s.id, s.name, s.classes_remaining, s.price,
+                    COUNT(DISTINCT ss.schedule) as training_days_per_week
             FROM {schema}.student s
             LEFT JOIN {schema}.student_schedule ss ON s.id = ss.student
             WHERE s.active = true
-            GROUP BY s.id, s.name, s.classes_remaining
+            GROUP BY s.id, s.name, s.classes_remaining, s.price
             HAVING COUNT(DISTINCT ss.schedule) > 0"""
         )
         
         for student in all_active_students:
             try:
+                # Учитываем особые тарифы при расчете дней в неделю
+                # Для price_id = 3 или 4 в субботу считаем как 2 дня
+                actual_days_per_week = student['training_days_per_week']
+                
+                if student['price'] in [3, 4]:
+                    # Проверяем, есть ли у студента тренировки в субботу
+                    saturday_schedule = await execute_raw_sql(
+                        f"""SELECT 1 
+                        FROM {schema}.student_schedule ss
+                        JOIN {schema}.schedule sched ON ss.schedule = sched.id
+                        WHERE ss.student = $1 AND sched.day_week = 'суббота'
+                        LIMIT 1;""",
+                        student['id']
+                    )
+                    if saturday_schedule:
+                        # Увеличиваем эффективное количество дней для расчета
+                        actual_days_per_week += 1
+                
                 next_payment_date = await calculate_next_payment_date(
                     student['id'], 
                     student['classes_remaining'],
-                    student['training_days_per_week']
+                    actual_days_per_week
                 )
                 
                 # Обновляем дату оплаты в базе
@@ -255,14 +314,21 @@ async def subtract_classes_and_update_payment_dates():
         # Краткий отчет по списаниям
         logger.info("📊 Отчет по списаниям:")
         for student in result[:5]:
-            logger.info(f"   👉 {student['name']} - осталось {student['classes_remaining']} занятий")
+            if is_saturday and student['price'] in [3, 4]:
+                logger.info(f"   👉 {student['name']} - списано 2 занятия, осталось {student['classes_remaining']} (особый тариф)")
+            else:
+                logger.info(f"   👉 {student['name']} - списано 1 занятие, осталось {student['classes_remaining']}")
+        
         if updated_count > 5:
             logger.info(f"   ... и еще {updated_count - 5} студентов")
         
         return {
             "success": True,
-            "message": f"✅ Списано занятий у {updated_count} студентов, обновлено {payment_updates} дат оплаты",
+            "message": f"✅ Списано занятий у {updated_count} студентов, обновлено {payment_updates} дат оплаты" + 
+                      (f", из них {special_tariff_count} по 2 занятия" if is_saturday else ""),
             "updated": updated_count,
+            "special_tariff_count": special_tariff_count if is_saturday else 0,
+            "regular_count": regular_count,
             "payment_dates_updated": payment_updates,
             "date": today_date.isoformat(),
             "weekday": today_weekday_ru
