@@ -318,3 +318,144 @@ async def calculate_missed_classes(student_id: int, start_date: date, end_date: 
     except Exception as e:
         print(f"Error calculating missed classes: {str(e)}")
         return {"success": False, "error": f"Ошибка расчета пропущенных занятий: {str(e)}", "missed_classes": 0}
+
+
+async def record_extra_student_visit(student_name: str, trainer_telegram_id: int,
+                                     schedule_id: int = None, place_id: int = None,
+                                     discipline_id: int = None) -> dict:
+    """
+    Записывает ученика на тренировку не по расписанию
+    """
+    try:
+        # Ищем ученика
+        student_data = await execute_raw_sql(
+            f"""SELECT id, name, classes_remaining 
+              FROM public.student 
+              WHERE active = true 
+              AND name ILIKE $1
+              LIMIT 1;""",
+            f"%{student_name}%"
+        )
+
+        if not student_data:
+            return {"success": False, "error": f"Ученик '{student_name}' не найден"}
+
+        student = student_data[0]
+        student_id = student['id']
+        current_balance = student['classes_remaining'] if student['classes_remaining'] is not None else 0
+
+        # Ищем тренера по telegram_id
+        trainer_data = await execute_raw_sql(
+            f"""SELECT id, name 
+              FROM public.trainer 
+              WHERE telegram_id = $1
+              AND active = true
+              LIMIT 1;""",
+            trainer_telegram_id
+        )
+
+        if not trainer_data:
+            return {"success": False, "error": "Тренер не найден"}
+
+        trainer = trainer_data[0]
+        trainer_id = trainer['id']
+
+        # Получаем текущие дату и время
+        current_datetime_data = await execute_raw_sql(f"SELECT NOW() as current_datetime;")
+        current_datetime = current_datetime_data[0]['current_datetime']
+        current_date = current_datetime.date()
+        current_time = current_datetime.time()
+
+        # Проверяем, было ли сегодня уже списание у этого ученика
+        today_visits = await execute_raw_sql(
+            f"""SELECT COUNT(*) as visit_count 
+              FROM public.visit 
+              WHERE student = $1 
+              AND DATE(data) = $2;""",
+            student_id, current_date
+        )
+
+        visit_count = today_visits[0]['visit_count'] if today_visits else 0
+        class_deducted = False
+        new_balance = current_balance
+
+        # Списание занятия только если сегодня еще не было посещений
+        if visit_count == 0 and current_balance > 0:
+            new_balance = current_balance - 1
+            class_deducted = True
+
+            # Обновляем баланс ученика
+            await execute_raw_sql(
+                f"UPDATE public.student SET classes_remaining = $1 WHERE id = $2;",
+                new_balance, student_id
+            )
+
+        # Определяем место тренировки
+        if not place_id:
+            # Если место не передано, используем первое доступное
+            place_data = await execute_raw_sql(
+                f"SELECT id, name FROM public.training_place LIMIT 1;"
+            )
+            if not place_data:
+                return {"success": False, "error": "Не найдены места тренировок"}
+            place = place_data[0]
+            place_id = place['id']
+        else:
+            # Получаем информацию о переданном месте
+            place_data = await execute_raw_sql(
+                f"SELECT id, name FROM public.training_place WHERE id = $1;",
+                place_id
+            )
+            if not place_data:
+                return {"success": False, "error": "Указанное место тренировки не найдено"}
+            place = place_data[0]
+
+        # Определяем спортивную дисциплину
+        if not discipline_id:
+            # Если дисциплина не передана, используем первую доступную
+            sport_data = await execute_raw_sql(
+                f"SELECT id, name FROM public.sport LIMIT 1;"
+            )
+            sport_id = sport_data[0]['id'] if sport_data else 1
+            sport_name = sport_data[0]['name'] if sport_data else "Неизвестная дисциплина"
+        else:
+            # Получаем информацию о переданной дисциплине
+            sport_data = await execute_raw_sql(
+                f"SELECT id, name FROM public.sport WHERE id = $1;",
+                discipline_id
+            )
+            if sport_data:
+                sport_id = sport_data[0]['id']
+                sport_name = sport_data[0]['name']
+            else:
+                sport_id = discipline_id
+                sport_name = "Неизвестная дисциплина"
+
+        # Создаем запись о посещении
+        visit_result = await execute_raw_sql(
+            f"""INSERT INTO public.visit 
+                  (data, trainer, student, place, sport_discipline, shedule) 
+              VALUES ($1, $2, $3, $4, $5, $6) 
+              RETURNING id;""",
+            current_datetime, trainer_id, student_id, place_id, sport_id, schedule_id
+        )
+
+        if not visit_result:
+            return {"success": False, "error": "Ошибка при записи посещения"}
+
+        return {
+            "success": True,
+            "student_name": student['name'],
+            "place_name": place['name'],
+            "visit_date": current_date.strftime('%d.%m.%Y'),
+            "visit_time": current_time.strftime('%H:%M'),
+            "class_deducted": class_deducted,
+            "new_balance": new_balance,
+            "trainer_name": trainer['name'],
+            "sport_name": sport_name,
+            "schedule_id": schedule_id
+        }
+
+    except Exception as e:
+        print(f"Error recording extra student visit: {str(e)}")
+        return {"success": False, "error": f"Системная ошибка: {str(e)}"}

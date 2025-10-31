@@ -205,7 +205,6 @@ async def handle_city_selection(message: Message, state: FSMContext):
         await message.answer("Ошибка при загрузке данных. Попробуйте позже.")
         print(f"Error in handle_city_selection: {str(e)}")
 
-
 @user_router.callback_query(TrainingStates.waiting_for_time, F.data.startswith("training:"))
 async def handle_time_selection(callback: CallbackQuery, state: FSMContext):
     """Обработчик выбора времени тренировки"""
@@ -263,7 +262,13 @@ async def handle_time_selection(callback: CallbackQuery, state: FSMContext):
             callback_data=f"confirm:{schedule_id}:{trainer_id}:{data['place_id']}:{selected_training['sport_discipline']}"
         )
 
-        # ДОБАВЛЯЕМ КНОПКУ ДЛЯ ПРОСМОТРА СТАТУСА ПОСЕЩЕНИЯ
+        # ДОБАВЛЯЕМ КНОПКУ "+ ученик" МЕЖДУ СУЩЕСТВУЮЩИМИ КНОПКАМИ
+        builder.button(
+            text="➕ ученик",
+            callback_data=f"extra_student:{schedule_id}:{trainer_id}:{data['place_id']}:{selected_training['sport_discipline']}"
+        )
+
+        # Добавляем кнопку для просмотра статуса посещения
         builder.button(
             text="📊 Показать кто пришел",
             callback_data=f"show_attendance:{schedule_id}"
@@ -460,19 +465,29 @@ async def show_attendance_status(callback: CallbackQuery):
 
         training = training_info[0]
 
-        # Получаем студентов с информацией о поясе
+        # Получаем ВСЕХ студентов, которые пришли на тренировку сегодня
+        # Включая тех, кто был добавлен через "+ ученик"
         students = await execute_raw_sql(
             f"""SELECT st.id, st.name, st.birthday, st.rang,
                 CASE 
                     WHEN v.id IS NOT NULL THEN 'present'
                     ELSE 'absent'
                 END as status
-            FROM {schema}.student_schedule ss
-            JOIN {schema}.student st ON ss.student = st.id
+            FROM {schema}.student st
+            LEFT JOIN {schema}.student_schedule ss ON ss.student = st.id AND ss.schedule = $1
             LEFT JOIN {schema}.visit v ON v.student = st.id 
                 AND v.shedule = $1 
                 AND DATE(v.data) = $2
-            WHERE ss.schedule = $1 AND st.active = true
+            WHERE st.active = true
+            AND (
+                ss.schedule = $1  -- Студенты из расписания
+                OR EXISTS (        -- ИЛИ студенты, которые пришли через "+ ученик"
+                    SELECT 1 FROM {schema}.visit v2 
+                    WHERE v2.student = st.id 
+                    AND v2.shedule = $1 
+                    AND DATE(v2.data) = $2
+                )
+            )
             ORDER BY 
                 CASE 
                     WHEN st.rang IS NULL THEN 999
@@ -499,8 +514,6 @@ async def show_attendance_status(callback: CallbackQuery):
             'time_start']
         end_time = training['time_end'].strftime("%H:%M") if isinstance(training['time_end'], time) else training[
             'time_end']
-
-
 
         # Создаем сообщение в формате как в примере
         message_lines = [
@@ -550,3 +563,238 @@ async def show_attendance_status(callback: CallbackQuery):
     except Exception as e:
         await callback.answer("Ошибка при получении статуса посещения", show_alert=True)
         print(f"Error in show_attendance_status: {str(e)}")
+
+class TrainingStates(StatesGroup):
+    waiting_for_time = State()
+    waiting_for_extra_student = State()  # Добавляем новое состояние
+
+
+async def record_extra_student_visit(student_name: str, trainer_telegram_id: int,
+                                     schedule_id: int = None, place_id: int = None,
+                                     discipline_id: int = None) -> dict:
+    """
+    Записывает ученика на тренировку не по расписанию
+    """
+    try:
+        # Ищем ученика
+        student_data = await execute_raw_sql(
+            f"""SELECT id, name, classes_remaining 
+            FROM public.student 
+            WHERE active = true 
+            AND name ILIKE $1
+            LIMIT 1;""",
+            f"%{student_name}%"
+        )
+
+        if not student_data:
+            return {"success": False, "error": f"Ученик '{student_name}' не найден"}
+
+        student = student_data[0]
+        student_id = student['id']
+        current_balance = student['classes_remaining'] if student['classes_remaining'] is not None else 0
+
+        # Ищем тренера по telegram_id
+        trainer_data = await execute_raw_sql(
+            f"""SELECT id, name 
+            FROM public.trainer 
+            WHERE telegram_id = $1
+            AND active = true
+            LIMIT 1;""",
+            trainer_telegram_id
+        )
+
+        if not trainer_data:
+            return {"success": False, "error": "Тренер не найден"}
+
+        trainer = trainer_data[0]
+        trainer_id = trainer['id']
+
+        # Получаем текущие дату и время в правильном формате (без часового пояса)
+        current_datetime_data = await execute_raw_sql(f"SELECT NOW()::timestamp as current_datetime;")
+        current_datetime = current_datetime_data[0]['current_datetime']
+        current_date = current_datetime.date()
+        current_time = current_datetime.time()
+
+        # ПРОВЕРКА НА ДУБЛИКАТ: проверяем, не был ли уже ученик записан на эту тренировку сегодня
+        existing_visit = await execute_raw_sql(
+            f"""SELECT id 
+            FROM public.visit 
+            WHERE student = $1 
+            AND shedule = $2 
+            AND DATE(data) = $3
+            LIMIT 1;""",
+            student_id, schedule_id, current_date
+        )
+
+        if existing_visit:
+            return {
+                "success": False,
+                "error": f"Ученик {student['name']} уже записан на эту тренировку сегодня"
+            }
+
+        # Проверяем, было ли сегодня уже списание у этого ученика (для любых тренировок)
+        today_visits = await execute_raw_sql(
+            f"""SELECT COUNT(*) as visit_count 
+            FROM public.visit 
+            WHERE student = $1 
+            AND DATE(data) = $2;""",
+            student_id, current_date
+        )
+
+        visit_count = today_visits[0]['visit_count'] if today_visits else 0
+        class_deducted = False
+        new_balance = current_balance
+
+        # Списание занятия только если сегодня еще не было посещений
+        if visit_count == 0 and current_balance > 0:
+            new_balance = current_balance - 1
+            class_deducted = True
+
+            # Обновляем баланс ученика
+            await execute_raw_sql(
+                f"UPDATE public.student SET classes_remaining = $1 WHERE id = $2;",
+                new_balance, student_id
+            )
+
+        # Определяем место тренировки
+        if not place_id:
+            # Если место не передано, используем первое доступное
+            place_data = await execute_raw_sql(
+                f"SELECT id, name FROM public.training_place LIMIT 1;"
+            )
+            if not place_data:
+                return {"success": False, "error": "Не найдены места тренировок"}
+            place = place_data[0]
+            place_id = place['id']
+        else:
+            # Получаем информацию о переданном месте
+            place_data = await execute_raw_sql(
+                f"SELECT id, name FROM public.training_place WHERE id = $1;",
+                place_id
+            )
+            if not place_data:
+                return {"success": False, "error": "Указанное место тренировки не найдено"}
+            place = place_data[0]
+
+        # Определяем спортивную дисциплину
+        if not discipline_id:
+            # Если дисциплина не передана, используем первую доступную
+            sport_data = await execute_raw_sql(
+                f"SELECT id, name FROM public.sport LIMIT 1;"
+            )
+            sport_id = sport_data[0]['id'] if sport_data else 1
+            sport_name = sport_data[0]['name'] if sport_data else "Неизвестная дисциплина"
+        else:
+            # Получаем информацию о переданной дисциплине
+            sport_data = await execute_raw_sql(
+                f"SELECT id, name FROM public.sport WHERE id = $1;",
+                discipline_id
+            )
+            if sport_data:
+                sport_id = sport_data[0]['id']
+                sport_name = sport_data[0]['name']
+            else:
+                sport_id = discipline_id
+                sport_name = "Неизвестная дисциплина"
+
+        # Создаем запись о посещении (используем timestamp без часового пояса)
+        visit_result = await execute_raw_sql(
+            f"""INSERT INTO public.visit 
+                (data, trainer, student, place, sport_discipline, shedule) 
+            VALUES ($1, $2, $3, $4, $5, $6) 
+            RETURNING id;""",
+            current_datetime, trainer_id, student_id, place_id, sport_id, schedule_id
+        )
+
+        if not visit_result:
+            return {"success": False, "error": "Ошибка при записи посещения"}
+
+        return {
+            "success": True,
+            "student_name": student['name'],
+            "place_name": place['name'],
+            "visit_date": current_date.strftime('%d.%m.%Y'),
+            "visit_time": current_time.strftime('%H:%M'),
+            "class_deducted": class_deducted,
+            "new_balance": new_balance,
+            "trainer_name": trainer['name'],
+            "sport_name": sport_name,
+            "schedule_id": schedule_id
+        }
+
+    except Exception as e:
+        print(f"Error recording extra student visit: {str(e)}")
+        return {"success": False, "error": f"Системная ошибка: {str(e)}"}
+
+@user_router.callback_query(F.data.startswith("extra_student:"))
+async def handle_extra_student(callback: CallbackQuery, state: FSMContext):
+    """Обработчик кнопки '+ ученик' для записи ученика не по расписанию"""
+    try:
+        _, schedule_id, trainer_id, place_id, discipline_id = callback.data.split(":")
+
+        # Сохраняем данные в состоянии для использования в следующем шаге
+        await state.update_data(
+            schedule_id=int(schedule_id),
+            trainer_id=int(trainer_id),
+            place_id=int(place_id),
+            discipline_id=int(discipline_id)
+        )
+
+        await callback.message.answer(
+            "➕ Запись ученика не по расписанию\n\n"
+            "Введите ФИО ученика:\n\n"
+            "Например:\n"
+            "<code>Аносова Кира</code>\n\n"
+            "Или:\n"
+            "<code>Иванов Петр</code>"
+        )
+
+        # Устанавливаем состояние ожидания имени ученика
+        await state.set_state(TrainingStates.waiting_for_extra_student)
+        await callback.answer()
+
+    except Exception as e:
+        await callback.answer("Ошибка при обработке запроса", show_alert=True)
+        print(f"Error in handle_extra_student: {str(e)}")
+
+
+@user_router.message(TrainingStates.waiting_for_extra_student)
+async def process_extra_student_name(message: Message, state: FSMContext):
+    """Обработка введенного имени ученика не по расписанию"""
+    try:
+        student_name = message.text.strip()
+        data = await state.get_data()
+
+        # Используем нашу функцию для записи ученика
+        result = await record_extra_student_visit(
+            student_name=student_name,
+            trainer_telegram_id=message.from_user.id,
+            schedule_id=data.get('schedule_id'),
+            place_id=data.get('place_id'),
+            discipline_id=data.get('discipline_id')
+        )
+
+        if result["success"]:
+            response_text = (
+                f"✅ Ученик записан на тренировку!\n\n"
+                f"👤 Ученик: <b>{result['student_name']}</b>\n"
+                f"🏢 Место: <b>{result['place_name']}</b>\n"
+                f"📅 Дата: <b>{result['visit_date']}</b>\n"
+                f"⏰ Время: <b>{result['visit_time']}</b>\n"
+            )
+
+            if result['class_deducted']:
+                response_text += f"📊 Списано занятие: <b>Да</b>\n"
+                response_text += f"🎯 Новый баланс: <b>{result['new_balance']}</b> занятий"
+            else:
+                response_text += f"📊 Списано занятие: <b>Нет</b> (уже списано сегодня)\n"
+                response_text += f"🎯 Текущий баланс: <b>{result['new_balance']}</b> занятий"
+        else:
+            response_text = f"❌ Ошибка: {result['error']}"
+
+        await message.answer(response_text)
+        await state.clear()
+
+    except Exception as e:
+        await message.answer(f"❌ Произошла ошибка: {str(e)}")
+        await state.clear()
