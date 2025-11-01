@@ -32,9 +32,14 @@ pytz
 pip install -r requirements.txt
 ```
 
-Комманды
+## Гит
 для гит
 git pull
+
+## Алембик
+alembic revision --autogenerate -m "добавил таблицы со  справками по болезни"
+alembic upgrade head
+
 
 python api_Students_shedule.py
 

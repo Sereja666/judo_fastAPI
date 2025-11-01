@@ -217,27 +217,27 @@ class Сompetition_trainer(Base):
 
 class MedCertificat_type(Base):
     """
-     Типы медицинских справок (допусков)
+    Типы медицинских справок (допусков)
     """
-    __tablename__ = 'medCertificat_type'
+    __tablename__ = 'medcertificat_type'  # Измените на нижний регистр
     __table_args__ = {'schema': schema}
     id = Column(Integer(), primary_key=True, autoincrement=True)
-    name_cert = Column(Integer())
+    name_cert = Column(String())
 
 # Факт оплаты
+
 class MedCertificat_received(Base):
     """
     Факт получения справки (разрешалки)
     """
-    __tablename__ = 'medCertificat_received'
+    __tablename__ = 'medcertificat_received'  # Измените на нижний регистр
     __table_args__ = {'schema': schema}
     id = Column(Integer(), primary_key=True, autoincrement=True)
     student_id = Column(Integer())
-    cert_id = Column(Integer()) # id справки из Types_med_certificates
-    date_start = Column(DateTime()) # начало справки
-    date_end = Column(DateTime())# окончание справки
+    cert_id = Column(Integer()) # id справки из medcertificat_type
+    date_start = Column(Date()) # начало справки
+    date_end = Column(Date())   # окончание справки
     active = Column(Boolean(), default=True, server_default='true') # актуальность справки
-
 
 class MedicalCertificates(Base):
     """

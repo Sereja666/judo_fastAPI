@@ -4,11 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ee547eef-2e63-46d4-8d9a-feffb711966c" name="Changes" comment="добавляю схемы мед справок">
+    <list default="true" id="ee547eef-2e63-46d4-8d9a-feffb711966c" name="Changes" comment="добавил  справками по болезни">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/database/middleware.py" beforeDir="false" afterPath="$PROJECT_DIR$/database/middleware.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/database/schemas.py" beforeDir="false" afterPath="$PROJECT_DIR$/database/schemas.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/handlers/admin_panel.py" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/admin_panel.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/handlers/daily_attendance.py" beforeDir="false" afterPath="$PROJECT_DIR$/regulatory_tasks/daily_attendance.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/keyboards/kbs.py" beforeDir="false" afterPath="$PROJECT_DIR$/keyboards/kbs.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -122,7 +123,7 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/handlers/daily_attendance.py" />
+      <option name="SCRIPT_NAME" value="C:\Python\Judo_aiogram_superset\regulatory_tasks\daily_attendance.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -287,7 +288,23 @@
       <option name="project" value="LOCAL" />
       <updated>1761717789642</updated>
     </task>
-    <option name="localTasksCounter" value="9" />
+    <task id="LOCAL-00009" summary="добавил  справками по болезни">
+      <option name="closed" value="true" />
+      <created>1761739967038</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1761739967038</updated>
+    </task>
+    <task id="LOCAL-00010" summary="добавил  справками по болезни">
+      <option name="closed" value="true" />
+      <created>1761939936862</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1761939936862</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -309,6 +326,7 @@
     <MESSAGE value="вынес урл суперсета в конфиг1" />
     <MESSAGE value="добавляю редактор тренеров" />
     <MESSAGE value="добавляю схемы мед справок" />
-    <option name="LAST_COMMIT_MESSAGE" value="добавляю схемы мед справок" />
+    <MESSAGE value="добавил  справками по болезни" />
+    <option name="LAST_COMMIT_MESSAGE" value="добавил  справками по болезни" />
   </component>
 </project>
