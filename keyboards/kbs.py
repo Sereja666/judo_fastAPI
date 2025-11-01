@@ -60,11 +60,11 @@ async def home_page_kb(user_telegram_id: int):
         input_field_placeholder="Воспользуйтесь меню:"
     )
 
-
 async def admin_page_kb(user_telegram_id: int):
     kb_list = [
         [KeyboardButton(text="🔙 Назад")],
-        [KeyboardButton(text="💳 оплата"), KeyboardButton(text="🏥 справка по болезни")]  # Кнопки в одном ряду
+        [KeyboardButton(text="💳 оплата"), KeyboardButton(text="🏥 справка по болезни")],
+        [KeyboardButton(text="📋 Медсправка")]  # Новая кнопка
     ]
 
     # Проверяем права пользователя через базу данных
