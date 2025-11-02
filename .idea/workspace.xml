@@ -4,13 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ee547eef-2e63-46d4-8d9a-feffb711966c" name="Changes" comment="переместил ежедневное списание в папку с регламентными заданиями">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/db_handler/db_funk.py" beforeDir="false" afterPath="$PROJECT_DIR$/db_handler/db_funk.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/handlers/admin_panel.py" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/admin_panel.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/handlers/user_router.py" beforeDir="false" afterPath="$PROJECT_DIR$/handlers/user_router.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/keyboards/kbs.py" beforeDir="false" afterPath="$PROJECT_DIR$/keyboards/kbs.py" afterDir="false" />
-    </list>
+    <list default="true" id="ee547eef-2e63-46d4-8d9a-feffb711966c" name="Changes" comment="021125" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -312,7 +306,15 @@
       <option name="project" value="LOCAL" />
       <updated>1761978952482</updated>
     </task>
-    <option name="localTasksCounter" value="12" />
+    <task id="LOCAL-00012" summary="021125">
+      <option name="closed" value="true" />
+      <created>1762073837178</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1762073837178</updated>
+    </task>
+    <option name="localTasksCounter" value="13" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -336,6 +338,7 @@
     <MESSAGE value="добавляю схемы мед справок" />
     <MESSAGE value="добавил  справками по болезни" />
     <MESSAGE value="переместил ежедневное списание в папку с регламентными заданиями" />
-    <option name="LAST_COMMIT_MESSAGE" value="переместил ежедневное списание в папку с регламентными заданиями" />
+    <MESSAGE value="021125" />
+    <option name="LAST_COMMIT_MESSAGE" value="021125" />
   </component>
 </project>
