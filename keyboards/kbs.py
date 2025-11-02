@@ -64,7 +64,7 @@ async def admin_page_kb(user_telegram_id: int):
     kb_list = [
         [KeyboardButton(text="🔙 Назад")],
         [KeyboardButton(text="💳 оплата"), KeyboardButton(text="🏥 справка по болезни")],
-        [KeyboardButton(text="📋 Медсправка")]  # Новая кнопка
+        [KeyboardButton(text="📋 Медсправка")]  # Теперь это меню
     ]
 
     # Проверяем права пользователя через базу данных
@@ -78,4 +78,19 @@ async def admin_page_kb(user_telegram_id: int):
         resize_keyboard=True,
         one_time_keyboard=True,
         input_field_placeholder="Воспользуйтесь меню:"
+    )
+
+def medical_certificate_kb():
+    """Клавиатура для меню медицинских справок"""
+    kb_list = [
+        [KeyboardButton(text="➕ Добавить справку")],
+        [KeyboardButton(text="👥 Справки учеников")],
+        [KeyboardButton(text="🔙 Назад")]
+    ]
+
+    return ReplyKeyboardMarkup(
+        keyboard=kb_list,
+        resize_keyboard=True,
+        one_time_keyboard=True,
+        input_field_placeholder="Выберите действие:"
     )

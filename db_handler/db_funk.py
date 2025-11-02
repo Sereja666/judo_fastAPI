@@ -362,3 +362,55 @@ async def process_payment(student_name: str, amount: int) -> dict:
     except Exception as e:
         print(f"Error processing payment: {str(e)}")
         return {"success": False, "error": f"Системная ошибка: {str(e)}"}
+
+
+async def get_all_certificates():
+    """Получает все медицинские справки"""
+    query = """
+    SELECT 
+        s.name as student_name,
+        mt.name_cert as certificate_type,
+        TO_CHAR(mr.date_start, 'DD.MM.YYYY') as start_date,
+        TO_CHAR(mr.date_end, 'DD.MM.YYYY') as end_date,
+        CASE 
+            WHEN mr.active = true AND mr.date_end >= CURRENT_DATE THEN 'active'
+            WHEN mr.active = true AND mr.date_end < CURRENT_DATE THEN 'expired'
+            ELSE 'inactive'
+        END as status,
+        mr.id as record_id
+    FROM public.medcertificat_received mr
+    JOIN public.student s ON mr.student_id = s.id
+    JOIN public.medcertificat_type mt ON mr.cert_id = mt.id
+    WHERE s.active = true
+    ORDER BY s.name, mr.date_end DESC;
+    """
+
+    return await execute_raw_sql(query)
+
+
+async def get_student_certificates(student_id: int):
+    """Получает медицинские справки конкретного ученика"""
+    query = """
+    SELECT 
+        mt.name_cert as certificate_type,
+        TO_CHAR(mr.date_start, 'DD.MM.YYYY') as start_date,
+        TO_CHAR(mr.date_end, 'DD.MM.YYYY') as end_date,
+        CASE 
+            WHEN mr.active = true AND mr.date_end >= CURRENT_DATE THEN 'active'
+            WHEN mr.active = true AND mr.date_end < CURRENT_DATE THEN 'expired'
+            ELSE 'inactive'
+        END as status,
+        CASE 
+            WHEN mr.date_end >= CURRENT_DATE THEN 
+                'Осталось ' || (mr.date_end - CURRENT_DATE) || ' дней'
+            ELSE
+                'Просрочена ' || (CURRENT_DATE - mr.date_end) || ' дней назад'
+        END as days_info,
+        mr.id as record_id
+    FROM public.medcertificat_received mr
+    JOIN public.medcertificat_type mt ON mr.cert_id = mt.id
+    WHERE mr.student_id = $1
+    ORDER BY mr.date_end DESC;
+    """
+
+    return await execute_raw_sql(query, student_id)

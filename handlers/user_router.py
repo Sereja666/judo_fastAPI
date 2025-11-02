@@ -27,8 +27,7 @@ logging.basicConfig(level=logging.ERROR)
 
 user_router = Router()
 
-universe_text = ('Чтоб получить информацию о своем профиле воспользуйся кнопкой "Мой профиль" или специальной '
-                 'командой из командного меню.')
+universe_text = ('https://superset.srm-1legion.ru/ - наша админка')
 
 
 @user_router.message(CommandStart())
