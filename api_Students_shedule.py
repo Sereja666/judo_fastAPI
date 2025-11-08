@@ -10,7 +10,8 @@ import os
 from datetime import datetime
 from database.middleware import SupersetAuthMiddleware
 from config import settings
-from database.schemas import Students, Sport, Schedule, Students_schedule, Trainers, Prices, engine, Visits
+from database.schemas import Students, Sport, Schedule, Students_schedule, Trainers, Prices, engine, Visits, \
+    Training_place
 
 # Создаем сессию базы данных
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -590,12 +591,13 @@ async def debug_routes():
     """Отладочный endpoint для просмотра всех зарегистрированных маршрутов"""
     routes = []
     for route in app.routes:
-        routes.append({
+        route_info = {
             "path": getattr(route, "path", None),
             "methods": getattr(route, "methods", None),
             "name": getattr(route, "name", None)
-        })
-    return JSONResponse(routes)     
+        }
+        routes.append(route_info)
+    return JSONResponse(routes)
 
 @app.get("/logout")
 async def logout():
@@ -609,30 +611,36 @@ async def logout():
 # Добавьте эти endpoints в существующий файл api_Students_shedule.py
 
 # ===== УПРАВЛЕНИЕ ПОСЕЩЕНИЯМИ =====
+# ===== УПРАВЛЕНИЕ ПОСЕЩЕНИЯМИ =====
 
 @app.get("/visits/", response_class=HTMLResponse)
 async def visits_page(request: Request, db: Session = Depends(get_db)):
     """Главная страница управления посещениями"""
-    trainers = db.query(Trainers).filter(Trainers.active == True).all()
-    sports = db.query(Sport).all()
-    training_places = db.query(Training_place).all()
+    try:
+        trainers = db.query(Trainers).filter(Trainers.active == True).all()
+        sports = db.query(Sport).all()
+        training_places = db.query(Training_place).all()
 
-    return templates.TemplateResponse("visits.html", {
-        "request": request,
-        "trainers": trainers,
-        "sports": sports,
-        "training_places": training_places
-    })
+        return templates.TemplateResponse("visits.html", {
+            "request": request,
+            "trainers": trainers,
+            "sports": sports,
+            "training_places": training_places
+        })
+    except Exception as e:
+        print(f"Error in visits_page: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
 @app.get("/visits/get-schedules-by-date")
 async def get_schedules_by_date(date: str, db: Session = Depends(get_db)):
     """Получение расписания на конкретную дату"""
     try:
+        print(f"Getting schedules for date: {date}")
         selected_date = datetime.fromisoformat(date).date()
-        day_of_week = selected_date.strftime('%A').lower()  # Получаем день недели
+        day_of_week = selected_date.strftime('%A').lower()
 
-        # Маппинг русских названий дней недели
+        # Маппинг английских названий дней недели на русские
         day_mapping = {
             'monday': 'понедельник',
             'tuesday': 'вторник',
@@ -644,11 +652,14 @@ async def get_schedules_by_date(date: str, db: Session = Depends(get_db)):
         }
 
         russian_day = day_mapping.get(day_of_week, day_of_week)
+        print(f"Russian day: {russian_day}")
 
         # Получаем расписание на этот день недели
         schedules = db.query(Schedule).filter(
             Schedule.day_week == russian_day
         ).all()
+
+        print(f"Found {len(schedules)} schedules")
 
         result = []
         for schedule in schedules:
@@ -670,6 +681,7 @@ async def get_schedules_by_date(date: str, db: Session = Depends(get_db)):
         return JSONResponse(result)
 
     except Exception as e:
+        print(f"Error in get_schedules_by_date: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Ошибка получения расписания: {str(e)}")
 
 
@@ -677,10 +689,14 @@ async def get_schedules_by_date(date: str, db: Session = Depends(get_db)):
 async def get_students_by_schedule(schedule_id: int, db: Session = Depends(get_db)):
     """Получение студентов, записанных на конкретное расписание"""
     try:
+        print(f"Getting students for schedule: {schedule_id}")
+
         # Получаем студентов из расписания
         student_schedules = db.query(Students_schedule).filter(
             Students_schedule.schedule == schedule_id
         ).all()
+
+        print(f"Found {len(student_schedules)} student schedule records")
 
         students = []
         for ss in student_schedules:
@@ -699,27 +715,37 @@ async def get_students_by_schedule(schedule_id: int, db: Session = Depends(get_d
                     "weight": student.weight or 0
                 })
 
+        print(f"Returning {len(students)} students")
         return JSONResponse(students)
 
     except Exception as e:
+        print(f"Error in get_students_by_schedule: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Ошибка получения студентов: {str(e)}")
 
 
 @app.get("/visits/search-students")
 async def search_students_visits(query: str, db: Session = Depends(get_db)):
     """Поиск студентов для добавления не по расписанию"""
-    if not query or len(query) < 2:
-        return JSONResponse([])
+    try:
+        print(f"Searching students with query: {query}")
 
-    students = db.query(Students).filter(
-        and_(
-            Students.active == True,
-            Students.name.ilike(f"%{query}%")
-        )
-    ).limit(10).all()
+        if not query or len(query) < 2:
+            return JSONResponse([])
 
-    result = [{"id": student.id, "name": student.name} for student in students]
-    return JSONResponse(result)
+        students = db.query(Students).filter(
+            and_(
+                Students.active == True,
+                Students.name.ilike(f"%{query}%")
+            )
+        ).limit(10).all()
+
+        result = [{"id": student.id, "name": student.name} for student in students]
+        print(f"Found {len(result)} students")
+        return JSONResponse(result)
+
+    except Exception as e:
+        print(f"Error in search_students_visits: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Ошибка поиска студентов: {str(e)}")
 
 
 @app.post("/visits/save-visits")
@@ -733,6 +759,9 @@ async def save_visits(
 ):
     """Сохранение посещений"""
     try:
+        print(f"Saving visits - date: {visit_date}, schedule: {schedule_id}, trainer: {trainer_id}")
+        print(f"Students: {student_ids}, Extra: {extra_student_ids}")
+
         visit_datetime = datetime.fromisoformat(visit_date)
 
         # Получаем информацию о расписании
@@ -817,13 +846,20 @@ async def save_visits(
         }
 
         if error_messages:
-            response_data["warnings"] = error_messages[:5]  # Ограничиваем количество предупреждений
+            response_data["warnings"] = error_messages[:5]
 
+        print(f"Successfully saved {success_count} visits")
         return JSONResponse(response_data)
 
     except Exception as e:
         db.rollback()
+        print(f"Error in save_visits: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Ошибка сохранения посещений: {str(e)}")
+
+
+
+
+
 
 if __name__ == "__main__":
     import uvicorn
