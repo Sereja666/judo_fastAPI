@@ -1,0 +1,399 @@
+<!-- templates/visits.html -->
+{% extends "base.html" %}
+
+{% block title %}Управление посещениями{% endblock %}
+
+{% block content %}
+<h1>📊 Управление посещениями</h1>
+
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="mb-0">Выбор даты и тренировки</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="visitDate" class="form-label">Дата тренировки *</label>
+                <select class="form-select" id="visitDate" required>
+                    <option value="">-- Выберите дату --</option>
+                    <!-- Опции будут заполнены JavaScript -->
+                </select>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="trainerSelect" class="form-label">Тренер *</label>
+                <select class="form-select" id="trainerSelect" required>
+                    <option value="">-- Выберите тренера --</option>
+                    {% for trainer in trainers %}
+                    <option value="{{ trainer.id }}">{{ trainer.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div id="schedulesSection" class="hidden">
+            <h6 class="section-title">Доступные тренировки</h6>
+            <div id="schedulesList" class="row">
+                <!-- Список тренировок будет здесь -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="studentsSection" class="card mt-4 hidden">
+    <div class="card-header">
+        <h5 class="mb-0">Ученики на тренировке</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Записанные ученики:</h6>
+                <div id="scheduledStudentsList" class="mb-3">
+                    <!-- Список учеников по расписанию -->
+                </div>
+            </div>
+            <div class="col-md-6">
+                <h6>Дополнительные ученики:</h6>
+                <div class="mb-3">
+                    <label for="extraStudentSearch" class="form-label">Поиск ученика:</label>
+                    <input type="text" class="form-control" id="extraStudentSearch" placeholder="Начните вводить имя">
+                    <div class="form-text">Для добавления учеников не по расписанию</div>
+                </div>
+                <div id="extraStudentsList">
+                    <!-- Список дополнительных учеников -->
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-3">
+            <button type="button" class="btn btn-success btn-lg" onclick="saveVisits()">
+                <i class="fas fa-save"></i>
+                Сохранить посещения
+            </button>
+            <a href="/" class="btn btn-secondary">← Назад к расписанию</a>
+        </div>
+    </div>
+</div>
+
+<div id="message" class="mt-3"></div>
+
+<!-- Скрытые поля для хранения данных -->
+<input type="hidden" id="selectedScheduleId">
+<input type="hidden" id="selectedVisitDate">
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let selectedStudents = new Set();
+    let extraStudents = new Set();
+    let searchTimeout = null;
+
+    $(document).ready(function() {
+        // Заполняем даты (последние 10 дней)
+        populateDates();
+
+        // Обработчики изменений
+        $('#visitDate').change(function() {
+            const selectedDate = $(this).val();
+            if (selectedDate) {
+                $('#selectedVisitDate').val(selectedDate);
+                loadSchedulesForDate(selectedDate);
+                $('#schedulesSection').removeClass('hidden');
+            } else {
+                $('#schedulesSection').addClass('hidden');
+                $('#studentsSection').addClass('hidden');
+            }
+        });
+
+        // Поиск учеников для добавления
+        $('#extraStudentSearch').on('input', function() {
+            clearTimeout(searchTimeout);
+            const query = $(this).val();
+
+            if (query.length < 2) {
+                $('#extraStudentsList').html('');
+                return;
+            }
+
+            searchTimeout = setTimeout(() => {
+                searchExtraStudents(query);
+            }, 500);
+        });
+    });
+
+    function populateDates() {
+        const dateSelect = $('#visitDate');
+        const today = new Date();
+
+        for (let i = 0; i < 10; i++) {
+            const date = new Date();
+            date.setDate(today.getDate() - i);
+
+            const dateString = date.toISOString().split('T')[0];
+            const formattedDate = formatDate(date);
+
+            const option = new Option(formattedDate, dateString);
+            if (i === 0) {
+                option.selected = true;
+                $('#selectedVisitDate').val(dateString);
+            }
+            dateSelect.append(option);
+        }
+
+        // Загружаем расписание для сегодняшней даты
+        loadSchedulesForDate($('#visitDate').val());
+    }
+
+    function formatDate(date) {
+        const days = ['ВС', 'ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ'];
+        const dayName = days[date.getDay()];
+        return `${date.toLocaleDateString('ru-RU')} (${dayName})`;
+    }
+
+    function loadSchedulesForDate(date) {
+        $('#schedulesList').html('<div class="col-12"><div class="text-center"><div class="spinner-border"></div><p>Загрузка расписания...</p></div></div>');
+
+        $.get(`/visits/get-schedules-by-date?date=${date}`)
+            .done(function(schedules) {
+                $('#schedulesList').empty();
+
+                if (schedules.length === 0) {
+                    $('#schedulesList').html('<div class="col-12"><div class="alert alert-info">На выбранную дату нет тренировок</div></div>');
+                    $('#studentsSection').addClass('hidden');
+                    return;
+                }
+
+                schedules.forEach(function(schedule) {
+                    const scheduleElement = `
+                        <div class="col-md-6 mb-3">
+                            <div class="schedule-item" onclick="selectSchedule(${schedule.id})"
+                                 data-schedule-id="${schedule.id}">
+                                <h6>${schedule.time_start} - ${schedule.time_end}</h6>
+                                <p class="mb-1"><strong>${schedule.sport_name}</strong></p>
+                                <p class="mb-1">📍 ${schedule.place_name}</p>
+                                ${schedule.description ? `<small class="text-muted">${schedule.description}</small>` : ''}
+                            </div>
+                        </div>
+                    `;
+                    $('#schedulesList').append(scheduleElement);
+                });
+            })
+            .fail(function() {
+                showMessage('Ошибка загрузки расписания', 'danger');
+            });
+    }
+
+    function selectSchedule(scheduleId) {
+        // Снимаем выделение со всех расписаний
+        $('.schedule-item').removeClass('selected');
+
+        // Выделяем выбранное расписание
+        $(`[data-schedule-id="${scheduleId}"]`).addClass('selected');
+
+        $('#selectedScheduleId').val(scheduleId);
+
+        // Загружаем студентов для этого расписания
+        loadStudentsForSchedule(scheduleId);
+        $('#studentsSection').removeClass('hidden');
+    }
+
+    function loadStudentsForSchedule(scheduleId) {
+        $('#scheduledStudentsList').html('<div class="text-center"><div class="spinner-border spinner-border-sm"></div> Загрузка учеников...</div>');
+
+        $.get(`/visits/get-students-by-schedule?schedule_id=${scheduleId}`)
+            .done(function(students) {
+                $('#scheduledStudentsList').empty();
+
+                if (students.length === 0) {
+                    $('#scheduledStudentsList').html('<div class="alert alert-warning">На эту тренировку нет записанных учеников</div>');
+                    return;
+                }
+
+                students.forEach(function(student) {
+                    const studentElement = `
+                        <div class="form-check mb-2">
+                            <input class="form-check-input student-checkbox" type="checkbox"
+                                   value="${student.id}" id="student_${student.id}"
+                                   onchange="toggleStudent(${student.id}, this.checked, false)">
+                            <label class="form-check-label" for="student_${student.id}">
+                                ${student.name}
+                                ${student.rang ? `<span class="badge bg-secondary">${student.rang}</span>` : ''}
+                                ${student.weight ? `<small class="text-muted">(${student.weight}кг)</small>` : ''}
+                            </label>
+                        </div>
+                    `;
+                    $('#scheduledStudentsList').append(studentElement);
+                });
+            })
+            .fail(function() {
+                showMessage('Ошибка загрузки учеников', 'danger');
+            });
+    }
+
+    function searchExtraStudents(query) {
+        $.get(`/visits/search-students?query=${encodeURIComponent(query)}`)
+            .done(function(students) {
+                $('#extraStudentsList').empty();
+
+                if (students.length === 0) {
+                    $('#extraStudentsList').html('<div class="text-muted">Ученики не найдены</div>');
+                    return;
+                }
+
+                students.forEach(function(student) {
+                    // Проверяем, не добавлен ли уже этот ученик
+                    const isAdded = extraStudents.has(student.id.toString());
+
+                    const studentElement = `
+                        <div class="form-check mb-2">
+                            <input class="form-check-input extra-student-checkbox" type="checkbox"
+                                   value="${student.id}" id="extra_student_${student.id}"
+                                   ${isAdded ? 'checked' : ''}
+                                   onchange="toggleStudent(${student.id}, this.checked, true)">
+                            <label class="form-check-label" for="extra_student_${student.id}">
+                                ${student.name}
+                                ${isAdded ? '<span class="badge bg-success">добавлен</span>' : ''}
+                            </label>
+                        </div>
+                    `;
+                    $('#extraStudentsList').append(studentElement);
+                });
+            })
+            .fail(function() {
+                showMessage('Ошибка поиска учеников', 'danger');
+            });
+    }
+
+    function toggleStudent(studentId, isChecked, isExtra) {
+        const studentIdStr = studentId.toString();
+
+        if (isExtra) {
+            if (isChecked) {
+                extraStudents.add(studentIdStr);
+            } else {
+                extraStudents.delete(studentIdStr);
+            }
+            // Обновляем отображение
+            $(`#extra_student_${studentId}`).next('label').find('.badge').remove();
+            if (isChecked) {
+                $(`#extra_student_${studentId}`).next('label').append(' <span class="badge bg-success">добавлен</span>');
+            }
+        } else {
+            if (isChecked) {
+                selectedStudents.add(studentIdStr);
+            } else {
+                selectedStudents.delete(studentIdStr);
+            }
+        }
+    }
+
+    function saveVisits() {
+        const visitDate = $('#selectedVisitDate').val();
+        const scheduleId = $('#selectedScheduleId').val();
+        const trainerId = $('#trainerSelect').val();
+
+        if (!visitDate || !scheduleId || !trainerId) {
+            showMessage('Заполните все обязательные поля', 'danger');
+            return;
+        }
+
+        if (selectedStudents.size === 0 && extraStudents.size === 0) {
+            showMessage('Выберите хотя бы одного ученика', 'warning');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('visit_date', visitDate + 'T12:00:00'); // Добавляем время
+        formData.append('schedule_id', scheduleId);
+        formData.append('trainer_id', trainerId);
+
+        // Добавляем выбранных студентов
+        selectedStudents.forEach(studentId => {
+            formData.append('student_ids', studentId);
+        });
+
+        // Добавляем дополнительных студентов
+        extraStudents.forEach(studentId => {
+            formData.append('extra_student_ids', studentId);
+        });
+
+        // Показываем загрузку
+        const saveButton = $('#studentsSection').find('button.btn-success');
+        const originalText = saveButton.html();
+        saveButton.html('<i class="fas fa-spinner fa-spin"></i> Сохранение...').prop('disabled', true);
+
+        fetch('/visits/save-visits', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.text().then(text => {
+                    throw new Error(`HTTP error! status: ${response.status}, message: ${text}`);
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            showMessage(data.message, 'success');
+
+            if (data.warnings) {
+                data.warnings.forEach(warning => {
+                    showMessage(warning, 'warning');
+                });
+            }
+
+            // Сбрасываем выбор
+            selectedStudents.clear();
+            extraStudents.clear();
+            $('.student-checkbox, .extra-student-checkbox').prop('checked', false);
+            $('.badge.bg-success').remove();
+
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            showMessage('Ошибка сохранения: ' + error.message, 'danger');
+        })
+        .finally(() => {
+            saveButton.html(originalText).prop('disabled', false);
+        });
+    }
+
+    function showMessage(text, type) {
+        $('#message').html(`
+            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${text}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `);
+
+        setTimeout(() => {
+            $('.alert').alert('close');
+        }, 5000);
+    }
+</script>
+
+<style>
+.schedule-item {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.schedule-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.schedule-item.selected {
+    border-color: var(--superset-primary);
+    background: linear-gradient(135deg, #f0f9ff 0%, #e1f5fe 100%);
+}
+
+.hidden {
+    display: none;
+}
+
+.badge {
+    font-size: 0.7em;
+}
+</style>
+{% endblock %}

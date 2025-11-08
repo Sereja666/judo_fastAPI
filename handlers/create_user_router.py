@@ -70,13 +70,14 @@ async def process_student_data(message: Message, state: FSMContext):
         # Сохраняем в базу
         result = await execute_raw_sql(
             f"""INSERT INTO {schema}.student (
-                name, birthday, sport_discipline, telephone, date_start
+                name, birthday, sport_discipline, telephone, date_start, price
             ) VALUES (
                 '{name}',
                 '{birthday_date}',
                 {int(discipline_id)},
                 '{phone}',
-                CURRENT_DATE
+                CURRENT_DATE,
+                0
             ) RETURNING id;"""
         )
 
@@ -112,7 +113,7 @@ async def process_schedule_copy(message: Message, state: FSMContext):
     if message.text.lower() == 'нет':
         await message.answer(
             "Расписание не скопировано",
-            reply_markup=main_kb(message.from_user.id)
+            reply_markup=await main_kb(message.from_user.id)
         )
         await state.clear()
         return

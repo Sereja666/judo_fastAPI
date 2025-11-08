@@ -10,7 +10,7 @@ import os
 from datetime import datetime
 from database.middleware import SupersetAuthMiddleware
 from config import settings
-from database.schemas import Students, Sport, Schedule, Students_schedule, Trainers, Prices, engine
+from database.schemas import Students, Sport, Schedule, Students_schedule, Trainers, Prices, engine, Visits
 
 # Создаем сессию базы данных
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -604,6 +604,226 @@ async def logout():
     # Очищаем cookie сессии
     response.delete_cookie("session")
     return response
+
+
+# Добавьте эти endpoints в существующий файл api_Students_shedule.py
+
+# ===== УПРАВЛЕНИЕ ПОСЕЩЕНИЯМИ =====
+
+@app.get("/visits/", response_class=HTMLResponse)
+async def visits_page(request: Request, db: Session = Depends(get_db)):
+    """Главная страница управления посещениями"""
+    trainers = db.query(Trainers).filter(Trainers.active == True).all()
+    sports = db.query(Sport).all()
+    training_places = db.query(Training_place).all()
+
+    return templates.TemplateResponse("visits.html", {
+        "request": request,
+        "trainers": trainers,
+        "sports": sports,
+        "training_places": training_places
+    })
+
+
+@app.get("/visits/get-schedules-by-date")
+async def get_schedules_by_date(date: str, db: Session = Depends(get_db)):
+    """Получение расписания на конкретную дату"""
+    try:
+        selected_date = datetime.fromisoformat(date).date()
+        day_of_week = selected_date.strftime('%A').lower()  # Получаем день недели
+
+        # Маппинг русских названий дней недели
+        day_mapping = {
+            'monday': 'понедельник',
+            'tuesday': 'вторник',
+            'wednesday': 'среда',
+            'thursday': 'четверг',
+            'friday': 'пятница',
+            'saturday': 'суббота',
+            'sunday': 'воскресенье'
+        }
+
+        russian_day = day_mapping.get(day_of_week, day_of_week)
+
+        # Получаем расписание на этот день недели
+        schedules = db.query(Schedule).filter(
+            Schedule.day_week == russian_day
+        ).all()
+
+        result = []
+        for schedule in schedules:
+            # Получаем информацию о месте тренировки
+            place = db.query(Training_place).filter(Training_place.id == schedule.training_place).first()
+            sport = db.query(Sport).filter(Sport.id == schedule.sport_discipline).first()
+
+            result.append({
+                "id": schedule.id,
+                "time_start": str(schedule.time_start),
+                "time_end": str(schedule.time_end),
+                "place_name": place.name if place else "Неизвестно",
+                "sport_name": sport.name if sport else "Неизвестно",
+                "description": schedule.description or "",
+                "training_place": schedule.training_place,
+                "sport_discipline": schedule.sport_discipline
+            })
+
+        return JSONResponse(result)
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Ошибка получения расписания: {str(e)}")
+
+
+@app.get("/visits/get-students-by-schedule")
+async def get_students_by_schedule(schedule_id: int, db: Session = Depends(get_db)):
+    """Получение студентов, записанных на конкретное расписание"""
+    try:
+        # Получаем студентов из расписания
+        student_schedules = db.query(Students_schedule).filter(
+            Students_schedule.schedule == schedule_id
+        ).all()
+
+        students = []
+        for ss in student_schedules:
+            student = db.query(Students).filter(
+                and_(
+                    Students.id == ss.student,
+                    Students.active == True
+                )
+            ).first()
+
+            if student:
+                students.append({
+                    "id": student.id,
+                    "name": student.name,
+                    "rang": student.rang or "",
+                    "weight": student.weight or 0
+                })
+
+        return JSONResponse(students)
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Ошибка получения студентов: {str(e)}")
+
+
+@app.get("/visits/search-students")
+async def search_students_visits(query: str, db: Session = Depends(get_db)):
+    """Поиск студентов для добавления не по расписанию"""
+    if not query or len(query) < 2:
+        return JSONResponse([])
+
+    students = db.query(Students).filter(
+        and_(
+            Students.active == True,
+            Students.name.ilike(f"%{query}%")
+        )
+    ).limit(10).all()
+
+    result = [{"id": student.id, "name": student.name} for student in students]
+    return JSONResponse(result)
+
+
+@app.post("/visits/save-visits")
+async def save_visits(
+        visit_date: str = Form(...),
+        schedule_id: int = Form(...),
+        trainer_id: int = Form(...),
+        student_ids: List[int] = Form([]),
+        extra_student_ids: List[int] = Form([]),
+        db: Session = Depends(get_db)
+):
+    """Сохранение посещений"""
+    try:
+        visit_datetime = datetime.fromisoformat(visit_date)
+
+        # Получаем информацию о расписании
+        schedule = db.query(Schedule).filter(Schedule.id == schedule_id).first()
+        if not schedule:
+            raise HTTPException(status_code=404, detail="Расписание не найдено")
+
+        success_count = 0
+        error_messages = []
+
+        # Обрабатываем студентов из расписания
+        for student_id in student_ids:
+            try:
+                # Проверяем, не было ли уже посещения сегодня
+                existing_visit = db.query(Visits).filter(
+                    and_(
+                        Visits.student == student_id,
+                        Visits.shedule == schedule_id,
+                        Visits.data >= visit_datetime.replace(hour=0, minute=0, second=0),
+                        Visits.data < visit_datetime.replace(hour=23, minute=59, second=59)
+                    )
+                ).first()
+
+                if existing_visit:
+                    error_messages.append(f"Студент ID {student_id} уже отмечен сегодня")
+                    continue
+
+                # Создаем запись о посещении
+                visit = Visits(
+                    data=visit_datetime,
+                    trainer=trainer_id,
+                    student=student_id,
+                    place=schedule.training_place,
+                    sport_discipline=schedule.sport_discipline,
+                    shedule=schedule_id
+                )
+
+                db.add(visit)
+                success_count += 1
+
+            except Exception as e:
+                error_messages.append(f"Ошибка для студента {student_id}: {str(e)}")
+
+        # Обрабатываем дополнительных студентов
+        for student_id in extra_student_ids:
+            try:
+                # Проверяем, не было ли уже посещения сегодня
+                existing_visit = db.query(Visits).filter(
+                    and_(
+                        Visits.student == student_id,
+                        Visits.data >= visit_datetime.replace(hour=0, minute=0, second=0),
+                        Visits.data < visit_datetime.replace(hour=23, minute=59, second=59)
+                    )
+                ).first()
+
+                if existing_visit:
+                    error_messages.append(f"Доп. студент ID {student_id} уже отмечен сегодня")
+                    continue
+
+                # Создаем запись о посещении
+                visit = Visits(
+                    data=visit_datetime,
+                    trainer=trainer_id,
+                    student=student_id,
+                    place=schedule.training_place,
+                    sport_discipline=schedule.sport_discipline,
+                    shedule=schedule_id
+                )
+
+                db.add(visit)
+                success_count += 1
+
+            except Exception as e:
+                error_messages.append(f"Ошибка для доп. студента {student_id}: {str(e)}")
+
+        db.commit()
+
+        response_data = {
+            "status": "success",
+            "message": f"Успешно сохранено {success_count} посещений",
+            "saved_count": success_count
+        }
+
+        if error_messages:
+            response_data["warnings"] = error_messages[:5]  # Ограничиваем количество предупреждений
+
+        return JSONResponse(response_data)
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Ошибка сохранения посещений: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn

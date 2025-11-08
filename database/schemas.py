@@ -43,7 +43,7 @@ class Students(Base):
     reference3 = Column(Date())  # до какого числа действует справка
     head_trainer_id = Column(Integer()) # айди главного тренера
     second_trainer_id = Column(Integer()) # айди второго тренера
-    price = Column(Integer())
+    price = Column(Integer(), default=0, server_default='0')
     payment_day = Column(Integer())  # день месяца для оплаты (1-31)
     classes_remaining = Column(Integer())  # сколько занятий на остатке в этом месяце
     expected_payment_date = Column(Date())  # ожидаемая дата оплаты
@@ -152,17 +152,24 @@ class Sport(Base):
     name = Column(String())
 
 
-# Пользователи телеграма
 class Telegram_user(Base):
     __tablename__ = 'telegram_user'
     __table_args__ = {'schema': schema}
-    # id = Column(Integer(), primary_key=True, autoincrement=True)
+
     telegram_id = Column(BigInteger(), primary_key=True)
-    permissions = Column(Integer())
+    permissions = Column(Integer(), default=0)
     telegram_username = Column(String())
     refer_id = Column(Integer())
     date_reg = Column(DateTime())
 
+    # Добавляем поля для обычной авторизации
+    phone = Column(String(), unique=True)  # Уникальный номер телефона
+    password_hash = Column(String())  # Хеш пароля
+    email = Column(String())  # Email (опционально)
+    full_name = Column(String())  # Полное имя
+    last_login = Column(DateTime())  # Дата последнего входа
+
+    is_active = Column(Boolean(), default=True, server_default='true')
 
 # Права телеграма
 class Telegram_permissions(Base):
