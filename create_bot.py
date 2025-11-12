@@ -4,7 +4,6 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from asyncpg_lite import DatabaseManager
 from decouple import config
-from aiogram.fsm.storage.redis import RedisStorage as FSMRedisStorage
 from config import settings
 
 # Импортируем Redis и middleware
@@ -25,7 +24,10 @@ db_manager = DatabaseManager(db_url=settings.db.db_url, deletion_password=config
 # инициируем объект бота, передавая ему parse_mode=ParseMode.HTML по умолчанию
 bot = Bot(token=config('TOKEN'), default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 
-# ИНИЦИАЛИЗАЦИЯ REDIS КЛИЕНТА
+# ИНИЦИАЛИЗАЦИЯ STORAGE
+redis_storage = None
+fsm_storage = None
+
 try:
     redis_client = get_redis_client()
 
@@ -35,6 +37,8 @@ try:
 
     # Два типа storage:
     # 1. Для FSM состояний Aiogram
+    from aiogram.fsm.storage.redis import RedisStorage as FSMRedisStorage
+
     fsm_storage = FSMRedisStorage(redis=redis_client)
 
     # 2. Для кастомных данных (выбранные студенты, кэш и т.д.)
@@ -46,12 +50,12 @@ except Exception as e:
     from aiogram.fsm.storage.memory import MemoryStorage
 
     fsm_storage = MemoryStorage()
-    redis_storage = None
+    logger.info("✅ Используется MemoryStorage как fallback")
 
-# инициируем объект диспетчера с Redis storage
+# инициируем объект диспетчера с выбранным storage
 dp = Dispatcher(storage=fsm_storage)
 
-# ДОБАВЛЯЕМ MIDDLEWARE
+# ДОБАВЛЯЕМ MIDDLEWARE ТОЛЬКО ЕСЛИ REDIS ДОСТУПЕН
 if redis_storage:
     # Middleware для Redis
     redis_middleware = RedisMiddleware(redis_storage)
@@ -60,6 +64,9 @@ if redis_storage:
     # Middleware для rate limiting
     rate_limit_middleware = RateLimitMiddleware(redis_storage)
     dp.message.outer_middleware(rate_limit_middleware)
+    logger.info("✅ Redis middleware добавлены")
+else:
+    logger.info("✅ Redis middleware пропущены (Redis недоступен)")
 
 # Middleware для логирования (всегда добавляем)
 logging_middleware = LoggingMiddleware()

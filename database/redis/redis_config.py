@@ -22,7 +22,8 @@ def get_redis_client() -> redis.Redis:
 
         # Проверяем подключение
         client.ping()
-        logger.info("Redis client initialized successfully")
+        logger.info(
+            f"Redis client initialized successfully: {settings.redis_conf.REDIS_HOST}:{settings.redis_conf.REDIS_PORT}")
         return client
 
     except Exception as e:
