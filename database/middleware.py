@@ -5,9 +5,12 @@ import httpx
 import json
 
 from aiogram import BaseMiddleware
-from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Callable, Dict, Any, Awaitable
-from aiogram.types import TelegramObject
+from aiogram.types import TelegramObject, Message
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class DBSessionMiddleware(BaseMiddleware):
     """Middleware для управления сессиями базы данных"""
@@ -28,6 +31,86 @@ class DBSessionMiddleware(BaseMiddleware):
             return await handler(event, data)
 
 
+class RedisMiddleware(BaseMiddleware):
+    """Middleware для добавления Redis в данные хендлеров"""
+
+    def __init__(self, redis_storage):
+        super().__init__()
+        self.redis_storage = redis_storage
+
+    async def __call__(
+            self,
+            handler: Callable[[TelegramObject, Dict[str, Any]], Awaitable[Any]],
+            event: TelegramObject,
+            data: Dict[str, Any],
+    ) -> Any:
+        """Добавляет redis_storage в данные хендлеров"""
+        data["redis_storage"] = self.redis_storage
+        return await handler(event, data)
+
+
+class RateLimitMiddleware(BaseMiddleware):
+    """Middleware для ограничения частоты запросов"""
+
+    def __init__(self, redis_storage, limit: int = 5, period: int = 10):
+        super().__init__()
+        self.redis_storage = redis_storage
+        self.limit = limit
+        self.period = period
+
+    async def __call__(
+            self,
+            handler: Callable[[TelegramObject, Dict[str, Any]], Awaitable[Any]],
+            event: TelegramObject,
+            data: Dict[str, Any],
+    ) -> Any:
+        """Проверяет rate limit для пользователя"""
+
+        # Применяем только к сообщениям
+        if not isinstance(event, Message):
+            return await handler(event, data)
+
+        if not self.redis_storage:
+            return await handler(event, data)
+
+        user_id = event.from_user.id
+        key = f"rate_limit:{user_id}:global"
+
+        try:
+            current = await self.redis_storage.redis.get(key)
+            if current and int(current) >= self.limit:
+                await event.answer("⚠️ Слишком много запросов. Подождите немного.")
+                return
+
+            # Увеличиваем счетчик
+            pipeline = self.redis_storage.redis.pipeline()
+            pipeline.incr(key)
+            pipeline.expire(key, self.period)
+            await pipeline.execute()
+
+            return await handler(event, data)
+
+        except Exception as e:
+            logger.error(f"Rate limit error: {e}")
+            return await handler(event, data)
+
+
+class LoggingMiddleware(BaseMiddleware):
+    """Middleware для логирования запросов"""
+
+    async def __call__(
+            self,
+            handler: Callable[[TelegramObject, Dict[str, Any]], Awaitable[Any]],
+            event: TelegramObject,
+            data: Dict[str, Any],
+    ) -> Any:
+        """Логирует входящие запросы"""
+        if isinstance(event, Message):
+            logger.info(f"Message from {event.from_user.id}: {event.text}")
+
+        return await handler(event, data)
+
+
 class SupersetAuthMiddleware:
     def __init__(self, app, superset_base_url: str):
         self.app = app
@@ -40,7 +123,7 @@ class SupersetAuthMiddleware:
 
         # Получаем сессионную куку
         session_cookie = request.cookies.get("session")
-        
+
         print(f"🔹 Проверка аутентификации для пути: {request.url.path}")
         print(f"🔹 Сессионная кука: {'есть' if session_cookie else 'нет'}")
         print(f"🔹 Все куки: {dict(request.cookies)}")
@@ -69,22 +152,22 @@ class SupersetAuthMiddleware:
             async with httpx.AsyncClient() as client:
                 # Создаем куки для запроса
                 cookies = {"session": session_cookie}
-                
+
                 # Проверяем через endpoint текущего пользователя
                 response = await client.get(
                     f"{self.superset_base_url}/api/v1/security/current",
                     cookies=cookies,
                     timeout=10.0
                 )
-                
+
                 if response.status_code == 200:
                     user_data = response.json()
                     print(f"✅ Авторизованный пользователь: {user_data.get('username', 'Unknown')}")
                     return True
-                
+
                 print(f"❌ Superset API вернул статус: {response.status_code}")
                 return False
-                
+
         except Exception as e:
             print(f"❌ Ошибка при проверке сессии Superset: {e}")
             return False

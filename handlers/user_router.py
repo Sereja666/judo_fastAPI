@@ -31,40 +31,10 @@ redis_storage = get_redis_storage()
 universe_text = ('https://superset.srm-1legion.ru/ - наша админка')
 
 
-# Rate limiting декоратор
-def rate_limit(limit: int = 1, period: int = 2):
-    def decorator(func):
-        async def wrapper(message: Message, *args, **kwargs):
-            if not redis_storage:
-                return await func(message, *args, **kwargs)
 
-            user_id = message.from_user.id
-            key = f"rate_limit:{user_id}:{func.__name__}"
-
-            try:
-                current = await redis_storage.redis.get(key)
-                if current and int(current) >= limit:
-                    await message.answer("⚠️ Слишком много запросов. Подождите немного.")
-                    return
-
-                # Увеличиваем счетчик
-                pipeline = redis_storage.redis.pipeline()
-                pipeline.incr(key)
-                pipeline.expire(key, period)
-                await pipeline.execute()
-
-                return await func(message, *args, **kwargs)
-            except Exception as e:
-                # Если Redis недоступен, пропускаем rate limiting
-                return await func(message, *args, **kwargs)
-
-        return wrapper
-
-    return decorator
 
 
 @user_router.message(CommandStart())
-@rate_limit(limit=3, period=10)
 async def cmd_start(message: Message, command: CommandObject):
     async with ChatActionSender.typing(bot=bot, chat_id=message.from_user.id):
         # Сначала проверяем кэш
@@ -103,7 +73,6 @@ async def cmd_start(message: Message, command: CommandObject):
 
 
 @user_router.message(F.text.contains('Назад'))
-@rate_limit(limit=2, period=5)
 async def cmd_start(message: Message):
     await message.answer(f'{message.from_user.first_name}, Вижу что вы уже в моей базе данных. {universe_text}',
                          reply_markup=await main_kb(message.from_user.id))
@@ -112,7 +81,6 @@ async def cmd_start(message: Message):
 # хендлер профиля
 @user_router.message(Command('profile'))
 @user_router.message(F.text.contains('Мой профиль'))
-@rate_limit(limit=2, period=5)
 async def get_profile(message: Message):
     async with ChatActionSender.typing(bot=bot, chat_id=message.from_user.id):
         # Проверяем кэш
@@ -139,7 +107,6 @@ async def get_profile(message: Message):
 
 # Обработчик кнопки "Посещения" с проверкой прав (оптимизированный)
 @user_router.message(F.text.contains('⚙️ Посещения'))
-@rate_limit(limit=2, period=5)
 async def handle_visits(message: types.Message):
     try:
         # Проверяем кэш прав
@@ -204,7 +171,6 @@ async def get_schedule_time(schedule_id: int) -> Optional[time]:
 
 # --- Обработчики ---
 @user_router.message(F.text.in_(['🥋 ГМР', '🥋 Сормовская', '🥋 Ставрапольская']))
-@rate_limit(limit=2, period=5)
 async def handle_city_selection(message: Message, state: FSMContext):
     """Обработчик выбора места тренировки"""
     try:

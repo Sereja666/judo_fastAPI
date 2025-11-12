@@ -4,12 +4,13 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from asyncpg_lite import DatabaseManager
 from decouple import config
-from aiogram.fsm.storage.redis import RedisStorage as FSMRedisStorage  # Для FSM
+from aiogram.fsm.storage.redis import RedisStorage as FSMRedisStorage
 from config import settings
 
-# Импортируем Redis
+# Импортируем Redis и middleware
 from database.redis.redis_config import get_redis_client
 from database.redis.redis_storage import RedisStorage as CustomRedisStorage
+from middleware import RedisMiddleware, RateLimitMiddleware, LoggingMiddleware
 
 # получаем список администраторов из .env
 admins = [int(admin_id) for admin_id in config('ADMINS').split(',')]
@@ -49,6 +50,22 @@ except Exception as e:
 
 # инициируем объект диспетчера с Redis storage
 dp = Dispatcher(storage=fsm_storage)
+
+# ДОБАВЛЯЕМ MIDDLEWARE
+if redis_storage:
+    # Middleware для Redis
+    redis_middleware = RedisMiddleware(redis_storage)
+    dp.update.outer_middleware(redis_middleware)
+
+    # Middleware для rate limiting
+    rate_limit_middleware = RateLimitMiddleware(redis_storage)
+    dp.message.outer_middleware(rate_limit_middleware)
+
+# Middleware для логирования (всегда добавляем)
+logging_middleware = LoggingMiddleware()
+dp.update.outer_middleware(logging_middleware)
+
+logger.info("✅ All middleware initialized successfully")
 
 
 # Функция для получения redis_storage в других модулях
