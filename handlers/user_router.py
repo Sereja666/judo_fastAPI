@@ -177,56 +177,74 @@ async def handle_city_selection(message: Message, state: FSMContext):
         selected_place_name = message.text.replace('🥋 ', '')
         today_weekday = get_current_week_day()
 
-        # Проверяем кэш тренировок
-        cache_key = f"trainings:{selected_place_name}:{today_weekday}"
-        cached_trainings = None
-        if redis_storage:
-            cached_trainings = await redis_storage.get_user_data(message.from_user.id, cache_key)
+        print(f"🔍 Выбрано место: {selected_place_name}, день недели: {today_weekday}")
 
-        if cached_trainings:
-            trainings = cached_trainings
-        else:
-            # Получаем ID места тренировки
-            place_data = await execute_raw_sql(
-                f"SELECT id FROM {schema}.training_place WHERE name = $1;",
-                selected_place_name
-            )
+        # Получаем ID места тренировки
+        place_data = await execute_raw_sql(
+            f"SELECT id FROM {schema}.training_place WHERE name = $1;",
+            selected_place_name
+        )
 
-            if not place_data:
-                await message.answer("Место тренировки не найдено")
-                return
+        if not place_data:
+            await message.answer("❌ Место тренировки не найдено в базе данных")
+            return
 
-            place_id = place_data[0]['id']
+        place_id = place_data[0]['id']
+        print(f"🔍 ID места {selected_place_name}: {place_id}")
 
-            # Получаем тренировки на сегодня
-            trainings = await execute_raw_sql(
-                f"""SELECT s.id as schedule_id, s.time_start, s.time_end, 
-                      s.sport_discipline, sp.name as discipline_name
-                FROM {schema}.schedule s
-                JOIN {schema}.sport sp ON s.sport_discipline = sp.id
-                WHERE s.training_place = $1 AND s.day_week = $2
-                ORDER BY s.time_start;""",
-                place_id, today_weekday
-            )
+        # Получаем тренировки на сегодня
+        trainings = await execute_raw_sql(
+            f"""SELECT s.id as schedule_id, s.time_start, s.time_end, 
+                  s.sport_discipline, sp.name as discipline_name, s.day_week
+            FROM {schema}.schedule s
+            JOIN {schema}.sport sp ON s.sport_discipline = sp.id
+            WHERE s.training_place = $1 AND s.day_week = $2
+            ORDER BY s.time_start;""",
+            place_id, today_weekday
+        )
 
-            # Сохраняем в кэш на 30 минут
-            if redis_storage and trainings:
-                await redis_storage.set_user_data(message.from_user.id, cache_key, trainings, 1800)
+        print(f"🔍 Найдено тренировок: {len(trainings)}")
 
         if not trainings:
-            await message.answer(f"На {selected_place_name} сегодня нет тренировок.")
+            await message.answer(f"❌ На {selected_place_name} сегодня нет тренировок.")
             return
+
+        # ПРЕОБРАЗУЕМ Record ОБЪЕКТЫ В СЛОВАРИ для сериализации
+        trainings_serializable = []
+        for training in trainings:
+            training_dict = {
+                'schedule_id': training['schedule_id'],
+                'time_start': training['time_start'].isoformat() if training['time_start'] else None,
+                'time_end': training['time_end'].isoformat() if training['time_end'] else None,
+                'sport_discipline': training['sport_discipline'],
+                'discipline_name': training['discipline_name'],
+                'day_week': training['day_week']
+            }
+            trainings_serializable.append(training_dict)
 
         # Сохраняем данные в состоянии
         await state.update_data(
             place_id=place_id,
             place_name=selected_place_name,
-            trainings=trainings
+            trainings=trainings_serializable  # Используем сериализуемые данные
         )
+
+        # Кэшируем в Redis (если доступен) - ТЕПЕРЬ С СЕРИАЛИЗУЕМЫМИ ДАННЫМИ
+        if redis_storage:
+            cache_key = f"trainings:{selected_place_name}:{today_weekday}"
+            try:
+                await redis_storage.set_user_data(
+                    message.from_user.id,
+                    cache_key,
+                    trainings_serializable,  # Сериализуемые данные
+                    1800
+                )
+            except Exception as e:
+                print(f"⚠️ Ошибка кэширования: {e}")
 
         # Создаем клавиатуру с тренировками
         builder = InlineKeyboardBuilder()
-        for training in trainings:
+        for training in trainings:  # Используем оригинальные данные для отображения
             start = training['time_start'].strftime("%H:%M") if isinstance(training['time_start'], time) else training[
                 'time_start']
             end = training['time_end'].strftime("%H:%M") if isinstance(training['time_end'], time) else training[
@@ -238,13 +256,15 @@ async def handle_city_selection(message: Message, state: FSMContext):
 
         builder.adjust(1)
         await message.answer(
-            f"🏢 Место: {selected_place_name}\nВыберите время тренировки:",
+            f"🏢 Место: {selected_place_name}\n"
+            f"📅 День: {today_weekday}\n"
+            f"Выберите время тренировки:",
             reply_markup=builder.as_markup()
         )
         await state.set_state(TrainingStates.waiting_for_time)
 
     except Exception as e:
-        await message.answer("Ошибка при загрузке данных. Попробуйте позже.")
+        await message.answer("❌ Ошибка при загрузке данных. Попробуйте позже.")
         print(f"Error in handle_city_selection: {str(e)}")
 
 
@@ -286,13 +306,16 @@ async def handle_time_selection(callback: CallbackQuery, state: FSMContext):
             students = cached_students
         else:
             # Получаем студентов на тренировку
-            students = await execute_raw_sql(
+            students_raw = await execute_raw_sql(
                 f"""SELECT st.id, st.name 
                 FROM {schema}.student_schedule ss
                 JOIN {schema}.student st ON ss.student = st.id
                 WHERE ss.schedule = $1 AND st.active = true;""",
                 int(schedule_id)
             )
+
+            # Преобразуем в сериализуемый формат
+            students = [{'id': s['id'], 'name': s['name']} for s in students_raw]
 
             # Сохраняем в кэш на 1 час
             if redis_storage and students:
@@ -324,7 +347,7 @@ async def handle_time_selection(callback: CallbackQuery, state: FSMContext):
             callback_data=f"confirm:{schedule_id}:{trainer_id}:{data['place_id']}:{selected_training['sport_discipline']}"
         )
 
-        # ДОБАВЛЯЕМ КНОПКУ "+ ученик" МЕЖДУ СУЩЕСТВУЮЩИМИ КНОПКАМИ
+        # Добавляем кнопку "+ ученик"
         builder.button(
             text="➕ ученик",
             callback_data=f"extra_student:{schedule_id}:{trainer_id}:{data['place_id']}:{selected_training['sport_discipline']}"
@@ -338,10 +361,16 @@ async def handle_time_selection(callback: CallbackQuery, state: FSMContext):
 
         builder.adjust(1)
 
-        # Форматируем время
-        start_time = selected_training['time_start'].strftime("%H:%M") if isinstance(selected_training['time_start'],
-                                                                                     time) else selected_training[
-            'time_start']
+        # Форматируем время (обрабатываем как строку, так и datetime)
+        if 'time_start' in selected_training and selected_training['time_start']:
+            if isinstance(selected_training['time_start'], str):
+                # Если это строка из кэша
+                start_time = selected_training['time_start'][11:16]  # Извлекаем время из ISO строки
+            else:
+                # Если это datetime объект
+                start_time = selected_training['time_start'].strftime("%H:%M")
+        else:
+            start_time = "??:??"
 
         await callback.message.edit_text(
             f"👨‍🏫 Тренер: {trainer_name}\n"
@@ -359,7 +388,6 @@ async def handle_time_selection(callback: CallbackQuery, state: FSMContext):
         await callback.answer("Ошибка при загрузке данных", show_alert=True)
         print(f"Error in handle_time_selection: {str(e)}")
         await state.clear()
-
 
 @user_router.callback_query(F.data.startswith("student:"))
 async def select_student(callback: CallbackQuery):
