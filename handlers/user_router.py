@@ -11,10 +11,9 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from sqlalchemy.dialects.postgresql import asyncpg
 
 from config import settings
-from create_bot import bot
+from create_bot import bot, get_redis_storage
 from database.database_module import create_visit_record_model
 from database.schemas import schema
-from database import redis_storage
 from db_handler.db_funk import get_user_data, insert_user, execute_raw_sql
 from keyboards.kbs import main_kb, home_page_kb, places_kb
 from utils.utils import get_refer_id, get_now_time, get_current_week_day, get_belt_emoji
@@ -22,40 +21,89 @@ from aiogram.utils.chat_action import ChatActionSender
 import logging
 from datetime import datetime, time
 
-
 logging.basicConfig(level=logging.ERROR)
 
 user_router = Router()
 
+# Инициализация redis_storage
+redis_storage = get_redis_storage()
+
 universe_text = ('https://superset.srm-1legion.ru/ - наша админка')
 
 
+# Rate limiting декоратор
+def rate_limit(limit: int = 1, period: int = 2):
+    def decorator(func):
+        async def wrapper(message: Message, *args, **kwargs):
+            if not redis_storage:
+                return await func(message, *args, **kwargs)
+
+            user_id = message.from_user.id
+            key = f"rate_limit:{user_id}:{func.__name__}"
+
+            try:
+                current = await redis_storage.redis.get(key)
+                if current and int(current) >= limit:
+                    await message.answer("⚠️ Слишком много запросов. Подождите немного.")
+                    return
+
+                # Увеличиваем счетчик
+                pipeline = redis_storage.redis.pipeline()
+                pipeline.incr(key)
+                pipeline.expire(key, period)
+                await pipeline.execute()
+
+                return await func(message, *args, **kwargs)
+            except Exception as e:
+                # Если Redis недоступен, пропускаем rate limiting
+                return await func(message, *args, **kwargs)
+
+        return wrapper
+
+    return decorator
+
+
 @user_router.message(CommandStart())
+@rate_limit(limit=3, period=10)
 async def cmd_start(message: Message, command: CommandObject):
     async with ChatActionSender.typing(bot=bot, chat_id=message.from_user.id):
-        user_info = await get_user_data(user_id=message.from_user.id)
+        # Сначала проверяем кэш
+        cached_user = None
+        if redis_storage:
+            cached_user = await redis_storage.get_user_data(message.from_user.id, "profile")
 
-        if user_info:
+        if cached_user:
             permissions_dict = {0: 'Гость', 1: 'Тренер', 2: 'Администратор', 3: 'Родитель', 4: 'Студент',
                                 99: 'Разработчик'}
-            permissions = permissions_dict.get(user_info.get('permissions'))
-
-            response_text = f'Приветствую вас {permissions}  {user_info.get("telegram_username")}, Вижу что вы уже в моей базе данных. {universe_text}'
+            permissions = permissions_dict.get(cached_user.get('permissions'))
+            response_text = f'Приветствую вас {permissions} {cached_user.get("telegram_username")}, Вижу что вы уже в моей базе данных. {universe_text}'
         else:
-            user_data = {
-                'telegram_id': message.from_user.id,
-                'permissions': 0,
-                'telegram_username': message.from_user.full_name,
-                'refer_id': None,
-                'date_reg': datetime.now()
-            }
+            user_info = await get_user_data(user_id=message.from_user.id)
+            if user_info:
+                permissions_dict = {0: 'Гость', 1: 'Тренер', 2: 'Администратор', 3: 'Родитель', 4: 'Студент',
+                                    99: 'Разработчик'}
+                permissions = permissions_dict.get(user_info.get('permissions'))
+                response_text = f'Приветствую вас {permissions} {user_info.get("telegram_username")}, Вижу что вы уже в моей базе данных. {universe_text}'
 
-            await insert_user(user_data)
-            response_text = f'{message.from_user.full_name}, вы зарегистрированы в боте {universe_text}'
+                # Сохраняем в кэш
+                if redis_storage:
+                    await redis_storage.set_user_data(message.from_user.id, "profile", user_info, 3600)
+            else:
+                user_data = {
+                    'telegram_id': message.from_user.id,
+                    'permissions': 0,
+                    'telegram_username': message.from_user.full_name,
+                    'refer_id': None,
+                    'date_reg': datetime.now()
+                }
+                await insert_user(user_data)
+                response_text = f'{message.from_user.full_name}, вы зарегистрированы в боте {universe_text}'
 
         await message.answer(text=response_text, reply_markup=await main_kb(message.from_user.id))
 
+
 @user_router.message(F.text.contains('Назад'))
+@rate_limit(limit=2, period=5)
 async def cmd_start(message: Message):
     await message.answer(f'{message.from_user.first_name}, Вижу что вы уже в моей базе данных. {universe_text}',
                          reply_markup=await main_kb(message.from_user.id))
@@ -64,9 +112,20 @@ async def cmd_start(message: Message):
 # хендлер профиля
 @user_router.message(Command('profile'))
 @user_router.message(F.text.contains('Мой профиль'))
+@rate_limit(limit=2, period=5)
 async def get_profile(message: Message):
     async with ChatActionSender.typing(bot=bot, chat_id=message.from_user.id):
-        user_info = await get_user_data(user_id=message.from_user.id)
+        # Проверяем кэш
+        cached_user = None
+        if redis_storage:
+            cached_user = await redis_storage.get_user_data(message.from_user.id, "profile")
+
+        if cached_user:
+            user_info = cached_user
+        else:
+            user_info = await get_user_data(user_id=message.from_user.id)
+            if redis_storage and user_info:
+                await redis_storage.set_user_data(message.from_user.id, "profile", user_info, 3600)
 
         if user_info:
             permissions_dict = {0: 'Гость', 1: 'Тренер', 2: 'Администратор', 3: 'Родитель', 4: 'Студент',
@@ -75,25 +134,32 @@ async def get_profile(message: Message):
 
             text = (f'👉 Ваш телеграм ID: <code><b>{message.from_user.id}</b></code> , права {permissions} \n')
 
-    await message.answer(text, reply_markup=await main_kb(message.from_user.id))
-
-
-# Словарь для хранения выбранных студентов {id: name}
-selected_students = {}
+        await message.answer(text, reply_markup=await main_kb(message.from_user.id))
 
 
 # Обработчик кнопки "Посещения" с проверкой прав (оптимизированный)
 @user_router.message(F.text.contains('⚙️ Посещения'))
+@rate_limit(limit=2, period=5)
 async def handle_visits(message: types.Message):
     try:
-        # Проверяем права пользователя
-        print(f" # Проверяем права пользователя {message.from_user.id}")
-        user_permission = await execute_raw_sql(
-            f"""SELECT permissions FROM {schema}.telegram_user 
-            WHERE telegram_id = {message.from_user.id};"""
-        )
-        print(user_permission)
-        if user_permission and user_permission[0]['permissions'] in (1, 2, 99):
+        # Проверяем кэш прав
+        cached_permissions = None
+        if redis_storage:
+            cached_permissions = await redis_storage.get_user_data(message.from_user.id, "permissions")
+
+        if cached_permissions is not None:
+            user_permission = cached_permissions
+        else:
+            user_permission = await execute_raw_sql(
+                f"""SELECT permissions FROM {schema}.telegram_user 
+                WHERE telegram_id = {message.from_user.id};"""
+            )
+            if user_permission:
+                user_permission = user_permission[0]['permissions']
+                if redis_storage:
+                    await redis_storage.set_user_data(message.from_user.id, "permissions", user_permission, 7200)
+
+        if user_permission and user_permission in (1, 2, 99):
             await message.answer("Выберите место:", reply_markup=places_kb())
         else:
             await message.answer("⛔ Доступ запрещен", reply_markup=types.ReplyKeyboardRemove())
@@ -106,10 +172,7 @@ async def handle_visits(message: types.Message):
 # Состояния FSM
 class TrainingStates(StatesGroup):
     waiting_for_time = State()
-
-
-
-
+    waiting_for_extra_student = State()
 
 
 async def get_trainer_name(trainer_id: int) -> str:
@@ -141,34 +204,48 @@ async def get_schedule_time(schedule_id: int) -> Optional[time]:
 
 # --- Обработчики ---
 @user_router.message(F.text.in_(['🥋 ГМР', '🥋 Сормовская', '🥋 Ставрапольская']))
+@rate_limit(limit=2, period=5)
 async def handle_city_selection(message: Message, state: FSMContext):
     """Обработчик выбора места тренировки"""
     try:
         selected_place_name = message.text.replace('🥋 ', '')
-
-        # Получаем ID места тренировки
-        place_data = await execute_raw_sql(
-            f"SELECT id FROM {schema}.training_place WHERE name = $1;",
-            selected_place_name
-        )
-
-        if not place_data:
-            await message.answer("Место тренировки не найдено")
-            return
-
-        place_id = place_data[0]['id']
         today_weekday = get_current_week_day()
-        print(today_weekday)
-        # Получаем тренировки на сегодня
-        trainings = await execute_raw_sql(
-            f"""SELECT s.id as schedule_id, s.time_start, s.time_end, 
-                  s.sport_discipline, sp.name as discipline_name
-            FROM {schema}.schedule s
-            JOIN {schema}.sport sp ON s.sport_discipline = sp.id
-            WHERE s.training_place = $1 AND s.day_week = $2
-            ORDER BY s.time_start;""",
-            place_id, today_weekday
-        )
+
+        # Проверяем кэш тренировок
+        cache_key = f"trainings:{selected_place_name}:{today_weekday}"
+        cached_trainings = None
+        if redis_storage:
+            cached_trainings = await redis_storage.get_user_data(message.from_user.id, cache_key)
+
+        if cached_trainings:
+            trainings = cached_trainings
+        else:
+            # Получаем ID места тренировки
+            place_data = await execute_raw_sql(
+                f"SELECT id FROM {schema}.training_place WHERE name = $1;",
+                selected_place_name
+            )
+
+            if not place_data:
+                await message.answer("Место тренировки не найдено")
+                return
+
+            place_id = place_data[0]['id']
+
+            # Получаем тренировки на сегодня
+            trainings = await execute_raw_sql(
+                f"""SELECT s.id as schedule_id, s.time_start, s.time_end, 
+                      s.sport_discipline, sp.name as discipline_name
+                FROM {schema}.schedule s
+                JOIN {schema}.sport sp ON s.sport_discipline = sp.id
+                WHERE s.training_place = $1 AND s.day_week = $2
+                ORDER BY s.time_start;""",
+                place_id, today_weekday
+            )
+
+            # Сохраняем в кэш на 30 минут
+            if redis_storage and trainings:
+                await redis_storage.set_user_data(message.from_user.id, cache_key, trainings, 1800)
 
         if not trainings:
             await message.answer(f"На {selected_place_name} сегодня нет тренировок.")
@@ -204,6 +281,7 @@ async def handle_city_selection(message: Message, state: FSMContext):
         await message.answer("Ошибка при загрузке данных. Попробуйте позже.")
         print(f"Error in handle_city_selection: {str(e)}")
 
+
 @user_router.callback_query(TrainingStates.waiting_for_time, F.data.startswith("training:"))
 async def handle_time_selection(callback: CallbackQuery, state: FSMContext):
     """Обработчик выбора времени тренировки"""
@@ -232,26 +310,45 @@ async def handle_time_selection(callback: CallbackQuery, state: FSMContext):
         trainer_id = trainer_data[0]['id']
         trainer_name = trainer_data[0]['name']
 
-        # Получаем студентов на тренировку
-        students = await execute_raw_sql(
-            f"""SELECT st.id, st.name 
-            FROM {schema}.student_schedule ss
-            JOIN {schema}.student st ON ss.student = st.id
-            WHERE ss.schedule = $1 AND st.active = true;""",
-            int(schedule_id)
-        )
+        # Проверяем кэш студентов
+        cache_key = f"students:schedule:{schedule_id}"
+        cached_students = None
+        if redis_storage:
+            cached_students = await redis_storage.get_user_data(callback.from_user.id, cache_key)
+
+        if cached_students:
+            students = cached_students
+        else:
+            # Получаем студентов на тренировку
+            students = await execute_raw_sql(
+                f"""SELECT st.id, st.name 
+                FROM {schema}.student_schedule ss
+                JOIN {schema}.student st ON ss.student = st.id
+                WHERE ss.schedule = $1 AND st.active = true;""",
+                int(schedule_id)
+            )
+
+            # Сохраняем в кэш на 1 час
+            if redis_storage and students:
+                await redis_storage.set_user_data(callback.from_user.id, cache_key, students, 3600)
 
         if not students:
             await callback.message.answer("На этой тренировке нет записанных студентов.")
             await state.clear()
             return
 
+        # Получаем текущий выбор студентов из Redis
+        selected_students = {}
+        if redis_storage:
+            selected_students = await redis_storage.get_selected_students(callback.from_user.id)
+
         # Создаем клавиатуру со студентами
         builder = InlineKeyboardBuilder()
         for student in students:
             student_id = str(student['id'])
+            is_selected = student_id in selected_students
             builder.button(
-                text=f"{'☑️' if student_id in selected_students else '⬜️'} {student['name']}",
+                text=f"{'☑️' if is_selected else '⬜️'} {student['name']}",
                 callback_data=f"student:{student_id}"
             )
 
@@ -302,6 +399,10 @@ async def handle_time_selection(callback: CallbackQuery, state: FSMContext):
 async def select_student(callback: CallbackQuery):
     """Обработчик выбора студента"""
     try:
+        if not redis_storage:
+            await callback.answer("Система временно недоступна", show_alert=True)
+            return
+
         _, student_id = callback.data.split(":")
         user_id = callback.from_user.id
 
@@ -346,7 +447,9 @@ async def confirm_attendance(callback: CallbackQuery):
         user_id = callback.from_user.id
 
         # Получаем выбранных студентов из Redis
-        selected_students = await redis_storage.get_selected_students(user_id)
+        selected_students = {}
+        if redis_storage:
+            selected_students = await redis_storage.get_selected_students(user_id)
 
         if not selected_students:
             await callback.answer("Выберите хотя бы одного студента!", show_alert=True)
@@ -428,7 +531,8 @@ async def confirm_attendance(callback: CallbackQuery):
         await callback.message.answer("\n".join(report))
 
         # ОЧИЩАЕМ ВЫБОР ПОСЛЕ ПОДТВЕРЖДЕНИЯ
-        await redis_storage.clear_selected_students(user_id)
+        if redis_storage:
+            await redis_storage.clear_selected_students(user_id)
 
         await callback.message.edit_reply_markup(reply_markup=None)
         await callback.answer()
@@ -447,16 +551,28 @@ async def show_attendance_status(callback: CallbackQuery):
 
         current_date = datetime.now().date()
 
-        # Получаем информацию о тренировке
-        training_info = await execute_raw_sql(
-            f"""SELECT s.time_start, s.time_end, tp.name as place_name, 
-                sp.name as discipline_name
-            FROM {schema}.schedule s
-            JOIN {schema}.training_place tp ON s.training_place = tp.id
-            JOIN {schema}.sport sp ON s.sport_discipline = sp.id
-            WHERE s.id = $1;""",
-            schedule_id
-        )
+        # Проверяем кэш информации о тренировке
+        cache_key = f"training_info:{schedule_id}"
+        cached_training_info = None
+        if redis_storage:
+            cached_training_info = await redis_storage.get_user_data(callback.from_user.id, cache_key)
+
+        if cached_training_info:
+            training_info = cached_training_info
+        else:
+            # Получаем информацию о тренировке
+            training_info = await execute_raw_sql(
+                f"""SELECT s.time_start, s.time_end, tp.name as place_name, 
+                    sp.name as discipline_name
+                FROM {schema}.schedule s
+                JOIN {schema}.training_place tp ON s.training_place = tp.id
+                JOIN {schema}.sport sp ON s.sport_discipline = sp.id
+                WHERE s.id = $1;""",
+                schedule_id
+            )
+
+            if redis_storage and training_info:
+                await redis_storage.set_user_data(callback.from_user.id, cache_key, training_info, 1800)
 
         if not training_info:
             await callback.answer("Информация о тренировке не найдена", show_alert=True)
@@ -562,10 +678,6 @@ async def show_attendance_status(callback: CallbackQuery):
     except Exception as e:
         await callback.answer("Ошибка при получении статуса посещения", show_alert=True)
         print(f"Error in show_attendance_status: {str(e)}")
-
-class TrainingStates(StatesGroup):
-    waiting_for_time = State()
-    waiting_for_extra_student = State()  # Добавляем новое состояние
 
 
 async def record_extra_student_visit(student_name: str, trainer_telegram_id: int,
@@ -675,7 +787,7 @@ async def record_extra_student_visit(student_name: str, trainer_telegram_id: int
                 return {"success": False, "error": "Указанное место тренировки не найдено"}
             place = place_data[0]
 
-        # Определяем спортивную дисциплину
+        # Определяем спортивную дисциплина
         if not discipline_id:
             # Если дисциплина не передана, используем первую доступную
             sport_data = await execute_raw_sql(
@@ -724,6 +836,7 @@ async def record_extra_student_visit(student_name: str, trainer_telegram_id: int
     except Exception as e:
         print(f"Error recording extra student visit: {str(e)}")
         return {"success": False, "error": f"Системная ошибка: {str(e)}"}
+
 
 @user_router.callback_query(F.data.startswith("extra_student:"))
 async def handle_extra_student(callback: CallbackQuery, state: FSMContext):
