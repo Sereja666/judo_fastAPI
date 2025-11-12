@@ -6,6 +6,7 @@ from aiogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, C
 from aiogram.utils.chat_action import ChatActionSender
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 import re
 from create_bot import bot
 from db_handler.db_funk import get_user_permissions, process_payment, execute_raw_sql, get_student_certificates, \
@@ -22,11 +23,12 @@ class PaymentStates(StatesGroup):
 
 # Состояния для медицинских справок
 class MedicalCertificateStates(StatesGroup):
-    waiting_for_action = State()  # Выбор действия (добавить/просмотреть)
-    waiting_for_student_name = State()  # Ввод ФИО для добавления справки
-    waiting_for_certificate_type = State()  # Выбор типа справки
-    waiting_for_certificate_dates = State()  # Ввод дат справки
-    waiting_for_student_for_list = State()  # Ввод ФИО для просмотра справок
+    waiting_for_action = State()
+    waiting_for_student_name = State()
+    waiting_for_certificate_type = State()
+    waiting_for_certificate_dates = State()  # Для справок по болезни
+    waiting_for_certificate_dates_dopusk = State()  # НОВОЕ: для меддопусков
+    waiting_for_student_for_list = State()
 
 
 @admin_router.message(F.text.endswith('Админ панель'))
@@ -334,9 +336,7 @@ async def start_add_certificate(message: Message, state: FSMContext):
         "➕ Добавление медицинской справки\n\n"
         "Введите ФИО ученика:\n\n"
         "Например:\n"
-        "<code>Аносова Кира</code>\n\n"
-        "Или:\n"
-        "<code>Иванов Петр</code>",
+        "<code>Аносова Кира</code>",
         reply_markup=await home_page_kb(message.from_user.id)
     )
     await state.set_state(MedicalCertificateStates.waiting_for_student_name)
@@ -396,7 +396,7 @@ async def process_student_name_for_certificate(message: Message, state: FSMConte
 
         await state.update_data(cert_types=cert_types)
 
-        from aiogram.utils.keyboard import InlineKeyboardBuilder
+
         builder = InlineKeyboardBuilder()
 
         for cert_type in cert_types:
@@ -479,13 +479,12 @@ async def continue_to_dates(callback: CallbackQuery, state: FSMContext):
             "Введите даты действия справки в формате:\n"
             "<b>ДД.ММ.ГГГГ - ДД.ММ.ГГГГ</b>\n\n"
             "Например:\n"
-            "<code>01.12.2024 - 31.12.2024</code>\n\n"
-            "Или:\n"
-            "<code>15.01.2025 - 15.02.2025</code>",
+            "<code>11.12.2025 - 31.12.2026</code>",
             reply_markup=await home_page_kb(callback.from_user.id)
         )
 
-        await state.set_state(MedicalCertificateStates.waiting_for_certificate_dates)
+        # ИЗМЕНЕНИЕ: используем новое состояние для допусков
+        await state.set_state(MedicalCertificateStates.waiting_for_certificate_dates_dopusk)
         await callback.answer()
 
     except Exception as e:
@@ -530,6 +529,45 @@ async def process_certificate_dates(message: Message, state: FSMContext):
         await message.answer(f"❌ Произошла ошибка: {str(e)}")
         await state.clear()
 
+
+# Добавьте новый обработчик для дат допусков:
+@admin_router.message(MedicalCertificateStates.waiting_for_certificate_dates_dopusk)
+async def process_certificate_dates_dopusk(message: Message, state: FSMContext):
+    """Обработка введенных дат справки (допуска)"""
+    try:
+        input_text = message.text.strip()
+        data = await state.get_data()
+
+        result = await parse_and_save_certificate(
+            data['student_id'],
+            data['selected_cert_type_id'],
+            input_text
+        )
+
+        if result["success"]:
+            cert_type_name = await execute_raw_sql(
+                "SELECT name_cert FROM public.medcertificat_type WHERE id = $1;",
+                data['selected_cert_type_id']
+            )
+
+            cert_name = cert_type_name[0]['name_cert'] if cert_type_name else "Неизвестный тип"
+
+            response_text = (
+                f"✅ Медицинская справка успешно добавлена!\n\n"
+                f"👤 Ученик: <b>{data['student_name']}</b>\n"
+                f"🏥 Тип справки: <b>{cert_name}</b>\n"
+                f"📅 Период действия: <b>{result['start_date']} - {result['end_date']}</b>\n"
+                f"🆔 ID записи: <b>{result['record_id']}</b>"
+            )
+        else:
+            response_text = f"❌ Ошибка: {result['error']}"
+
+        await message.answer(response_text)
+        await state.clear()
+
+    except Exception as e:
+        await message.answer(f"❌ Произошла ошибка: {str(e)}")
+        await state.clear()
 
 async def parse_and_save_certificate(student_id: int, cert_type_id: int, input_text: str) -> dict:
     """Парсит даты и сохраняет медицинскую справку (допуск)"""

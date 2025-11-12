@@ -528,7 +528,7 @@ async def show_attendance_status(callback: CallbackQuery):
             birth_year = student['birthday'].year if student['birthday'] else " "
             belt_emoji = get_belt_emoji(student['rang'])
 
-            student_line = f"{belt_emoji}{student['name']} {birth_year}"
+            student_line = f"{belt_emoji} {student['name']} {birth_year}"
 
             if student['status'] == 'present':
                 present_students.append(student_line)
