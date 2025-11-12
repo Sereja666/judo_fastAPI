@@ -26,7 +26,7 @@ def get_current_week_day():
     # Получаем день недели в виде строки
     day_of_week = now.strftime("%A")  # Полное название дня недели
     # day_of_week = now.strftime("%a")  # Сокращенное название дня недели
-    return day_of_week
+    return day_of_week.lower()
 
     # Функция для определения эмодзи по цвету пояса
 
