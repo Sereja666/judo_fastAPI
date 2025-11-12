@@ -10,7 +10,7 @@ from config import settings
 # Импортируем Redis и middleware
 from database.redis.redis_config import get_redis_client
 from database.redis.redis_storage import RedisStorage as CustomRedisStorage
-from middleware import RedisMiddleware, RateLimitMiddleware, LoggingMiddleware
+from database.middleware import RedisMiddleware, RateLimitMiddleware, LoggingMiddleware
 
 # получаем список администраторов из .env
 admins = [int(admin_id) for admin_id in config('ADMINS').split(',')]
