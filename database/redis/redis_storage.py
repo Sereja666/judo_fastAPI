@@ -1,10 +1,9 @@
 import json
-import redis
+import redis.asyncio as redis
 from typing import Dict, Optional
 import logging
 
 logger = logging.getLogger(__name__)
-
 
 class RedisStorage:
     def __init__(self, redis_client: redis.Redis):
@@ -20,7 +19,7 @@ class RedisStorage:
         """Получить выбранных студентов для пользователя"""
         try:
             key = self._get_user_key(user_id)
-            data = self.redis.get(key)
+            data = await self.redis.get(key)
             return json.loads(data) if data else {}
         except Exception as e:
             logger.error(f"Error getting selected students for user {user_id}: {e}")
@@ -30,7 +29,7 @@ class RedisStorage:
         """Сохранить выбранных студентов для пользователя"""
         try:
             key = self._get_user_key(user_id)
-            self.redis.setex(key, ttl, json.dumps(students))
+            await self.redis.setex(key, ttl, json.dumps(students))
         except Exception as e:
             logger.error(f"Error setting selected students for user {user_id}: {e}")
 
@@ -50,7 +49,7 @@ class RedisStorage:
         """Очистить выбор студентов для пользователя"""
         try:
             key = self._get_user_key(user_id)
-            self.redis.delete(key)
+            await self.redis.delete(key)
         except Exception as e:
             logger.error(f"Error clearing selected students for user {user_id}: {e}")
 
@@ -58,7 +57,7 @@ class RedisStorage:
         """Универсальный метод для сохранения данных пользователя"""
         try:
             redis_key = self._get_session_key(user_id, key)
-            self.redis.setex(redis_key, ttl, json.dumps(data))
+            await self.redis.setex(redis_key, ttl, json.dumps(data))
         except Exception as e:
             logger.error(f"Error setting user data for user {user_id}, key {key}: {e}")
 
@@ -66,7 +65,7 @@ class RedisStorage:
         """Универсальный метод для получения данных пользователя"""
         try:
             redis_key = self._get_session_key(user_id, key)
-            data = self.redis.get(redis_key)
+            data = await self.redis.get(redis_key)
             return json.loads(data) if data else None
         except Exception as e:
             logger.error(f"Error getting user data for user {user_id}, key {key}: {e}")
