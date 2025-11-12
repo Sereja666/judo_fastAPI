@@ -47,3 +47,16 @@ alembic upgrade head
 
 python api_Students_shedule.py
 
+## Работа с ботом
+### Остановить бота
+sudo systemctl stop judo-bot.service
+
+### Перезапустить бота
+sudo systemctl restart judo-bot.service
+
+### Посмотреть логи
+sudo journalctl -u judo-bot.service -f
+
+### Посмотреть последние логи
+sudo journalctl -u judo-bot.service --lines=50
+
