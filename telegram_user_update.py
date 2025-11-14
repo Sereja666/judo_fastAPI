@@ -68,10 +68,9 @@ def update_telegram_user_orm(user_data, connection_string):
 
 
 
-data = {'telegram_id': '5255683105',
-        'phone': "+79183249979",
-        'permissions': 99,
-        'telegram_username': "Администратор Ставрапольская"}
+data = {'telegram_id': '350123948',
+
+        'permissions': 0,}
 
 PG_LINK="postgresql+psycopg2://superset:superset@10.10.10.28:5433/superset"
 update_telegram_user_orm(data, PG_LINK)

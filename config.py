@@ -12,18 +12,14 @@ config.read('config.ini', encoding='utf-8')
 
 load_dotenv()
 
-DB_HOST = os.environ.get("DB_HOST")
-DB_PORT = os.environ.get("DB_PORT")
-DB_NAME = os.environ.get("DB_NAME")
-DB_USER = os.environ.get("DB_USER")
-DB_PASS = os.environ.get("DB_PASS")
 SECRET = os.environ.get("SECRET")
+
 PG_LINK = {
-    "user": "superset",
-    "password": "superset",
-    "database": "superset",
-    "host": "10.10.10.28",
-    "port": "5433"
+    "user": config['db']['user'],
+    "password": config['db']['password'],
+    "database": config['db']['dbname'],
+    "host": config['db']['host'],
+    "port": config['db']['port']
 }
 
 class DB(BaseSettings):
@@ -33,8 +29,6 @@ class DB(BaseSettings):
     port: str = config['db']['port']
     db: str = config['db']['dbname']
 
-    # db_url: str = f'postgresql+psycopg2://{user}:{password}@172.19.38.68:5433/superset'
-    # url: str = f'postgresql+psycopg2://{user}:{password}@localhost:5432/superset_judo'
 
     db_url: str = f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{db}"
     db_url_asinc: str = f"postgresql+asyncpg://{user}:{password}@{host}:{port}/{db}"
