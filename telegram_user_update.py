@@ -2,6 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 
+from config import  settings
 from database.schemas import Telegram_user
 
 
@@ -72,5 +73,5 @@ data = {'telegram_id': '350123948',
 
         'permissions': 0,}
 
-PG_LINK="postgresql+psycopg2://superset:superset@10.10.10.28:5433/superset"
-update_telegram_user_orm(data, PG_LINK)
+
+update_telegram_user_orm(data, settings.db.db_url)
