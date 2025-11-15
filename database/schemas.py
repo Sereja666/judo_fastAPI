@@ -187,7 +187,7 @@ class Subscription(Base):
     name = Column(String())
 
 
-# Залы тренировок
+# Соревнования
 class Сompetition(Base):
     """
     Соревнования
@@ -214,13 +214,23 @@ class Сompetition_student(Base):
 
 class Сompetition_trainer(Base):
     """
-    Ответственный тренер
+    Ответственный за соревнование тренер
     """
     __tablename__ = 'competition_trainer'
     __table_args__ = {'schema': schema}
     id = Column(Integer(), primary_key=True, autoincrement=True)
     competition_id = Column(Integer())
     trainer_id = Column(Integer())
+
+class Сompetition_MedCertificat(Base):
+    """
+    Справки для соревнования
+    """
+    __tablename__ = 'competition_medcert'
+    __table_args__ = {'schema': schema}
+    id = Column(Integer(), primary_key=True, autoincrement=True)
+    competition_id = Column(Integer())
+    med_certificat_id = Column(Integer())
 
 class MedCertificat_type(Base):
     """

@@ -71,7 +71,7 @@ def update_telegram_user_orm(user_data, connection_string):
 
 data = {'telegram_id': '350123948',
 
-        'permissions': 0,}
+        'permissions': 99,}
 
 
 update_telegram_user_orm(data, settings.db.db_url)
