@@ -2,8 +2,7 @@
 from math import ceil
 from config import settings
 
-from create_bot import db_manager, logger
-
+from logger_config import logger
 import asyncpg
 
 from database.schemas import schema
@@ -13,12 +12,11 @@ from database.schemas import schema
 async def get_user_data(user_id: int, table_name=f'{schema}.telegram_user'):
     conn = await asyncpg.connect(**settings.db.pg_link)
     try:
-        print(f'пытаюсь получить инфу о {user_id}')
+        logger.info(f'пытаюсь получить инфу о {user_id}')
         row = await conn.fetchrow(
             f"SELECT * FROM {table_name} WHERE telegram_id = $1",
             user_id
         )
-        print(row)
         return dict(row) if row else None
     finally:
         await conn.close()
@@ -43,8 +41,6 @@ async def get_all_users(table_name='student', schema_name=schema, count=False):
     finally:
         await conn.close()
 
-
-#
 
 async def insert_user(user_data: dict, table_name: str = f'{schema}.telegram_user'):
     conn = await asyncpg.connect(**settings.db.pg_link)
@@ -84,7 +80,7 @@ async def get_user_permissions(user_telegram_id: int) -> int:
         else:
             return 0  # Гость по умолчанию
     except Exception as e:
-        print(f"Error getting user permissions: {str(e)}")
+        logger.error(f"Error getting user permissions: {str(e)}")
         return 0  # Гость в случае ошибки
 
 
@@ -99,7 +95,7 @@ async def execute_raw_sql(query: str, *params):
             result = await conn.fetch(query)
         return result
     except Exception as e:
-        print(f"Database error: {str(e)}")
+        logger.error(f"Database error: {str(e)}")
         raise  # Пробрасываем исключение дальше
     finally:
         await conn.close()
@@ -178,7 +174,7 @@ async def save_selection(schedule_id: int, student_ids: list, trainer_id: int, p
                 success_count += 1
             except Exception as e:
                 errors.append(f"Студент {student_id}: {str(e)}")
-                print(f"Ошибка при сохранении для студента {student_id}: {e}")
+                logger.error(f"Ошибка при сохранении для студента {student_id}: {e}")
 
         # Формируем итоговое сообщение
         message_parts = []
@@ -192,7 +188,7 @@ async def save_selection(schedule_id: int, student_ids: list, trainer_id: int, p
         return bool(success_count), "; ".join(message_parts)
 
     except Exception as e:
-        print(f"Ошибка в save_selection: {e}")
+        logger.error(f"Ошибка в save_selection: {e}")
         return False, f"Системная ошибка: {str(e)}"
 
 
@@ -360,7 +356,7 @@ async def process_payment(student_name: str, amount: int) -> dict:
         }
 
     except Exception as e:
-        print(f"Error processing payment: {str(e)}")
+        logger.error(f"Error processing payment: {str(e)}")
         return {"success": False, "error": f"Системная ошибка: {str(e)}"}
 
 

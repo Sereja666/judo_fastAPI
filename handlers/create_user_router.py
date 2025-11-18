@@ -13,10 +13,10 @@ from db_handler.db_funk import get_user_data, insert_user, execute_raw_sql
 from keyboards.kbs import main_kb, home_page_kb, places_kb
 from utils.utils import get_refer_id, get_now_time, get_current_week_day
 from aiogram.utils.chat_action import ChatActionSender
-import logging
+from logger_config import logger
 from datetime import datetime, time
 
-logging.basicConfig(level=logging.ERROR)
+
 
 create_user_router = Router()
 
@@ -85,6 +85,7 @@ async def process_student_data(message: Message, state: FSMContext):
 
         # Сохраняем ID нового ученика в состоянии
         await state.update_data(new_student_id=new_student_id)
+        logger.info(f"Создан новый ученик id-{new_student_id}, имя-{name}, ДР-{birthday_date}, тел.-{phone}")
 
         # Предлагаем скопировать расписание
         await message.answer(
@@ -152,7 +153,7 @@ async def process_schedule_copy(message: Message, state: FSMContext):
 
         await message.answer(
             f"✅ Скопировано {count} занятий от ученика ID {source_student_id}",
-            reply_markup=main_kb(message.from_user.id)
+            reply_markup=await main_kb(message.from_user.id)
         )
 
     except Exception as e:

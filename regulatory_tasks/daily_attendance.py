@@ -37,6 +37,7 @@ import sys
 import os
 from datetime import datetime, timedelta
 from math import ceil
+from logger_config import logger
 
 # Добавляем путь к проекту в PYTHONPATH
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -48,7 +49,7 @@ try:
     import logging
     from config import settings
 except ImportError as e:
-    print(f"❌ Ошибка импорта: {e}")
+    logger.error(f"❌ Ошибка импорта: {e}")
     sys.exit(1)
 
 # Настройка логирования

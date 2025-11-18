@@ -1,5 +1,5 @@
 import asyncio
-from create_bot import bot, dp, admins
+from create_bot import bot, dp
 from database.database_module import setup_db
 from database.middleware import DBSessionMiddleware
 from db_handler.db_funk import get_all_users
@@ -7,10 +7,9 @@ from handlers.admin_panel import admin_router
 from handlers.create_user_router import create_user_router
 from handlers.user_router import user_router
 from aiogram.types import BotCommand, BotCommandScopeDefault
-import logging
+from logger_config import logger
 
 
-logging.basicConfig(level=logging.ERROR)
 
 
 # Функция, которая настроит командное меню (дефолтное для всех пользователей)
@@ -23,6 +22,7 @@ async def set_commands():
 # Функция, которая выполнится когда бот запустится
 async def start_bot():
     await set_commands()
+    logger.success(f"Бот запущен")
     # count_users = await get_all_users(count=True)
     # try:
     #     for admin_id in admins:
@@ -33,7 +33,7 @@ async def start_bot():
 
 # Функция, которая выполнится когда бот завершит свою работу
 async def stop_bot():
-    pass
+    logger.success(f"Бот остановлен")
     # try:
     #     for admin_id in admins:
     #         await bot.send_message(admin_id, 'Бот остановлен!')

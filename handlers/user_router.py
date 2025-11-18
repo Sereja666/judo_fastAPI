@@ -18,10 +18,8 @@ from db_handler.db_funk import get_user_data, insert_user, execute_raw_sql
 from keyboards.kbs import main_kb, home_page_kb, places_kb
 from utils.utils import get_refer_id, get_now_time, get_current_week_day, get_belt_emoji
 from aiogram.utils.chat_action import ChatActionSender
-import logging
+from logger_config import logger
 from datetime import datetime, time
-
-logging.basicConfig(level=logging.ERROR)
 
 user_router = Router()
 
@@ -29,9 +27,6 @@ user_router = Router()
 redis_storage = get_redis_storage()
 
 universe_text = ('https://superset.srm-1legion.ru/ - наша админка')
-
-
-
 
 
 @user_router.message(CommandStart())
@@ -389,6 +384,7 @@ async def handle_time_selection(callback: CallbackQuery, state: FSMContext):
         print(f"Error in handle_time_selection: {str(e)}")
         await state.clear()
 
+
 @user_router.callback_query(F.data.startswith("student:"))
 async def select_student(callback: CallbackQuery):
     """Обработчик выбора студента"""
@@ -432,7 +428,7 @@ async def select_student(callback: CallbackQuery):
 
     except Exception as e:
         await callback.answer("Ошибка при выборе", show_alert=True)
-        print(f"Error in select_student: {str(e)}")
+        logger.error(f"Error in select_student: {str(e)}")
 
 
 @user_router.callback_query(F.data.startswith("confirm:"))
@@ -760,6 +756,7 @@ async def record_extra_student_visit(student_name: str, trainer_telegram_id: int
                 f"UPDATE public.student SET classes_remaining = $1 WHERE id = $2;",
                 new_balance, student_id
             )
+            logger.info(f'Списние заниятия  у {student['name']} за приход вне расписания')
 
         # Определяем место тренировки
         if not place_id:
@@ -813,7 +810,17 @@ async def record_extra_student_visit(student_name: str, trainer_telegram_id: int
 
         if not visit_result:
             return {"success": False, "error": "Ошибка при записи посещения"}
-
+        logger.info(
+            f'Посещение записано для {student['name']}'
+            f' {place['name']},'
+            f' {current_date.strftime('%d.%m.%Y')},'
+            f' {current_time.strftime('%H:%M')},'
+            f' {class_deducted},'
+            f' {new_balance},'
+            f' {trainer['name']}'
+            f'{sport_name}'
+            f'{schedule_id}'
+            f'')
         return {
             "success": True,
             "student_name": student['name'],
@@ -861,7 +868,7 @@ async def handle_extra_student(callback: CallbackQuery, state: FSMContext):
 
     except Exception as e:
         await callback.answer("Ошибка при обработке запроса", show_alert=True)
-        print(f"Error in handle_extra_student: {str(e)}")
+        logger.error(f"Error in handle_extra_student: {str(e)}")
 
 
 @user_router.message(TrainingStates.waiting_for_extra_student)
@@ -903,4 +910,5 @@ async def process_extra_student_name(message: Message, state: FSMContext):
 
     except Exception as e:
         await message.answer(f"❌ Произошла ошибка: {str(e)}")
+        logger.error(f"❌ Произошла ошибка: {str(e)}")
         await state.clear()

@@ -12,6 +12,7 @@ from create_bot import bot
 from db_handler.db_funk import get_user_permissions, process_payment, execute_raw_sql, get_student_certificates, \
     get_all_certificates
 from keyboards.kbs import home_page_kb, admin_page_kb, medical_certificate_kb
+from logger_config import logger
 
 admin_router = Router()
 
@@ -461,7 +462,7 @@ async def select_certificate_type(callback: CallbackQuery, state: FSMContext):
     except Exception as e:
         await callback.answer("❌ Ошибка при выборе типа справки", show_alert=True)
 
-
+#    """Переход к вводу дат справки"""
 @admin_router.callback_query(MedicalCertificateStates.waiting_for_certificate_type, F.data == "cert_continue")
 async def continue_to_dates(callback: CallbackQuery, state: FSMContext):
     """Переход к вводу дат справки"""
@@ -530,7 +531,7 @@ async def process_certificate_dates(message: Message, state: FSMContext):
         await state.clear()
 
 
-# Добавьте новый обработчик для дат допусков:
+
 @admin_router.message(MedicalCertificateStates.waiting_for_certificate_dates_dopusk)
 async def process_certificate_dates_dopusk(message: Message, state: FSMContext):
     """Обработка введенных дат справки (допуска)"""
@@ -898,5 +899,5 @@ async def record_extra_student_visit(student_name: str, trainer_telegram_id: int
         }
 
     except Exception as e:
-        print(f"Error recording extra student visit: {str(e)}")
+        logger.error(f"Ошибка записи ученика на дополнительное занятие: {str(e)}")
         return {"success": False, "error": f"Системная ошибка: {str(e)}"}
