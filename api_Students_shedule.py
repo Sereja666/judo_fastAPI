@@ -868,6 +868,8 @@ async def competitions_page(request: Request, db: Session = Depends(get_db)):
 async def get_events(year: int, month: int, db: Session = Depends(get_db)):
     """Получение мероприятий для конкретного месяца"""
     try:
+        print(f"🔹 Получение мероприятий за {year}-{month}")
+
         # Получаем мероприятия за указанный месяц
         start_date = datetime(year, month, 1)
         if month == 12:
@@ -875,6 +877,9 @@ async def get_events(year: int, month: int, db: Session = Depends(get_db)):
         else:
             end_date = datetime(year, month + 1, 1)
 
+        print(f"🔹 Поиск мероприятий с {start_date} по {end_date}")
+
+        # Используем правильное название класса - Сompetition (с русской С)
         competitions = db.query(Сompetition).filter(
             and_(
                 Сompetition.date >= start_date,
@@ -882,19 +887,23 @@ async def get_events(year: int, month: int, db: Session = Depends(get_db)):
             )
         ).all()
 
+        print(f"🔹 Найдено {len(competitions)} мероприятий")
+
         events = []
         for comp in competitions:
             events.append({
                 "id": comp.id,
                 "name": comp.name,
-                "date": comp.date.isoformat(),
+                "date": comp.date.isoformat() if comp.date else None,
                 "address": comp.address or ""
             })
 
         return JSONResponse(events)
 
     except Exception as e:
-        print(f"Error in get_events: {str(e)}")
+        print(f"❌ Ошибка в get_events: {str(e)}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Ошибка получения мероприятий: {str(e)}")
 
 
@@ -902,27 +911,42 @@ async def get_events(year: int, month: int, db: Session = Depends(get_db)):
 async def get_day_events(date: str, db: Session = Depends(get_db)):
     """Получение мероприятий на конкретную дату"""
     try:
+        print(f"🔹 Получение мероприятий на дату: {date}")
+
         selected_date = datetime.fromisoformat(date).date()
+        next_day = selected_date + timedelta(days=1)
+
+        print(f"🔹 Поиск мероприятий с {selected_date} по {next_day}")
 
         competitions = db.query(Сompetition).filter(
-            Сompetition.date >= selected_date,
-            Сompetition.date < selected_date + timedelta(days=1)
+            and_(
+                Сompetition.date >= selected_date,
+                Сompetition.date < next_day
+            )
         ).all()
+
+        print(f"🔹 Найдено {len(competitions)} мероприятий на эту дату")
 
         events = []
         for comp in competitions:
+            event_time = ""
+            if comp.date:
+                event_time = comp.date.strftime("%H:%M")
+
             events.append({
                 "id": comp.id,
                 "name": comp.name,
-                "date": comp.date.isoformat(),
+                "date": comp.date.isoformat() if comp.date else None,
                 "address": comp.address or "",
-                "time": comp.date.strftime("%H:%M") if comp.date else ""
+                "time": event_time
             })
 
         return JSONResponse(events)
 
     except Exception as e:
-        print(f"Error in get_day_events: {str(e)}")
+        print(f"❌ Ошибка в get_day_events: {str(e)}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Ошибка получения мероприятий: {str(e)}")
 
 

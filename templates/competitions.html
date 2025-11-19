@@ -140,30 +140,43 @@
         updateMonthDisplay();
     }
 
-    function loadEventsForMonth(year, month) {
-        $.get(`/competitions/get-events?year=${year}&month=${month}`, function(events) {
-            // Сбрасываем хранилище мероприятий
-            eventsByDate = {};
-            
-            // Группируем мероприятия по датам
-            events.forEach(event => {
+   function loadEventsForMonth(year, month) {
+    console.log(`🔄 Загрузка мероприятий за ${year}-${month}`);
+
+    $.get(`/competitions/get-events?year=${year}&month=${month}`, function(events) {
+        console.log(`✅ Загружено ${events.length} мероприятий`, events);
+
+        // Сбрасываем хранилище мероприятий
+        eventsByDate = {};
+
+        // Группируем мероприятия по датам
+        events.forEach(event => {
+            if (event.date) {
                 const eventDate = new Date(event.date);
                 const dateString = eventDate.toISOString().split('T')[0];
-                
+
                 if (!eventsByDate[dateString]) {
                     eventsByDate[dateString] = [];
                 }
                 eventsByDate[dateString].push(event);
-            });
-            
-            // Перерисовываем календарь с мероприятиями
-            generateCalendar(currentYear, currentMonth);
-            
-        }).fail(function() {
-            console.error('Ошибка загрузки мероприятий');
-            showMessage('Ошибка загрузки мероприятий', 'danger');
+            }
         });
-    }
+
+        console.log('📅 Сгруппированные мероприятия:', eventsByDate);
+
+        // Перерисовываем календарь с мероприятиями
+        generateCalendar(currentYear, currentMonth);
+
+    }).fail(function(xhr, status, error) {
+        console.error('❌ Ошибка загрузки мероприятий:', error);
+        console.log('Детали ошибки:', xhr.responseText);
+        showMessage('Ошибка загрузки мероприятий: ' + error, 'danger');
+
+        // Все равно перерисовываем календарь, но без мероприятий
+        eventsByDate = {};
+        generateCalendar(currentYear, currentMonth);
+    });
+}
 
     // Обработчик клика по дню
     $(document).on('click', '.btn-day', function() {
