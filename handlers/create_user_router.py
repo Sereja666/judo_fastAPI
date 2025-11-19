@@ -165,4 +165,4 @@ async def process_schedule_copy(message: Message, state: FSMContext):
 
 @create_user_router.message(F.text == "Отмена")
 async def cancel_handler(message: Message):
-    await message.answer("Действие отменено", reply_markup=main_kb(message.from_user.id))
+    await message.answer("Действие отменено", reply_markup=await main_kb(message.from_user.id))

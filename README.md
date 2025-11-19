@@ -37,8 +37,11 @@ pip install -r requirements.txt
 ```
 
 ## Гит
-для гит
-git pull
+
+git pull<br>
+<br>
+git reset --hard HEAD <br>
+git pull origin master<br>
 
 ## Алембик
 alembic revision --autogenerate -m "добавил таблицы со  справками по болезни"
