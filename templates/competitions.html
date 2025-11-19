@@ -1,3 +1,77 @@
+<!-- templates/competitions.html -->
+{% extends "base.html" %}
+
+{% block title %}Календарь мероприятий{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Календарь мероприятий</h1>
+    <div>
+        <button class="btn btn-outline-secondary" onclick="previousMonth()">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        <span id="currentMonth" class="mx-3 fw-bold fs-5"></span>
+        <button class="btn btn-outline-secondary" onclick="nextMonth()">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-calendar-alt me-2"></i>
+            Календарь соревнований и мероприятий
+        </h5>
+    </div>
+    <div class="card-body">
+        <!-- Дни недели -->
+        <div class="row weekdays-row mb-2">
+            <div class="col day-header text-center">Пн</div>
+            <div class="col day-header text-center">Вт</div>
+            <div class="col day-header text-center">Ср</div>
+            <div class="col day-header text-center">Чт</div>
+            <div class="col day-header text-center">Пт</div>
+            <div class="col day-header text-center">Сб</div>
+            <div class="col day-header text-center">Вс</div>
+        </div>
+
+        <!-- Контейнер для календаря -->
+        <div id="calendar" class="calendar-grid">
+            <!-- Календарь будет генерироваться JavaScript -->
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для мероприятий дня -->
+<div class="modal fade" id="dayModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="dayModalTitle">Мероприятия</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="dayEventsList">
+                    <!-- Список мероприятий будет здесь -->
+                </div>
+                <div id="noEvents" class="text-center py-4">
+                    <p class="text-muted">На этот день нет мероприятий</p>
+                    <button class="btn btn-primary" onclick="createCompetition()">
+                        <i class="fas fa-plus"></i> Создать мероприятие
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="message" class="mt-3"></div>
+{% endblock %}
+
 {% block scripts %}
 <script>
     let currentDate = new Date();
@@ -140,43 +214,43 @@
         updateMonthDisplay();
     }
 
-   function loadEventsForMonth(year, month) {
-    console.log(`🔄 Загрузка мероприятий за ${year}-${month}`);
-
-    $.get(`/competitions/get-events?year=${year}&month=${month}`, function(events) {
-        console.log(`✅ Загружено ${events.length} мероприятий`, events);
-
-        // Сбрасываем хранилище мероприятий
-        eventsByDate = {};
-
-        // Группируем мероприятия по датам
-        events.forEach(event => {
-            if (event.date) {
-                const eventDate = new Date(event.date);
-                const dateString = eventDate.toISOString().split('T')[0];
-
-                if (!eventsByDate[dateString]) {
-                    eventsByDate[dateString] = [];
+    function loadEventsForMonth(year, month) {
+        console.log(`🔄 Загрузка мероприятий за ${year}-${month}`);
+        
+        $.get(`/competitions/get-events?year=${year}&month=${month}`, function(events) {
+            console.log(`✅ Загружено ${events.length} мероприятий`, events);
+            
+            // Сбрасываем хранилище мероприятий
+            eventsByDate = {};
+            
+            // Группируем мероприятия по датам
+            events.forEach(event => {
+                if (event.date) {
+                    const eventDate = new Date(event.date);
+                    const dateString = eventDate.toISOString().split('T')[0];
+                    
+                    if (!eventsByDate[dateString]) {
+                        eventsByDate[dateString] = [];
+                    }
+                    eventsByDate[dateString].push(event);
                 }
-                eventsByDate[dateString].push(event);
-            }
+            });
+            
+            console.log('📅 Сгруппированные мероприятия:', eventsByDate);
+            
+            // Перерисовываем календарь с мероприятиями
+            generateCalendar(currentYear, currentMonth);
+            
+        }).fail(function(xhr, status, error) {
+            console.error('❌ Ошибка загрузки мероприятий:', error);
+            console.log('Детали ошибки:', xhr.responseText);
+            showMessage('Ошибка загрузки мероприятий: ' + error, 'danger');
+            
+            // Все равно перерисовываем календарь, но без мероприятий
+            eventsByDate = {};
+            generateCalendar(currentYear, currentMonth);
         });
-
-        console.log('📅 Сгруппированные мероприятия:', eventsByDate);
-
-        // Перерисовываем календарь с мероприятиями
-        generateCalendar(currentYear, currentMonth);
-
-    }).fail(function(xhr, status, error) {
-        console.error('❌ Ошибка загрузки мероприятий:', error);
-        console.log('Детали ошибки:', xhr.responseText);
-        showMessage('Ошибка загрузки мероприятий: ' + error, 'danger');
-
-        // Все равно перерисовываем календарь, но без мероприятий
-        eventsByDate = {};
-        generateCalendar(currentYear, currentMonth);
-    });
-}
+    }
 
     // Обработчик клика по дню
     $(document).on('click', '.btn-day', function() {
@@ -223,8 +297,8 @@
             }
             
             $('#dayModal').modal('show');
-        }).fail(function() {
-            $('#dayEventsList').html('<div class="alert alert-danger">Ошибка загрузки мероприятий</div>');
+        }).fail(function(xhr, status, error) {
+            $('#dayEventsList').html('<div class="alert alert-danger">Ошибка загрузки мероприятий: ' + error + '</div>');
             $('#noEvents').show();
             $('#dayModal').modal('show');
         });
@@ -390,3 +464,4 @@
     }
 }
 </style>
+{% endblock %}
