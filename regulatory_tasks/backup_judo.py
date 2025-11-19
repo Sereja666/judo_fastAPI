@@ -1,8 +1,12 @@
+import sys
 import os
 import subprocess
 import datetime
 import shutil
-from config import PG_LINK
+
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, project_root)
+from config import settings
 
 
 def create_docker_superset_backup():
@@ -12,8 +16,14 @@ def create_docker_superset_backup():
 
     # Конфигурация
     DOCKER_CONTAINER = "big_db"  # Имя контейнера
-
-
+    DB_CONFIG = {
+        "host": settings.db.host,  # Внутри контейнера
+        "port": '5432',
+        "dbname": settings.db.db,
+        "user": settings.db.db,
+        "password": settings.db.password
+    }
+    print(DB_CONFIG)
     BACKUP_PATH = r"/mnt/backup_judo"
 
     # Проверяем сетевую папку
@@ -33,16 +43,16 @@ def create_docker_superset_backup():
         cmd = [
             "docker", "exec", DOCKER_CONTAINER,
             "pg_dump",
-            "-h", PG_LINK["host"],
-            "-p", PG_LINK["port"],
-            "-U", PG_LINK["user"],
-            "-d", PG_LINK["dbname"],
+            "-h", DB_CONFIG["host"],
+            "-p", DB_CONFIG["port"],
+            "-U", DB_CONFIG["user"],
+            "-d", DB_CONFIG["dbname"],
             "-w"
         ]
 
         # Устанавливаем пароль
         env = os.environ.copy()
-        env['PGPASSWORD'] = PG_LINK['password']
+        env['PGPASSWORD'] = DB_CONFIG['password']
 
         # Выполняем и сохраняем в файл
         with open(backup_filepath, 'w') as f:
