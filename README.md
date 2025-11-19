@@ -60,3 +60,6 @@ sudo journalctl -u judo-bot.service -f
 ### Посмотреть последние логи
 sudo journalctl -u judo-bot.service --lines=50
 
+
+## Ручной бэкап
+ /app/judo_fastAPI/venv/bin/python /app/judo_fastAPI/database/backup_sql.py
