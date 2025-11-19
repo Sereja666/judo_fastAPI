@@ -13,8 +13,7 @@ from database.redis.redis_config import get_redis_client
 from database.redis.redis_storage import RedisStorage as CustomRedisStorage
 from database.middleware import LoggingMiddleware
 
-# получаем список администраторов из .env
-# admins = [int(admin_id) for admin_id in config('ADMINS').split(',')]
+
 
 db_manager = DatabaseManager(db_url=settings.db.db_url, deletion_password=config('ROOT_PASS'))
 bot = Bot(token=config('TOKEN'), default=DefaultBotProperties(parse_mode=ParseMode.HTML))

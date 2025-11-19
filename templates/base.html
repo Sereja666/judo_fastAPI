@@ -380,12 +380,7 @@
                             Superset
                         </a>
                     </li>
-                    <li class="nav-item">                    
-                        <a class="nav-link" href="http://10.10.10.28:8088/">
-                            <i class="fas fa-chart-line"></i>
-                            (!)Superset
-                        </a>     
-                    </li>
+
                     <li class="nav-item">
                         <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="/">
                             <i class="fas fa-calendar-alt"></i>
@@ -410,6 +405,15 @@
                             Посещения
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/competitions/' %}active{% endif %}" href="/competitions/">
+                            <i class="fas fa-trophy"></i>
+                            Мероприятия
+                        </a>
+                    </li>
+
+
+
                 </ul>
             </div>
         </div>

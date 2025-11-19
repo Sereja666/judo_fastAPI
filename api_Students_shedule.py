@@ -7,11 +7,11 @@ from sqlalchemy.orm import sessionmaker, Session
 from typing import List, Optional
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from database.middleware import SupersetAuthMiddleware
 from config import settings
 from database.schemas import Students, Sport, Schedule, Students_schedule, Trainers, Prices, engine, Visits, \
-    Training_place
+    Training_place, Сompetition
 
 # Создаем сессию базы данных
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -608,9 +608,6 @@ async def logout():
     return response
 
 
-# Добавьте эти endpoints в существующий файл api_Students_shedule.py
-
-# ===== УПРАВЛЕНИЕ ПОСЕЩЕНИЯМИ =====
 # ===== УПРАВЛЕНИЕ ПОСЕЩЕНИЯМИ =====
 
 @app.get("/visits/", response_class=HTMLResponse)
@@ -857,7 +854,76 @@ async def save_visits(
         raise HTTPException(status_code=500, detail=f"Ошибка сохранения посещений: {str(e)}")
 
 
+# ===== КАЛЕНДАРЬ МЕРОПРИЯТИЙ =====
 
+@app.get("/competitions/", response_class=HTMLResponse)
+async def competitions_page(request: Request, db: Session = Depends(get_db)):
+    """Главная страница календаря мероприятий"""
+    return templates.TemplateResponse("competitions.html", {
+        "request": request
+    })
+
+
+@app.get("/competitions/get-events")
+async def get_events(year: int, month: int, db: Session = Depends(get_db)):
+    """Получение мероприятий для конкретного месяца"""
+    try:
+        # Получаем мероприятия за указанный месяц
+        start_date = datetime(year, month, 1)
+        if month == 12:
+            end_date = datetime(year + 1, 1, 1)
+        else:
+            end_date = datetime(year, month + 1, 1)
+
+        competitions = db.query(Сompetition).filter(
+            and_(
+                Сompetition.date >= start_date,
+                Сompetition.date < end_date
+            )
+        ).all()
+
+        events = []
+        for comp in competitions:
+            events.append({
+                "id": comp.id,
+                "name": comp.name,
+                "date": comp.date.isoformat(),
+                "address": comp.address or ""
+            })
+
+        return JSONResponse(events)
+
+    except Exception as e:
+        print(f"Error in get_events: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Ошибка получения мероприятий: {str(e)}")
+
+
+@app.get("/competitions/get-day-events")
+async def get_day_events(date: str, db: Session = Depends(get_db)):
+    """Получение мероприятий на конкретную дату"""
+    try:
+        selected_date = datetime.fromisoformat(date).date()
+
+        competitions = db.query(Сompetition).filter(
+            Сompetition.date >= selected_date,
+            Сompetition.date < selected_date + timedelta(days=1)
+        ).all()
+
+        events = []
+        for comp in competitions:
+            events.append({
+                "id": comp.id,
+                "name": comp.name,
+                "date": comp.date.isoformat(),
+                "address": comp.address or "",
+                "time": comp.date.strftime("%H:%M") if comp.date else ""
+            })
+
+        return JSONResponse(events)
+
+    except Exception as e:
+        print(f"Error in get_day_events: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Ошибка получения мероприятий: {str(e)}")
 
 
 
