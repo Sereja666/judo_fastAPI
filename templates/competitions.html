@@ -1,82 +1,9 @@
-<!-- templates/competitions.html -->
-{% extends "base.html" %}
-
-{% block title %}Календарь мероприятий{% endblock %}
-
-{% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1>Календарь мероприятий</h1>
-    <div>
-        <button class="btn btn-outline-secondary" onclick="previousMonth()">
-            <i class="fas fa-chevron-left"></i>
-        </button>
-        <span id="currentMonth" class="mx-3 fw-bold fs-5"></span>
-        <button class="btn btn-outline-secondary" onclick="nextMonth()">
-            <i class="fas fa-chevron-right"></i>
-        </button>
-    </div>
-</div>
-
-<div class="card">
-    <div class="card-header">
-        <h5 class="mb-0">
-            <i class="fas fa-calendar-alt me-2"></i>
-            Календарь соревнований и мероприятий
-        </h5>
-    </div>
-    <div class="card-body">
-        <!-- Дни недели -->
-        <div class="row weekdays-row mb-2">
-            <div class="col day-header text-center">Пн</div>
-            <div class="col day-header text-center">Вт</div>
-            <div class="col day-header text-center">Ср</div>
-            <div class="col day-header text-center">Чт</div>
-            <div class="col day-header text-center">Пт</div>
-            <div class="col day-header text-center">Сб</div>
-            <div class="col day-header text-center">Вс</div>
-        </div>
-
-        <!-- Контейнер для календаря -->
-        <div id="calendar" class="calendar-grid">
-            <!-- Календарь будет генерироваться JavaScript -->
-        </div>
-    </div>
-</div>
-
-<!-- Модальное окно для мероприятий дня -->
-<div class="modal fade" id="dayModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="dayModalTitle">Мероприятия</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div id="dayEventsList">
-                    <!-- Список мероприятий будет здесь -->
-                </div>
-                <div id="noEvents" class="text-center py-4">
-                    <p class="text-muted">На этот день нет мероприятий</p>
-                    <button class="btn btn-primary" onclick="createCompetition()">
-                        <i class="fas fa-plus"></i> Создать мероприятие
-                    </button>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div id="message" class="mt-3"></div>
-{% endblock %}
-
 {% block scripts %}
 <script>
     let currentDate = new Date();
     let currentYear = currentDate.getFullYear();
     let currentMonth = currentDate.getMonth();
+    let eventsByDate = {}; // Храним мероприятия по датам
 
     $(document).ready(function() {
         generateCalendar(currentYear, currentMonth);
@@ -91,7 +18,7 @@
         const firstDay = new Date(year, month, 1);
         // Последний день месяца
         const lastDay = new Date(year, month + 1, 0);
-
+        
         // День недели первого дня (0 - воскресенье, 1 - понедельник и т.д.)
         let firstDayOfWeek = firstDay.getDay();
         // Преобразуем к нашему формату (понедельник - 0)
@@ -101,17 +28,17 @@
         const daysInMonth = lastDay.getDate();
 
         let date = 1;
-
+        
         // Создаем недели
         for (let i = 0; i < 6; i++) {
             if (date > daysInMonth) break;
-
+            
             const weekRow = $('<div class="row week-row mb-2"></div>');
-
+            
             // Дни недели
             for (let j = 0; j < 7; j++) {
                 const dayCell = $('<div class="col day-cell text-center p-2"></div>');
-
+                
                 if (i === 0 && j < firstDayOfWeek) {
                     // Пустые ячейки перед первым днем месяца
                     dayCell.html('&nbsp;');
@@ -120,32 +47,63 @@
                     dayCell.html('&nbsp;');
                 } else {
                     const currentDay = new Date(year, month, date);
+                    const dateString = currentDay.toISOString().split('T')[0];
                     const isToday = isSameDay(currentDay, new Date());
-
+                    const dayEvents = eventsByDate[dateString] || [];
+                    const hasEvents = dayEvents.length > 0;
+                    
                     let dayClass = 'day-number';
                     if (isToday) {
                         dayClass += ' today';
                     }
-
+                    if (hasEvents) {
+                        dayClass += ' has-events';
+                    }
+                    
+                    // Создаем содержимое дня
+                    let dayContent = `
+                        <div class="day-number">${date}</div>
+                    `;
+                    
+                    // Добавляем мероприятия если они есть
+                    if (hasEvents) {
+                        // Берем только первое мероприятие для отображения в календаре
+                        const firstEvent = dayEvents[0];
+                        dayContent += `
+                            <div class="events-indicator">
+                                <i class="fas fa-trophy me-1"></i>
+                            </div>
+                            <div class="event-preview" title="${firstEvent.name}">
+                                ${truncateText(firstEvent.name, 15)}
+                            </div>
+                        `;
+                    } else {
+                        dayContent += '<div class="events-indicator"></div>';
+                    }
+                    
                     const dayButton = $(`
-                        <button class="btn btn-day ${dayClass}" data-date="${currentDay.toISOString().split('T')[0]}">
-                            <div class="day-number">${date}</div>
-                            <div class="events-indicator"></div>
+                        <button class="btn btn-day ${dayClass}" data-date="${dateString}">
+                            ${dayContent}
                         </button>
                     `);
-
+                    
                     dayCell.append(dayButton);
                     date++;
                 }
-
+                
                 weekRow.append(dayCell);
             }
-
+            
             calendar.append(weekRow);
         }
 
         // Загружаем мероприятия для этого месяца
         loadEventsForMonth(year, month + 1);
+    }
+
+    function truncateText(text, maxLength) {
+        if (text.length <= maxLength) return text;
+        return text.substring(0, maxLength) + '...';
     }
 
     function isSameDay(date1, date2) {
@@ -184,21 +142,26 @@
 
     function loadEventsForMonth(year, month) {
         $.get(`/competitions/get-events?year=${year}&month=${month}`, function(events) {
-            // Обрабатываем мероприятия и отмечаем дни
+            // Сбрасываем хранилище мероприятий
+            eventsByDate = {};
+            
+            // Группируем мероприятия по датам
             events.forEach(event => {
                 const eventDate = new Date(event.date);
                 const dateString = eventDate.toISOString().split('T')[0];
-
-                // Находим кнопку дня и добавляем индикатор мероприятия
-                const dayButton = $(`button[data-date="${dateString}"]`);
-                if (dayButton.length) {
-                    dayButton.addClass('has-events');
-                    const indicator = dayButton.find('.events-indicator');
-                    indicator.html('<i class="fas fa-trophy"></i>');
+                
+                if (!eventsByDate[dateString]) {
+                    eventsByDate[dateString] = [];
                 }
+                eventsByDate[dateString].push(event);
             });
+            
+            // Перерисовываем календарь с мероприятиями
+            generateCalendar(currentYear, currentMonth);
+            
         }).fail(function() {
             console.error('Ошибка загрузки мероприятий');
+            showMessage('Ошибка загрузки мероприятий', 'danger');
         });
     }
 
@@ -212,38 +175,40 @@
         const modalDate = new Date(date);
         const options = { day: 'numeric', month: 'long', year: 'numeric' };
         const formattedDate = modalDate.toLocaleDateString('ru-RU', options);
-
+        
         $('#dayModalTitle').text(`Мероприятия на ${formattedDate}`);
-
+        
         // Показываем загрузку
         $('#dayEventsList').html('<div class="text-center"><div class="spinner-border"></div></div>');
         $('#noEvents').hide();
-
+        
         // Загружаем мероприятия дня
         $.get(`/competitions/get-day-events?date=${date}`, function(events) {
             $('#dayEventsList').empty();
-
+            
             if (events.length > 0) {
                 events.forEach(event => {
                     const eventTime = event.time ? ` в ${event.time}` : '';
                     const eventElement = $(`
                         <div class="event-item mb-3 p-3 border rounded">
-                            <h6 class="mb-2">${event.name}</h6>
+                            <h6 class="mb-2 text-primary">${event.name}</h6>
                             <p class="mb-1 text-muted small">${formattedDate}${eventTime}</p>
-                            ${event.address ? `<p class="mb-2 small"><i class="fas fa-map-marker-alt"></i> ${event.address}</p>` : ''}
+                            ${event.address ? `<p class="mb-2 small"><i class="fas fa-map-marker-alt me-1"></i> ${event.address}</p>` : ''}
                             <button class="btn btn-sm btn-outline-primary" onclick="editCompetition(${event.id})">
-                                <i class="fas fa-edit"></i> Редактировать
+                                <i class="fas fa-edit me-1"></i> Редактировать
                             </button>
                         </div>
                     `);
                     $('#dayEventsList').append(eventElement);
                 });
                 $('#noEvents').hide();
+                $('#dayEventsList').show();
             } else {
                 $('#dayEventsList').empty();
                 $('#noEvents').show();
+                $('#dayEventsList').hide();
             }
-
+            
             $('#dayModal').modal('show');
         }).fail(function() {
             $('#dayEventsList').html('<div class="alert alert-danger">Ошибка загрузки мероприятий</div>');
@@ -254,13 +219,14 @@
 
     function createCompetition() {
         // Заглушка для создания мероприятия
-        alert('Функция создания мероприятия будет реализована позже');
+        const date = $('#dayModal').data('currentDate');
+        alert(`Создание мероприятия на дату: ${date}\n\nФункция будет реализована позже`);
         $('#dayModal').modal('hide');
     }
 
     function editCompetition(competitionId) {
         // Заглушка для редактирования мероприятия
-        alert(`Функция редактирования мероприятия (ID: ${competitionId}) будет реализована позже`);
+        alert(`Редактирование мероприятия ID: ${competitionId}\n\nФункция будет реализована позже`);
         $('#dayModal').modal('hide');
     }
 
@@ -281,7 +247,7 @@
 }
 
 .weekdays-row, .week-row {
-    min-height: 60px;
+    min-height: 80px;
 }
 
 .day-header {
@@ -294,7 +260,7 @@
 }
 
 .day-cell {
-    min-height: 80px;
+    min-height: 100px;
 }
 
 .btn-day {
@@ -309,6 +275,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
+    font-size: 0.85rem;
 }
 
 .btn-day:hover {
@@ -337,31 +304,76 @@
     font-size: 0.8rem;
     color: var(--superset-success);
     min-height: 1rem;
+    margin-bottom: 0.25rem;
+}
+
+.event-preview {
+    font-size: 0.75rem;
+    color: var(--superset-dark);
+    font-weight: 500;
+    line-height: 1.2;
+    max-height: 2.4rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
 }
 
 .event-item {
     background: var(--superset-light);
     border-left: 4px solid var(--superset-primary) !important;
+    transition: all 0.3s ease;
+}
+
+.event-item:hover {
+    background: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .event-item h6 {
-    color: var(--superset-dark);
+    color: var(--superset-primary);
     margin: 0;
+    font-weight: 600;
 }
 
 /* Адаптивность */
 @media (max-width: 768px) {
     .day-cell {
-        min-height: 60px;
+        min-height: 80px;
     }
-
+    
     .day-number {
         font-size: 0.9rem;
     }
-
+    
     .events-indicator {
         font-size: 0.7rem;
     }
+    
+    .event-preview {
+        font-size: 0.7rem;
+        -webkit-line-clamp: 1;
+        max-height: 1.2rem;
+    }
+    
+    .btn-day {
+        padding: 0.25rem;
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .weekdays-row, .week-row {
+        min-height: 60px;
+    }
+    
+    .day-cell {
+        min-height: 70px;
+    }
+    
+    .event-preview {
+        display: none; /* Скрываем названия на очень маленьких экранах */
+    }
 }
 </style>
-{% endblock %}
