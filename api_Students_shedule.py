@@ -12,6 +12,9 @@ from database.middleware import SupersetAuthMiddleware
 from config import settings
 from database.schemas import Students, Sport, Schedule, Students_schedule, Trainers, Prices, engine, Visits, \
     Training_place, Сompetition
+from logger_config import logger
+
+
 
 # Создаем сессию базы данных
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -868,7 +871,7 @@ async def competitions_page(request: Request, db: Session = Depends(get_db)):
 async def get_events(year: int, month: int, db: Session = Depends(get_db)):
     """Получение мероприятий для конкретного месяца"""
     try:
-        print(f"🔹 Получение мероприятий за {year}-{month}")
+        logger.debug(f"🔹 Получение мероприятий за {year}-{month}")
 
         # Получаем мероприятия за указанный месяц
         start_date = datetime(year, month, 1)
@@ -877,7 +880,7 @@ async def get_events(year: int, month: int, db: Session = Depends(get_db)):
         else:
             end_date = datetime(year, month + 1, 1)
 
-        print(f"🔹 Поиск мероприятий с {start_date} по {end_date}")
+        logger.debug(f"🔹 Поиск мероприятий с {start_date} по {end_date}")
 
         # Используем правильное название класса - Сompetition (с русской С)
         competitions = db.query(Сompetition).filter(
@@ -887,7 +890,7 @@ async def get_events(year: int, month: int, db: Session = Depends(get_db)):
             )
         ).all()
 
-        print(f"🔹 Найдено {len(competitions)} мероприятий")
+        logger.debug(f"🔹 Найдено {len(competitions)} мероприятий")
 
         events = []
         for comp in competitions:
@@ -901,7 +904,7 @@ async def get_events(year: int, month: int, db: Session = Depends(get_db)):
         return JSONResponse(events)
 
     except Exception as e:
-        print(f"❌ Ошибка в get_events: {str(e)}")
+        logger.error(f"❌ Ошибка в get_events: {str(e)}")
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Ошибка получения мероприятий: {str(e)}")
@@ -911,12 +914,12 @@ async def get_events(year: int, month: int, db: Session = Depends(get_db)):
 async def get_day_events(date: str, db: Session = Depends(get_db)):
     """Получение мероприятий на конкретную дату"""
     try:
-        print(f"🔹 Получение мероприятий на дату: {date}")
+        logger.debug(f"🔹 Получение мероприятий на дату: {date}")
 
         selected_date = datetime.fromisoformat(date).date()
         next_day = selected_date + timedelta(days=1)
 
-        print(f"🔹 Поиск мероприятий с {selected_date} по {next_day}")
+        logger.debug(f"🔹 Поиск мероприятий с {selected_date} по {next_day}")
 
         competitions = db.query(Сompetition).filter(
             and_(
@@ -925,7 +928,7 @@ async def get_day_events(date: str, db: Session = Depends(get_db)):
             )
         ).all()
 
-        print(f"🔹 Найдено {len(competitions)} мероприятий на эту дату")
+        logger.debug(f"🔹 Найдено {len(competitions)} мероприятий на эту дату")
 
         events = []
         for comp in competitions:
@@ -944,7 +947,7 @@ async def get_day_events(date: str, db: Session = Depends(get_db)):
         return JSONResponse(events)
 
     except Exception as e:
-        print(f"❌ Ошибка в get_day_events: {str(e)}")
+        logger.error(f"❌ Ошибка в get_day_events: {str(e)}")
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Ошибка получения мероприятий: {str(e)}")
