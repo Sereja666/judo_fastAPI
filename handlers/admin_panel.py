@@ -13,6 +13,7 @@ from db_handler.db_funk import get_user_permissions, process_payment, execute_ra
     get_all_certificates
 from keyboards.kbs import home_page_kb, admin_page_kb, medical_certificate_kb
 from logger_config import logger
+from utils.utils import prepare_state_data, convert_to_serializable
 
 admin_router = Router()
 
@@ -378,10 +379,13 @@ async def process_student_name_for_certificate(message: Message, state: FSMConte
             return
 
         student = student_data[0]
-        await state.update_data(
+
+        # ИСПРАВЛЕНИЕ: используем подготовку данных для состояния
+        state_data = prepare_state_data(
             student_id=student['id'],
             student_name=student['name']
         )
+        await state.update_data(**state_data)
 
         cert_types = await execute_raw_sql(
             "SELECT id, name_cert FROM public.medcertificat_type ORDER BY id;"
@@ -395,12 +399,17 @@ async def process_student_name_for_certificate(message: Message, state: FSMConte
             await state.clear()
             return
 
-        await state.update_data(cert_types=cert_types)
+        # ИСПРАВЛЕНИЕ: преобразуем типы справок
+        cert_types_serializable = convert_to_serializable(cert_types)
 
+        state_data.update({
+            'cert_types': cert_types_serializable
+        })
+        await state.update_data(**state_data)
 
         builder = InlineKeyboardBuilder()
 
-        for cert_type in cert_types:
+        for cert_type in cert_types_serializable:
             builder.button(
                 text=f"⬜️ {cert_type['name_cert']}",
                 callback_data=f"cert_type:{cert_type['id']}"
@@ -475,8 +484,11 @@ async def continue_to_dates(callback: CallbackQuery, state: FSMContext):
 
         await callback.message.edit_reply_markup(reply_markup=None)
 
+        # Данные уже сериализованы, но для надежности преобразуем
+        student_name = str(data['student_name'])
+
         await callback.message.answer(
-            f"👤 Ученик: <b>{data['student_name']}</b>\n\n"
+            f"👤 Ученик: <b>{student_name}</b>\n\n"
             "Введите даты действия справки в формате:\n"
             "<b>ДД.ММ.ГГГГ - ДД.ММ.ГГГГ</b>\n\n"
             "Например:\n"
@@ -484,7 +496,6 @@ async def continue_to_dates(callback: CallbackQuery, state: FSMContext):
             reply_markup=await home_page_kb(callback.from_user.id)
         )
 
-        # ИЗМЕНЕНИЕ: используем новое состояние для допусков
         await state.set_state(MedicalCertificateStates.waiting_for_certificate_dates_dopusk)
         await callback.answer()
 
