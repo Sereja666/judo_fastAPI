@@ -11,7 +11,7 @@ import re
 from create_bot import bot
 from db_handler.db_funk import get_user_permissions, process_payment, execute_raw_sql, get_student_certificates, \
     get_all_certificates
-from keyboards.kbs import home_page_kb, admin_page_kb, medical_certificate_kb
+from keyboards.kbs import home_page_kb, admin_page_kb, medical_certificate_kb, main_kb
 from logger_config import logger
 from utils.utils import prepare_state_data, convert_to_serializable
 
@@ -40,6 +40,14 @@ async def get_profile(message: Message):
         admin_text = "Добро пожаловать в админ панель!"
     await message.answer(admin_text, reply_markup=await admin_page_kb(message.from_user.id))
 
+@admin_router.message(PaymentStates.waiting_for_payment_data, F.text.contains('🔙 Назад'))
+async def cancel_payment_process(message: Message, state: FSMContext):
+    """Отмена процесса оплаты"""
+    await state.clear()
+    await message.answer(
+        "❌ Процесс оплаты отменен",
+        reply_markup=await admin_page_kb(message.from_user.id)
+    )
 
 @admin_router.message(F.text.contains('💳 оплата'))
 async def start_payment_process(message: Message, state: FSMContext):
@@ -329,6 +337,7 @@ async def medical_certificate_menu(message: Message, state: FSMContext):
         reply_markup=medical_certificate_kb()
     )
     await state.set_state(MedicalCertificateStates.waiting_for_action)
+
 
 
 @admin_router.message(MedicalCertificateStates.waiting_for_action, F.text.contains('➕ Добавить справку'))
@@ -925,3 +934,89 @@ async def record_extra_student_visit(student_name: str, trainer_telegram_id: int
     except Exception as e:
         logger.error(f"Ошибка записи ученика на дополнительное занятие: {str(e)}")
         return {"success": False, "error": f"Системная ошибка: {str(e)}"}
+
+
+# Обработчики для кнопки "Назад" во всех состояниях медицинских справок
+# Отмена в состоянии ожидания данных справки по болезни
+@admin_router.message(MedicalCertificateStates.waiting_for_certificate_dates, F.text.contains('🔙 Назад'))
+async def cancel_medical_certificate_process(message: Message, state: FSMContext):
+    """Отмена процесса обработки справки по болезни"""
+    await state.clear()
+    await message.answer(
+        "❌ Процесс обработки справки по болезни отменен",
+        reply_markup=await admin_page_kb(message.from_user.id)
+    )
+
+# Отмена в состоянии ожидания имени ученика для медсправки
+@admin_router.message(MedicalCertificateStates.waiting_for_student_name, F.text.contains('🔙 Назад'))
+async def cancel_certificate_student_input(message: Message, state: FSMContext):
+    """Отмена ввода имени ученика для медсправки"""
+    await state.clear()
+    await message.answer(
+        "❌ Ввод имени ученика отменен",
+        reply_markup=medical_certificate_kb()
+    )
+    await state.set_state(MedicalCertificateStates.waiting_for_action)
+
+# Отмена в состоянии ожидания типа справки
+@admin_router.message(MedicalCertificateStates.waiting_for_certificate_type, F.text.contains('🔙 Назад'))
+async def cancel_certificate_type_selection(message: Message, state: FSMContext):
+    """Отмена выбора типа справки"""
+    await state.clear()
+    await message.answer(
+        "❌ Выбор типа справки отменен",
+        reply_markup=medical_certificate_kb()
+    )
+    await state.set_state(MedicalCertificateStates.waiting_for_action)
+
+# Отмена в состоянии ожидания дат справки (допуск)
+@admin_router.message(MedicalCertificateStates.waiting_for_certificate_dates_dopusk, F.text.contains('🔙 Назад'))
+async def cancel_certificate_dates_input(message: Message, state: FSMContext):
+    """Отмена ввода дат справки"""
+    await state.clear()
+    await message.answer(
+        "❌ Ввод дат справки отменен",
+        reply_markup=medical_certificate_kb()
+    )
+    await state.set_state(MedicalCertificateStates.waiting_for_action)
+
+# Отмена в состоянии ожидания ученика для списка справок
+@admin_router.message(MedicalCertificateStates.waiting_for_student_for_list, F.text.contains('🔙 Назад'))
+async def cancel_certificate_list_view(message: Message, state: FSMContext):
+    """Отмена просмотра справок ученика"""
+    await state.clear()
+    await message.answer(
+        "❌ Просмотр справок отменен",
+        reply_markup=medical_certificate_kb()
+    )
+    await state.set_state(MedicalCertificateStates.waiting_for_action)
+
+
+@admin_router.message(F.text.contains('🔙 Назад'))
+async def universal_back_handler(message: Message, state: FSMContext):
+    """Универсальный обработчик кнопки Назад для любых состояний"""
+    current_state = await state.get_state()
+
+    if current_state is None:
+        # Если нет активного состояния, просто возвращаем в главное меню
+        await message.answer(
+            "Главное меню",
+            reply_markup=await main_kb(message.from_user.id)
+        )
+    else:
+        # Если есть активное состояние, очищаем его
+        await state.clear()
+        user_permissions = await get_user_permissions(message.from_user.id)
+
+        if user_permissions in [99, 2]:
+            # Для админов возвращаем в админ панель
+            await message.answer(
+                "❌ Текущее действие отменено",
+                reply_markup=await admin_page_kb(message.from_user.id)
+            )
+        else:
+            # Для обычных пользователей возвращаем в главное меню
+            await message.answer(
+                "❌ Текущее действие отменено",
+                reply_markup=await main_kb(message.from_user.id)
+            )
