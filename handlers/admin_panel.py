@@ -33,6 +33,40 @@ class MedicalCertificateStates(StatesGroup):
     waiting_for_student_for_list = State()
 
 
+# ===== УНИВЕРСАЛЬНЫЕ ОБРАБОТЧИКИ КНОПКИ "НАЗАД" =====
+
+@admin_router.message(F.text.contains('🔙 Назад'))
+async def universal_back_handler(message: Message, state: FSMContext):
+    """Универсальный обработчик кнопки Назад для любых состояний"""
+    current_state = await state.get_state()
+
+    if current_state is None:
+        # Если нет активного состояния, просто возвращаем в главное меню
+        await message.answer(
+            "Главное меню",
+            reply_markup=await main_kb(message.from_user.id)
+        )
+    else:
+        # Если есть активное состояние, очищаем его
+        await state.clear()
+        user_permissions = await get_user_permissions(message.from_user.id)
+
+        if user_permissions in [99, 2]:
+            # Для админов возвращаем в админ панель
+            await message.answer(
+                "❌ Текущее действие отменено",
+                reply_markup=await admin_page_kb(message.from_user.id)
+            )
+        else:
+            # Для обычных пользователей возвращаем в главное меню
+            await message.answer(
+                "❌ Текущее действие отменено",
+                reply_markup=await main_kb(message.from_user.id)
+            )
+
+
+# ===== ОБРАБОТЧИКИ ОПЛАТЫ =====
+
 @admin_router.message(F.text.endswith('Админ панель'))
 async def get_profile(message: Message):
     """Главное меню админ панели"""
@@ -40,14 +74,6 @@ async def get_profile(message: Message):
         admin_text = "Добро пожаловать в админ панель!"
     await message.answer(admin_text, reply_markup=await admin_page_kb(message.from_user.id))
 
-@admin_router.message(PaymentStates.waiting_for_payment_data, F.text.contains('🔙 Назад'))
-async def cancel_payment_process(message: Message, state: FSMContext):
-    """Отмена процесса оплаты"""
-    await state.clear()
-    await message.answer(
-        "❌ Процесс оплаты отменен",
-        reply_markup=await admin_page_kb(message.from_user.id)
-    )
 
 @admin_router.message(F.text.contains('💳 оплата'))
 async def start_payment_process(message: Message, state: FSMContext):
@@ -142,6 +168,8 @@ async def process_payment_input(message: Message, state: FSMContext):
         await message.answer(f"❌ Произошла ошибка: {str(e)}")
         await state.clear()
 
+
+# ===== СПРАВКИ ПО БОЛЕЗНИ =====
 
 @admin_router.message(F.text.contains('🏥 справка по болезни'))
 async def start_medical_certificate_process(message: Message, state: FSMContext):
@@ -339,7 +367,6 @@ async def medical_certificate_menu(message: Message, state: FSMContext):
     await state.set_state(MedicalCertificateStates.waiting_for_action)
 
 
-
 @admin_router.message(MedicalCertificateStates.waiting_for_action, F.text.contains('➕ Добавить справку'))
 async def start_add_certificate(message: Message, state: FSMContext):
     """Начало процесса добавления новой справки"""
@@ -488,7 +515,7 @@ async def select_certificate_type(callback: CallbackQuery, state: FSMContext):
     except Exception as e:
         await callback.answer("❌ Ошибка при выборе типа справки", show_alert=True)
 
-#    """Переход к вводу дат справки"""
+
 @admin_router.callback_query(MedicalCertificateStates.waiting_for_certificate_type, F.data == "cert_continue")
 async def continue_to_dates(callback: CallbackQuery, state: FSMContext):
     """Переход к вводу дат справки"""
@@ -561,7 +588,6 @@ async def process_certificate_dates(message: Message, state: FSMContext):
         await state.clear()
 
 
-
 @admin_router.message(MedicalCertificateStates.waiting_for_certificate_dates_dopusk)
 async def process_certificate_dates_dopusk(message: Message, state: FSMContext):
     """Обработка введенных дат справки (допуска)"""
@@ -600,6 +626,7 @@ async def process_certificate_dates_dopusk(message: Message, state: FSMContext):
         logger.error(f"❌ Произошла ошибка: {str(e)}")
         await message.answer(f"❌ Произошла ошибка: {str(e)}")
         await state.clear()
+
 
 async def parse_and_save_certificate(student_id: int, cert_type_id: int, input_text: str) -> dict:
     """Парсит даты и сохраняет медицинскую справку (допуск)"""
@@ -687,8 +714,8 @@ async def start_view_certificates(message: Message, state: FSMContext):
 @admin_router.message(MedicalCertificateStates.waiting_for_action, F.text.contains('🔙 Назад'))
 async def back_to_main_menu(message: Message, state: FSMContext):
     """Возврат в главное меню"""
-    await message.answer("Возврат в главное меню", reply_markup=await admin_page_kb(message.from_user.id))
     await state.clear()
+    await message.answer("Возврат в главное меню", reply_markup=await admin_page_kb(message.from_user.id))
 
 
 @admin_router.message(MedicalCertificateStates.waiting_for_student_for_list, F.text.contains('📋 Все справки'))
@@ -934,89 +961,3 @@ async def record_extra_student_visit(student_name: str, trainer_telegram_id: int
     except Exception as e:
         logger.error(f"Ошибка записи ученика на дополнительное занятие: {str(e)}")
         return {"success": False, "error": f"Системная ошибка: {str(e)}"}
-
-
-# Обработчики для кнопки "Назад" во всех состояниях медицинских справок
-# Отмена в состоянии ожидания данных справки по болезни
-@admin_router.message(MedicalCertificateStates.waiting_for_certificate_dates, F.text.contains('🔙 Назад'))
-async def cancel_medical_certificate_process(message: Message, state: FSMContext):
-    """Отмена процесса обработки справки по болезни"""
-    await state.clear()
-    await message.answer(
-        "❌ Процесс обработки справки по болезни отменен",
-        reply_markup=await admin_page_kb(message.from_user.id)
-    )
-
-# Отмена в состоянии ожидания имени ученика для медсправки
-@admin_router.message(MedicalCertificateStates.waiting_for_student_name, F.text.contains('🔙 Назад'))
-async def cancel_certificate_student_input(message: Message, state: FSMContext):
-    """Отмена ввода имени ученика для медсправки"""
-    await state.clear()
-    await message.answer(
-        "❌ Ввод имени ученика отменен",
-        reply_markup=medical_certificate_kb()
-    )
-    await state.set_state(MedicalCertificateStates.waiting_for_action)
-
-# Отмена в состоянии ожидания типа справки
-@admin_router.message(MedicalCertificateStates.waiting_for_certificate_type, F.text.contains('🔙 Назад'))
-async def cancel_certificate_type_selection(message: Message, state: FSMContext):
-    """Отмена выбора типа справки"""
-    await state.clear()
-    await message.answer(
-        "❌ Выбор типа справки отменен",
-        reply_markup=medical_certificate_kb()
-    )
-    await state.set_state(MedicalCertificateStates.waiting_for_action)
-
-# Отмена в состоянии ожидания дат справки (допуск)
-@admin_router.message(MedicalCertificateStates.waiting_for_certificate_dates_dopusk, F.text.contains('🔙 Назад'))
-async def cancel_certificate_dates_input(message: Message, state: FSMContext):
-    """Отмена ввода дат справки"""
-    await state.clear()
-    await message.answer(
-        "❌ Ввод дат справки отменен",
-        reply_markup=medical_certificate_kb()
-    )
-    await state.set_state(MedicalCertificateStates.waiting_for_action)
-
-# Отмена в состоянии ожидания ученика для списка справок
-@admin_router.message(MedicalCertificateStates.waiting_for_student_for_list, F.text.contains('🔙 Назад'))
-async def cancel_certificate_list_view(message: Message, state: FSMContext):
-    """Отмена просмотра справок ученика"""
-    await state.clear()
-    await message.answer(
-        "❌ Просмотр справок отменен",
-        reply_markup=medical_certificate_kb()
-    )
-    await state.set_state(MedicalCertificateStates.waiting_for_action)
-
-
-@admin_router.message(F.text.contains('🔙 Назад'))
-async def universal_back_handler(message: Message, state: FSMContext):
-    """Универсальный обработчик кнопки Назад для любых состояний"""
-    current_state = await state.get_state()
-
-    if current_state is None:
-        # Если нет активного состояния, просто возвращаем в главное меню
-        await message.answer(
-            "Главное меню",
-            reply_markup=await main_kb(message.from_user.id)
-        )
-    else:
-        # Если есть активное состояние, очищаем его
-        await state.clear()
-        user_permissions = await get_user_permissions(message.from_user.id)
-
-        if user_permissions in [99, 2]:
-            # Для админов возвращаем в админ панель
-            await message.answer(
-                "❌ Текущее действие отменено",
-                reply_markup=await admin_page_kb(message.from_user.id)
-            )
-        else:
-            # Для обычных пользователей возвращаем в главное меню
-            await message.answer(
-                "❌ Текущее действие отменено",
-                reply_markup=await main_kb(message.from_user.id)
-            )
