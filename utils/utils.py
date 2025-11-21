@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 import pytz
 import locale
 from decimal import Decimal

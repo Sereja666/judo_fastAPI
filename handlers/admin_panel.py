@@ -500,6 +500,7 @@ async def continue_to_dates(callback: CallbackQuery, state: FSMContext):
         await callback.answer()
 
     except Exception as e:
+        logger.error(e)
         await callback.answer("❌ Ошибка", show_alert=True)
 
 
@@ -538,6 +539,7 @@ async def process_certificate_dates(message: Message, state: FSMContext):
         await state.clear()
 
     except Exception as e:
+        logger.error(f"❌ Произошла ошибка: {str(e)}")
         await message.answer(f"❌ Произошла ошибка: {str(e)}")
         await state.clear()
 
@@ -578,6 +580,7 @@ async def process_certificate_dates_dopusk(message: Message, state: FSMContext):
         await state.clear()
 
     except Exception as e:
+        logger.error(f"❌ Произошла ошибка: {str(e)}")
         await message.answer(f"❌ Произошла ошибка: {str(e)}")
         await state.clear()
 
@@ -639,7 +642,7 @@ async def parse_and_save_certificate(student_id: int, cert_type_id: int, input_t
         }
 
     except Exception as e:
-        print(f"Error saving medical certificate: {str(e)}")
+        logger.error(f"Error saving medical certificate: {str(e)}")
         return {"success": False, "error": f"Системная ошибка: {str(e)}"}
 
 
@@ -716,6 +719,7 @@ async def show_all_certificates(message: Message, state: FSMContext):
         await state.clear()
 
     except Exception as e:
+        logger.error(f"Ошибка при получении списка справок: {str(e)}")
         await message.answer(f"❌ Ошибка при получении списка справок: {str(e)}")
         await state.clear()
 
@@ -784,6 +788,7 @@ async def show_student_certificates(message: Message, state: FSMContext):
         await state.set_state(MedicalCertificateStates.waiting_for_action)
 
     except Exception as e:
+        logger.error(f" Ошибка при получении справок: {str(e)}")
         await message.answer(f"❌ Ошибка при получении справок: {str(e)}")
         await state.clear()
 
