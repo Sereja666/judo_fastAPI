@@ -369,6 +369,7 @@ async def process_student_name_for_certificate(message: Message, state: FSMConte
             return
 
         if len(student_data) > 1:
+            # ИСПРАВЛЕНИЕ: обращаемся к данным до преобразования
             students_list = "\n".join([f"• {s['name']}" for s in student_data])
             await message.answer(
                 f"🔍 Найдено несколько учеников по запросу '{student_name}':\n\n"
@@ -380,12 +381,11 @@ async def process_student_name_for_certificate(message: Message, state: FSMConte
 
         student = student_data[0]
 
-        # ИСПРАВЛЕНИЕ: используем подготовку данных для состояния
-        state_data = prepare_state_data(
-            student_id=student['id'],
-            student_name=student['name']
+        # ИСПРАВЛЕНИЕ: сохраняем простые значения напрямую
+        await state.update_data(
+            student_id=int(student['id']),
+            student_name=str(student['name'])
         )
-        await state.update_data(**state_data)
 
         cert_types = await execute_raw_sql(
             "SELECT id, name_cert FROM public.medcertificat_type ORDER BY id;"
@@ -399,17 +399,25 @@ async def process_student_name_for_certificate(message: Message, state: FSMConte
             await state.clear()
             return
 
-        # ИСПРАВЛЕНИЕ: преобразуем типы справок
-        cert_types_serializable = convert_to_serializable(cert_types)
+        # ИСПРАВЛЕНИЕ: создаем простой список словарей для клавиатуры
+        cert_types_for_kb = []
+        cert_types_for_state = []
 
-        state_data.update({
-            'cert_types': cert_types_serializable
-        })
-        await state.update_data(**state_data)
+        for cert_type in cert_types:
+            cert_dict = {
+                'id': int(cert_type['id']),
+                'name_cert': str(cert_type['name_cert'])
+            }
+            cert_types_for_kb.append(cert_dict)
+            cert_types_for_state.append(cert_dict)
 
+        # Сохраняем в состоянии
+        await state.update_data(cert_types=cert_types_for_state)
+
+        # Строим клавиатуру из подготовленных данных
         builder = InlineKeyboardBuilder()
 
-        for cert_type in cert_types_serializable:
+        for cert_type in cert_types_for_kb:
             builder.button(
                 text=f"⬜️ {cert_type['name_cert']}",
                 callback_data=f"cert_type:{cert_type['id']}"
