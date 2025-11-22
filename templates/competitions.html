@@ -865,9 +865,110 @@
         `);
         setTimeout(() => $('.alert').alert('close'), 5000);
     }
+
+    // Функция для загрузки участников при наведении на день
+    function loadDayParticipants(dateString) {
+        const dayEvents = eventsByDate[dateString] || [];
+        if (dayEvents.length === 0) return;
+
+        // Для каждого мероприятия в этот день загружаем участников
+        let loadedCount = 0;
+        const allParticipants = [];
+
+        dayEvents.forEach(event => {
+            if (competitionParticipants[event.id]) {
+                // Если данные уже загружены, используем их
+                const participants = competitionParticipants[event.id] || [];
+                const participantNames = participants.map(studentId => {
+                    const student = allStudents.find(s => s.id === studentId);
+                    return student ? student.name : 'Неизвестный ученик';
+                });
+                allParticipants.push(...participantNames);
+                loadedCount++;
+
+                if (loadedCount === dayEvents.length) {
+                    updateDayTooltip(dateString, allParticipants);
+                }
+            } else {
+                // Загружаем данные мероприятия
+                $.get(`/competitions/get-competition-data/${event.id}`, function(data) {
+                    competitionParticipants[event.id] = data.students || [];
+
+                    const participants = competitionParticipants[event.id] || [];
+                    const participantNames = participants.map(studentId => {
+                        const student = allStudents.find(s => s.id === studentId);
+                        return student ? student.name : 'Неизвестный ученик';
+                    });
+                    allParticipants.push(...participantNames);
+                    loadedCount++;
+
+                    if (loadedCount === dayEvents.length) {
+                        updateDayTooltip(dateString, allParticipants);
+                    }
+                }).fail(function() {
+                    // Если не удалось загрузить, просто увеличиваем счетчик
+                    loadedCount++;
+                    if (loadedCount === dayEvents.length) {
+                        updateDayTooltip(dateString, allParticipants);
+                    }
+                });
+            }
+        });
+    }
+
+    // Функция для обновления tooltip дня
+    function updateDayTooltip(dateString, participants) {
+        // Убираем дубликаты
+        const uniqueParticipants = [...new Set(participants)];
+
+        // Находим кнопку дня
+        const dayButton = $(`button[data-date="${dateString}"]`);
+
+        if (uniqueParticipants.length === 0) {
+            // Если нет участников - удаляем tooltip полностью
+            dayButton.removeAttr('data-bs-toggle');
+            dayButton.removeAttr('data-bs-title');
+            dayButton.removeAttr('data-bs-html');
+            dayButton.off('mouseenter');
+
+            const tooltipInstance = bootstrap.Tooltip.getInstance(dayButton[0]);
+            if (tooltipInstance) {
+                tooltipInstance.dispose();
+            }
+            return;
+        }
+
+        let tooltipContent = `<strong>Участники:</strong><br>${uniqueParticipants.join('<br>')}`;
+
+        // Обновляем атрибут title
+        dayButton.attr('data-bs-title', tooltipContent);
+
+        // Убедимся, что есть все необходимые атрибуты
+        dayButton.attr('data-bs-toggle', 'tooltip');
+        dayButton.attr('data-bs-html', 'true');
+
+        // Обновляем tooltip
+        const tooltipInstance = bootstrap.Tooltip.getInstance(dayButton[0]);
+        if (tooltipInstance) {
+            tooltipInstance.dispose();
+        }
+
+        // Создаем новый tooltip
+        new bootstrap.Tooltip(dayButton[0], {
+            trigger: 'hover',
+            placement: 'top',
+            delay: {show: 500, hide: 100},
+            html: true
+        });
+
+        // Принудительно показываем tooltip (если курсор все еще на элементе)
+        dayButton.tooltip('show');
+    }
+
 </script>
 
 <style>
+
 .calendar-grid {
     min-height: 400px;
 }
