@@ -512,14 +512,24 @@
                         dayContent += '<div class="events-indicator"></div>';
                     }
 
-                    const dayButton = $(`
-                        <button class="btn ${dayClass}" data-date="${dateString}"
-                                data-bs-toggle="tooltip" data-bs-html="true"
-                                data-bs-title="Загрузка участников..."
-                                onmouseenter="loadDayParticipants('${dateString}')">
-                            ${dayContent}
-                        </button>
-                    `);
+                    // Для дней с мероприятиями добавляем tooltip, для дней без - нет
+                    let dayButton;
+                    if (hasEvents) {
+                        dayButton = $(`
+                            <button class="btn ${dayClass}" data-date="${dateString}"
+                                    data-bs-toggle="tooltip" data-bs-html="true"
+                                    data-bs-title="Загрузка участников..."
+                                    onmouseenter="loadDayParticipants('${dateString}')">
+                                ${dayContent}
+                            </button>
+                        `);
+                    } else {
+                        dayButton = $(`
+                            <button class="btn ${dayClass}" data-date="${dateString}">
+                                ${dayContent}
+                            </button>
+                        `);
+                    }
 
                     dayCell.append(dayButton);
                     date++;
@@ -531,7 +541,7 @@
             calendar.append(weekRow);
         }
 
-        // Инициализируем tooltips после создания календаря
+        // Инициализируем tooltips только для дней с мероприятиями
         initializeTooltips();
     }
 
@@ -540,7 +550,7 @@
         // Удаляем существующие tooltips
         $('[data-bs-toggle="tooltip"]').tooltip('dispose');
 
-        // Инициализируем новые tooltips
+        // Инициализируем новые tooltips только для элементов с атрибутом data-bs-toggle="tooltip"
         const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
         const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
             return new bootstrap.Tooltip(tooltipTriggerEl, {
@@ -555,11 +565,7 @@
     // Функция для загрузки участников при наведении на день
     function loadDayParticipants(dateString) {
         const dayEvents = eventsByDate[dateString] || [];
-        if (dayEvents.length === 0) {
-            // Если нет мероприятий, показываем пустой tooltip
-            updateDayTooltip(dateString, []);
-            return;
-        }
+        if (dayEvents.length === 0) return;
 
         // Для каждого мероприятия в этот день загружаем участников
         let loadedCount = 0;
@@ -637,9 +643,6 @@
             delay: {show: 500, hide: 100},
             html: true
         });
-
-        // Показываем tooltip
-        dayButton.tooltip('show');
     }
 
     // Функция для форматирования даты в правильный формат для API (без времени)
@@ -778,14 +781,24 @@
                         dayContent += '<div class="events-indicator"></div>';
                     }
 
-                    const dayButton = $(`
-                        <button class="btn ${dayClass}" data-date="${dateString}"
-                                data-bs-toggle="tooltip" data-bs-html="true"
-                                data-bs-title="Загрузка участников..."
-                                onmouseenter="loadDayParticipants('${dateString}')">
-                            ${dayContent}
-                        </button>
-                    `);
+                    // Для дней с мероприятиями добавляем tooltip, для дней без - нет
+                    let dayButton;
+                    if (hasEvents) {
+                        dayButton = $(`
+                            <button class="btn ${dayClass}" data-date="${dateString}"
+                                    data-bs-toggle="tooltip" data-bs-html="true"
+                                    data-bs-title="Загрузка участников..."
+                                    onmouseenter="loadDayParticipants('${dateString}')">
+                                ${dayContent}
+                            </button>
+                        `);
+                    } else {
+                        dayButton = $(`
+                            <button class="btn ${dayClass}" data-date="${dateString}">
+                                ${dayContent}
+                            </button>
+                        `);
+                    }
 
                     dayCell.append(dayButton);
                     date++;
