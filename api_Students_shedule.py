@@ -2,6 +2,7 @@
 from fastapi import FastAPI, Request, Form, Depends, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import create_engine, and_
 from sqlalchemy.orm import sessionmaker, Session
 from typing import List, Optional
@@ -20,7 +21,7 @@ from logger_config import logger
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 app = FastAPI(title="Student Management System")
-
+app.mount("/static", StaticFiles(directory="static"), name="static")
 # URL вашего Superset
 SUPERSET_BASE_URL = settings.superset_conf.base_url
 
