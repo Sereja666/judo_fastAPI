@@ -69,7 +69,7 @@ def update_telegram_user_orm(user_data, connection_string):
 
 
 
-data = {'telegram_id': '350123948',
+data = {'telegram_id': '1626296025',
 
         'permissions': 99,}
 
