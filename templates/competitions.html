@@ -541,19 +541,25 @@
             calendar.append(weekRow);
         }
 
-        // Инициализируем tooltips только для дней с мероприятиями
+        // Инициализируем tooltips после создания календаря
         initializeTooltips();
     }
 
     // Функция для инициализации tooltips
     function initializeTooltips() {
         // Удаляем существующие tooltips
-        $('[data-bs-toggle="tooltip"]').tooltip('dispose');
+        const tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+        tooltips.forEach(element => {
+            const tooltip = bootstrap.Tooltip.getInstance(element);
+            if (tooltip) {
+                tooltip.dispose();
+            }
+        });
 
-        // Инициализируем новые tooltips только для элементов с атрибутом data-bs-toggle="tooltip"
-        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl, {
+        // Инициализируем новые tooltips
+        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+        tooltipTriggerList.forEach(tooltipTriggerEl => {
+            new bootstrap.Tooltip(tooltipTriggerEl, {
                 trigger: 'hover',
                 placement: 'top',
                 delay: {show: 500, hide: 100},
