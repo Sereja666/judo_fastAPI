@@ -188,9 +188,6 @@
         updateMonthDisplay();
         loadEventsForMonth(currentYear, currentMonth + 1);
         loadFormData(); // Загружаем данные для формы
-
-        // Инициализируем Bootstrap tooltips
-        initializeTooltips();
     });
 
     function loadFormData() {
@@ -515,12 +512,12 @@
                         dayContent += '<div class="events-indicator"></div>';
                     }
 
-                    // ВСЕГДА добавляем tooltip атрибуты, но для дней без мероприятий не будем загружать данные
+                    // ВСЕГДА добавляем tooltip для дней с мероприятиями
                     const dayButton = $(`
                         <button class="btn ${dayClass}" data-date="${dateString}"
                                 data-bs-toggle="tooltip" data-bs-html="true"
-                                data-bs-title="${hasEvents ? 'Загрузка участников...' : ''}"
-                                ${hasEvents ? `onmouseenter="loadDayParticipants('${dateString}')"` : ''}>
+                                data-bs-title="Загрузка участников..."
+                                onmouseenter="loadDayParticipants('${dateString}')">
                             ${dayContent}
                         </button>
                     `);
@@ -612,7 +609,13 @@
         if (uniqueParticipants.length > 0) {
             tooltipContent = `<strong>Участники:</strong><br>${uniqueParticipants.join('<br>')}`;
         } else {
-            // Если нет участников, не показываем tooltip
+            // ЕСЛИ НЕТ УЧАСТНИКОВ - НЕ ПОКАЗЫВАЕМ TOOLTIP ВООБЩЕ
+            const dayButton = $(`button[data-date="${dateString}"]`);
+            dayButton.attr('data-bs-title', '');
+            const tooltipInstance = bootstrap.Tooltip.getInstance(dayButton[0]);
+            if (tooltipInstance) {
+                tooltipInstance.dispose();
+            }
             return;
         }
 
@@ -773,12 +776,12 @@
                         dayContent += '<div class="events-indicator"></div>';
                     }
 
-                    // ВСЕГДА добавляем tooltip атрибуты, но для дней без мероприятий не будем загружать данные
+                    // ВСЕГДА добавляем tooltip для дней с мероприятиями
                     const dayButton = $(`
                         <button class="btn ${dayClass}" data-date="${dateString}"
                                 data-bs-toggle="tooltip" data-bs-html="true"
-                                data-bs-title="${hasEvents ? 'Загрузка участников...' : ''}"
-                                ${hasEvents ? `onmouseenter="loadDayParticipants('${dateString}')"` : ''}>
+                                data-bs-title="Загрузка участников..."
+                                onmouseenter="loadDayParticipants('${dateString}')">
                             ${dayContent}
                         </button>
                     `);
