@@ -180,11 +180,17 @@
     let selectedTrainers = [];
     let selectedCertificates = [];
 
+    // Хранилище для данных о участниках мероприятий
+    let competitionParticipants = {};
+
     $(document).ready(function() {
         generateCalendar(currentYear, currentMonth);
         updateMonthDisplay();
         loadEventsForMonth(currentYear, currentMonth + 1);
         loadFormData(); // Загружаем данные для формы
+
+        // Инициализируем Bootstrap tooltips
+        $('[data-bs-toggle="tooltip"]').tooltip();
     });
 
     function loadFormData() {
@@ -207,6 +213,39 @@
         }).fail(function() {
             showMessage('Ошибка загрузки данных формы', 'danger');
         });
+    }
+
+    // Новая функция для загрузки данных участников мероприятий
+    function loadCompetitionParticipants(competitionId, dateString) {
+        if (!competitionParticipants[competitionId]) {
+            $.get(`/competitions/get-competition-data/${competitionId}`, function(data) {
+                competitionParticipants[competitionId] = data.students || [];
+
+                // Создаем HTML для tooltip
+                const participantNames = competitionParticipants[competitionId].map(studentId => {
+                    const student = allStudents.find(s => s.id === studentId);
+                    return student ? student.name : 'Неизвестный ученик';
+                });
+
+                const tooltipContent = participantNames.length > 0
+                    ? `<strong>Участники:</strong><br>${participantNames.join('<br>')}`
+                    : '<em>Нет участников</em>';
+
+                // Обновляем tooltip для кнопки дня
+                $(`button[data-date="${dateString}"]`).attr('data-bs-title', tooltipContent);
+
+                // Переинициализируем tooltip
+                const tooltip = bootstrap.Tooltip.getInstance($(`button[data-date="${dateString}"]`)[0]);
+                if (tooltip) {
+                    tooltip.dispose();
+                }
+                new bootstrap.Tooltip($(`button[data-date="${dateString}"]`)[0]);
+
+            }).fail(function() {
+                // Если не удалось загрузить данные, показываем пустой tooltip
+                $(`button[data-date="${dateString}"]`).attr('data-bs-title', '<em>Не удалось загрузить список участников</em>');
+            });
+        }
     }
 
     function renderCertificatesList() {
@@ -410,6 +449,11 @@
                 showMessage(data.message, 'success');
                 $('#competitionFormModal').modal('hide');
 
+                // Очищаем кэш участников для этого мероприятия
+                if (competitionId) {
+                    delete competitionParticipants[competitionId];
+                }
+
                 // Обновляем календарь
                 loadEventsForMonth(currentYear, currentMonth + 1);
             } else {
@@ -505,7 +549,10 @@
                     }
 
                     const dayButton = $(`
-                        <button class="btn ${dayClass}" data-date="${dateString}">
+                        <button class="btn ${dayClass}" data-date="${dateString}"
+                                data-bs-toggle="tooltip" data-bs-html="true"
+                                data-bs-title="Загрузка участников..."
+                                onmouseenter="loadDayParticipants('${dateString}')">
                             ${dayContent}
                         </button>
                     `);
@@ -519,6 +566,65 @@
 
             calendar.append(weekRow);
         }
+
+        // Инициализируем tooltips после создания календаря
+        $('[data-bs-toggle="tooltip"]').tooltip({
+            trigger: 'hover',
+            placement: 'top',
+            delay: {show: 500, hide: 100}
+        });
+    }
+
+    // Функция для загрузки участников при наведении на день
+    function loadDayParticipants(dateString) {
+        const dayEvents = eventsByDate[dateString] || [];
+        if (dayEvents.length === 0) return;
+
+        // Для каждого мероприятия в этот день загружаем участников
+        dayEvents.forEach(event => {
+            if (!competitionParticipants[event.id]) {
+                loadCompetitionParticipants(event.id, dateString);
+            } else {
+                // Если данные уже загружены, обновляем tooltip
+                updateDayTooltip(dateString);
+            }
+        });
+    }
+
+    // Функция для обновления tooltip дня
+    function updateDayTooltip(dateString) {
+        const dayEvents = eventsByDate[dateString] || [];
+        let allParticipants = [];
+
+        dayEvents.forEach(event => {
+            const participants = competitionParticipants[event.id] || [];
+            const participantNames = participants.map(studentId => {
+                const student = allStudents.find(s => s.id === studentId);
+                return student ? student.name : 'Неизвестный ученик';
+            });
+            allParticipants = allParticipants.concat(participantNames);
+        });
+
+        // Убираем дубликаты
+        allParticipants = [...new Set(allParticipants)];
+
+        const tooltipContent = allParticipants.length > 0
+            ? `<strong>Участники мероприятий:</strong><br>${allParticipants.join('<br>')}`
+            : '<em>Нет участников</em>';
+
+        // Обновляем tooltip
+        $(`button[data-date="${dateString}"]`).attr('data-bs-title', tooltipContent);
+
+        // Переинициализируем tooltip
+        const tooltip = bootstrap.Tooltip.getInstance($(`button[data-date="${dateString}"]`)[0]);
+        if (tooltip) {
+            tooltip.dispose();
+        }
+        new bootstrap.Tooltip($(`button[data-date="${dateString}"]`)[0], {
+            trigger: 'hover',
+            placement: 'top',
+            delay: {show: 500, hide: 100}
+        });
     }
 
     // Функция для форматирования даты в правильный формат для API (без времени)
@@ -658,7 +764,10 @@
                     }
 
                     const dayButton = $(`
-                        <button class="btn ${dayClass}" data-date="${dateString}">
+                        <button class="btn ${dayClass}" data-date="${dateString}"
+                                data-bs-toggle="tooltip" data-bs-html="true"
+                                data-bs-title="Загрузка участников..."
+                                onmouseenter="loadDayParticipants('${dateString}')">
                             ${dayContent}
                         </button>
                     `);
@@ -672,6 +781,13 @@
 
             calendar.append(weekRow);
         }
+
+        // Инициализируем tooltips после перерисовки
+        $('[data-bs-toggle="tooltip"]').tooltip({
+            trigger: 'hover',
+            placement: 'top',
+            delay: {show: 500, hide: 100}
+        });
     }
 
     // Обработчик клика по дню
@@ -837,6 +953,21 @@
     font-weight: 600;
 }
 
+/* Стили для tooltip */
+.tooltip {
+    --bs-tooltip-bg: var(--superset-dark);
+    --bs-tooltip-color: white;
+}
+
+.tooltip .tooltip-inner {
+    background-color: var(--superset-dark);
+    color: white;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    max-width: 300px;
+    text-align: left;
+}
+
 /* Адаптивность */
 @media (max-width: 768px) {
     .day-cell {
@@ -861,6 +992,10 @@
         padding: 0.25rem;
         font-size: 0.8rem;
     }
+
+    .tooltip .tooltip-inner {
+        max-width: 200px;
+    }
 }
 
 @media (max-width: 576px) {
@@ -874,6 +1009,11 @@
 
     .event-preview {
         display: none;
+    }
+
+    .tooltip .tooltip-inner {
+        max-width: 150px;
+        font-size: 0.8rem;
     }
 }
 </style>
