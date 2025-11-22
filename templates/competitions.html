@@ -57,13 +57,103 @@
                 </div>
                 <div id="noEvents" class="text-center py-4" style="display: none;">
                     <p class="text-muted">На этот день нет мероприятий</p>
-                    <button class="btn btn-primary" onclick="createCompetition()">
+                    <button class="btn btn-primary" onclick="showCompetitionForm()">
                         <i class="fas fa-plus"></i> Создать мероприятие
                     </button>
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для формы мероприятия -->
+<div class="modal fade" id="competitionFormModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="competitionFormTitle">Создание мероприятия</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="competitionForm">
+                    <input type="hidden" id="competitionId" name="competition_id">
+                    <input type="hidden" id="competitionDate" name="date">
+
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="competitionName" class="form-label">Название мероприятия *</label>
+                                <input type="text" class="form-control" id="competitionName" name="name" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="competitionDateDisplay" class="form-label">Дата</label>
+                                <input type="text" class="form-control" id="competitionDateDisplay" readonly style="background-color: #f8f9fa;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="competitionAddress" class="form-label">Адрес проведения</label>
+                        <textarea class="form-control" id="competitionAddress" name="address" rows="2"></textarea>
+                    </div>
+
+                    <!-- Медицинские справки -->
+                    <div class="mb-4">
+                        <label class="form-label">Требуемые медицинские справки</label>
+                        <div id="certificatesList" class="border rounded p-3" style="max-height: 150px; overflow-y: auto;">
+                            <!-- Список справок будет здесь -->
+                        </div>
+                    </div>
+
+                    <!-- Участники -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Участники</label>
+                                <div class="input-group mb-2">
+                                    <input type="text" class="form-control" id="studentSearch" placeholder="Поиск ученика...">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="searchStudent()">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                                <div id="studentsList" class="border rounded p-2" style="max-height: 200px; overflow-y: auto;">
+                                    <!-- Список выбранных учеников будет здесь -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Ответственные тренеры</label>
+                                <div class="input-group mb-2">
+                                    <select class="form-select" id="trainerSelect">
+                                        <option value="">Выберите тренера...</option>
+                                    </select>
+                                    <button class="btn btn-outline-primary" type="button" onclick="addTrainer()">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                                <div id="trainersList" class="border rounded p-2" style="max-height: 200px; overflow-y: auto;">
+                                    <!-- Список выбранных тренеров будет здесь -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-danger" id="deleteCompetitionBtn" style="display: none;" onclick="deleteCompetition()">
+                    <i class="fas fa-trash"></i> Удалить
+                </button>
+                <button type="button" class="btn btn-primary" onclick="saveCompetition()">
+                    <i class="fas fa-save"></i> Сохранить
+                </button>
             </div>
         </div>
     </div>
@@ -80,13 +170,268 @@
     let eventsByDate = {}; // Храним мероприятия по датам
     let currentSelectedDate = null; // Текущая выбранная дата для модального окна
 
+    // Данные для формы
+    let allMedCertificates = [];
+    let allStudents = [];
+    let allTrainers = [];
+
+    // Выбранные элементы в форме
+    let selectedStudents = [];
+    let selectedTrainers = [];
+    let selectedCertificates = [];
+
     $(document).ready(function() {
         generateCalendar(currentYear, currentMonth);
         updateMonthDisplay();
-        // Загружаем мероприятия после создания календаря
         loadEventsForMonth(currentYear, currentMonth + 1);
+        loadFormData(); // Загружаем данные для формы
     });
 
+    function loadFormData() {
+        // Загружаем данные для формы (справки, ученики, тренеры)
+        $.get('/competitions/get-all-data', function(data) {
+            allMedCertificates = data.med_cert_types || [];
+            allStudents = data.students || [];
+            allTrainers = data.trainers || [];
+
+            // Заполняем список тренеров в селекте
+            const trainerSelect = $('#trainerSelect');
+            trainerSelect.empty().append('<option value="">Выберите тренера...</option>');
+            allTrainers.forEach(trainer => {
+                trainerSelect.append(`<option value="${trainer.id}">${trainer.name}</option>`);
+            });
+
+            // Заполняем список справок
+            renderCertificatesList();
+
+        }).fail(function() {
+            showMessage('Ошибка загрузки данных формы', 'danger');
+        });
+    }
+
+    function renderCertificatesList() {
+        const certificatesList = $('#certificatesList');
+        certificatesList.empty();
+
+        allMedCertificates.forEach(cert => {
+            const isSelected = selectedCertificates.includes(cert.id);
+            const certElement = `
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" value="${cert.id}"
+                           id="cert_${cert.id}" ${isSelected ? 'checked' : ''}
+                           onchange="toggleCertificate(${cert.id})">
+                    <label class="form-check-label" for="cert_${cert.id}">
+                        ${cert.name}
+                    </label>
+                </div>
+            `;
+            certificatesList.append(certElement);
+        });
+    }
+
+    function toggleCertificate(certId) {
+        const index = selectedCertificates.indexOf(certId);
+        if (index > -1) {
+            selectedCertificates.splice(index, 1);
+        } else {
+            selectedCertificates.push(certId);
+        }
+    }
+
+    function searchStudent() {
+        const searchTerm = $('#studentSearch').val().toLowerCase();
+        if (!searchTerm) return;
+
+        // Простой поиск по имени
+        const filteredStudents = allStudents.filter(student =>
+            student.name.toLowerCase().includes(searchTerm)
+        );
+
+        if (filteredStudents.length > 0) {
+            const student = filteredStudents[0];
+            if (!selectedStudents.includes(student.id)) {
+                selectedStudents.push(student.id);
+                renderStudentsList();
+            }
+            $('#studentSearch').val('');
+        }
+    }
+
+    function addTrainer() {
+        const trainerId = $('#trainerSelect').val();
+        if (trainerId && !selectedTrainers.includes(parseInt(trainerId))) {
+            selectedTrainers.push(parseInt(trainerId));
+            renderTrainersList();
+            $('#trainerSelect').val('');
+        }
+    }
+
+    function renderStudentsList() {
+        const studentsList = $('#studentsList');
+        studentsList.empty();
+
+        selectedStudents.forEach(studentId => {
+            const student = allStudents.find(s => s.id === studentId);
+            if (student) {
+                const studentElement = `
+                    <div class="d-flex justify-content-between align-items-center p-2 border-bottom">
+                        <span>${student.name}</span>
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeStudent(${studentId})">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `;
+                studentsList.append(studentElement);
+            }
+        });
+    }
+
+    function renderTrainersList() {
+        const trainersList = $('#trainersList');
+        trainersList.empty();
+
+        selectedTrainers.forEach(trainerId => {
+            const trainer = allTrainers.find(t => t.id === trainerId);
+            if (trainer) {
+                const trainerElement = `
+                    <div class="d-flex justify-content-between align-items-center p-2 border-bottom">
+                        <span>${trainer.name}</span>
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeTrainer(${trainerId})">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `;
+                trainersList.append(trainerElement);
+            }
+        });
+    }
+
+    function removeStudent(studentId) {
+        selectedStudents = selectedStudents.filter(id => id !== studentId);
+        renderStudentsList();
+    }
+
+    function removeTrainer(trainerId) {
+        selectedTrainers = selectedTrainers.filter(id => id !== trainerId);
+        renderTrainersList();
+    }
+
+    function showCompetitionForm() {
+        $('#dayModal').modal('hide');
+
+        // Сбрасываем форму
+        resetCompetitionForm();
+
+        // Устанавливаем дату
+        $('#competitionDate').val(currentSelectedDate);
+        $('#competitionDateDisplay').val(formatDisplayDate(currentSelectedDate));
+
+        $('#competitionFormTitle').text('Создание мероприятия');
+        $('#deleteCompetitionBtn').hide();
+
+        $('#competitionFormModal').modal('show');
+    }
+
+    function editCompetition(competitionId) {
+        $('#dayModal').modal('hide');
+
+        // Загружаем данные мероприятия
+        $.get(`/competitions/get-competition-data/${competitionId}`, function(data) {
+            // Заполняем форму
+            $('#competitionId').val(data.competition.id);
+            $('#competitionName').val(data.competition.name);
+            $('#competitionAddress').val(data.competition.address || '');
+            $('#competitionDate').val(data.competition.date ? data.competition.date.split('T')[0] : '');
+            $('#competitionDateDisplay').val(formatDisplayDate(data.competition.date ? data.competition.date.split('T')[0] : ''));
+
+            // Устанавливаем выбранные элементы
+            selectedStudents = data.students || [];
+            selectedTrainers = data.trainers || [];
+            selectedCertificates = data.certificates || [];
+
+            renderStudentsList();
+            renderTrainersList();
+            renderCertificatesList();
+
+            $('#competitionFormTitle').text('Редактирование мероприятия');
+            $('#deleteCompetitionBtn').show();
+
+            $('#competitionFormModal').modal('show');
+
+        }).fail(function() {
+            showMessage('Ошибка загрузки данных мероприятия', 'danger');
+        });
+    }
+
+    function resetCompetitionForm() {
+        $('#competitionForm')[0].reset();
+        $('#competitionId').val('');
+        selectedStudents = [];
+        selectedTrainers = [];
+        selectedCertificates = [];
+
+        renderStudentsList();
+        renderTrainersList();
+        renderCertificatesList();
+    }
+
+    function formatDisplayDate(dateString) {
+        const date = new Date(dateString + 'T00:00:00');
+        return date.toLocaleDateString('ru-RU', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+        });
+    }
+
+    function saveCompetition() {
+        const competitionId = $('#competitionId').val();
+        const formData = new FormData();
+
+        // Добавляем основные данные
+        formData.append('name', $('#competitionName').val());
+        formData.append('address', $('#competitionAddress').val());
+        formData.append('date', $('#competitionDate').val());
+
+        // Добавляем списки
+        selectedStudents.forEach(id => formData.append('student_ids', id));
+        selectedTrainers.forEach(id => formData.append('trainer_ids', id));
+        selectedCertificates.forEach(id => formData.append('certificate_ids', id));
+
+        const url = competitionId ? `/competitions/update-competition/${competitionId}` : '/competitions/create-competition';
+
+        fetch(url, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showMessage(data.message, 'success');
+                $('#competitionFormModal').modal('hide');
+
+                // Обновляем календарь
+                loadEventsForMonth(currentYear, currentMonth + 1);
+            } else {
+                showMessage(data.message || 'Ошибка сохранения', 'danger');
+            }
+        })
+        .catch(error => {
+            showMessage('Ошибка сохранения: ' + error, 'danger');
+        });
+    }
+
+    function deleteCompetition() {
+        const competitionId = $('#competitionId').val();
+        if (!competitionId) return;
+
+        if (confirm('Вы уверены, что хотите удалить это мероприятие?')) {
+            // Здесь можно добавить эндпоинт для удаления
+            showMessage('Функция удаления будет реализована позже', 'info');
+        }
+    }
+
+    // Функции календаря
     function generateCalendar(year, month) {
         const calendar = $('#calendar');
         calendar.empty();
@@ -383,20 +728,6 @@
             $('#noEvents').show();
             $('#dayModal').modal('show');
         });
-    }
-
-    function createCompetition() {
-        // Заглушка для создания мероприятия
-        if (currentSelectedDate) {
-            alert(`Создание мероприятия на дату: ${currentSelectedDate}\n\nФункция будет реализована позже`);
-        }
-        $('#dayModal').modal('hide');
-    }
-
-    function editCompetition(competitionId) {
-        // Заглушка для редактирования мероприятия
-        alert(`Редактирование мероприятия ID: ${competitionId}\n\nФункция будет реализована позже`);
-        $('#dayModal').modal('hide');
     }
 
     function showMessage(text, type) {

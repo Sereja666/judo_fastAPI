@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from database.middleware import SupersetAuthMiddleware
 from config import settings
 from database.schemas import Students, Sport, Schedule, Students_schedule, Trainers, Prices, engine, Visits, \
-    Training_place, Сompetition
+    Training_place, Сompetition, MedCertificat_type, Сompetition_trainer, Сompetition_student, Сompetition_MedCertificat
 from logger_config import logger
 
 
@@ -953,6 +953,202 @@ async def get_day_events(date: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"Ошибка получения мероприятий: {str(e)}")
 
 
+# ===== ДОПОЛНИТЕЛЬНЫЕ ЭНДПОИНТЫ ДЛЯ МЕРОПРИЯТИЙ =====
+
+@app.get("/competitions/get-all-data")
+async def get_all_competition_data(db: Session = Depends(get_db)):
+    """Получение всех данных для формы мероприятия"""
+    try:
+        # Получаем типы медицинских справок
+        med_cert_types = db.query(MedCertificat_type).all()
+        # Получаем всех активных учеников
+        students = db.query(Students).filter(Students.active == True).all()
+        # Получаем всех активных тренеров
+        trainers = db.query(Trainers).filter(Trainers.active == True).all()
+
+        result = {
+            "med_cert_types": [{"id": cert.id, "name": cert.name_cert} for cert in med_cert_types],
+            "students": [{"id": student.id, "name": student.name} for student in students],
+            "trainers": [{"id": trainer.id, "name": trainer.name} for trainer in trainers]
+        }
+
+        return JSONResponse(result)
+
+    except Exception as e:
+        print(f"Error in get_all_competition_data: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Ошибка получения данных: {str(e)}")
+
+
+@app.get("/competitions/get-competition-data/{competition_id}")
+async def get_competition_data(competition_id: int, db: Session = Depends(get_db)):
+    """Получение данных конкретного мероприятия"""
+    try:
+        competition = db.query(Сompetition).filter(Сompetition.id == competition_id).first()
+        if not competition:
+            raise HTTPException(status_code=404, detail="Мероприятие не найдено")
+
+        # Получаем приглашенных студентов
+        competition_students = db.query(Сompetition_student).filter(
+            Сompetition_student.competition_id == competition_id
+        ).all()
+
+        # Получаем ответственных тренеров
+        competition_trainers = db.query(Сompetition_trainer).filter(
+            Сompetition_trainer.competition_id == competition_id
+        ).all()
+
+        # Получаем требуемые справки
+        competition_certificates = db.query(Сompetition_MedCertificat).filter(
+            Сompetition_MedCertificat.competition_id == competition_id
+        ).all()
+
+        result = {
+            "competition": {
+                "id": competition.id,
+                "name": competition.name,
+                "address": competition.address or "",
+                "date": competition.date.isoformat() if competition.date else None
+            },
+            "students": [cs.student_id for cs in competition_students],
+            "trainers": [ct.trainer_id for ct in competition_trainers],
+            "certificates": [cmc.med_certificat_id for cmc in competition_certificates]
+        }
+
+        return JSONResponse(result)
+
+    except Exception as e:
+        print(f"Error in get_competition_data: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Ошибка получения данных мероприятия: {str(e)}")
+
+
+@app.post("/competitions/create-competition")
+async def create_competition(
+        name: str = Form(...),
+        address: str = Form(None),
+        date: str = Form(...),
+        student_ids: List[int] = Form([]),
+        trainer_ids: List[int] = Form([]),
+        certificate_ids: List[int] = Form([]),
+        db: Session = Depends(get_db)
+):
+    """Создание нового мероприятия"""
+    try:
+        # Создаем мероприятие
+        new_competition = Сompetition(
+            name=name,
+            address=address,
+            date=datetime.fromisoformat(date)
+        )
+        db.add(new_competition)
+        db.flush()  # Получаем ID созданного мероприятия
+
+        # Добавляем студентов
+        for student_id in student_ids:
+            competition_student = Сompetition_student(
+                competition_id=new_competition.id,
+                student_id=student_id
+            )
+            db.add(competition_student)
+
+        # Добавляем тренеров
+        for trainer_id in trainer_ids:
+            competition_trainer = Сompetition_trainer(
+                competition_id=new_competition.id,
+                trainer_id=trainer_id
+            )
+            db.add(competition_trainer)
+
+        # Добавляем справки
+        for cert_id in certificate_ids:
+            competition_cert = Сompetition_MedCertificat(
+                competition_id=new_competition.id,
+                med_certificat_id=cert_id
+            )
+            db.add(competition_cert)
+
+        db.commit()
+
+        return JSONResponse({
+            "status": "success",
+            "message": "Мероприятие успешно создано",
+            "competition_id": new_competition.id
+        })
+
+    except Exception as e:
+        db.rollback()
+        print(f"Error in create_competition: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Ошибка создания мероприятия: {str(e)}")
+
+
+@app.post("/competitions/update-competition/{competition_id}")
+async def update_competition(
+        competition_id: int,
+        name: str = Form(...),
+        address: str = Form(None),
+        date: str = Form(...),
+        student_ids: List[int] = Form([]),
+        trainer_ids: List[int] = Form([]),
+        certificate_ids: List[int] = Form([]),
+        db: Session = Depends(get_db)
+):
+    """Обновление мероприятия"""
+    try:
+        competition = db.query(Сompetition).filter(Сompetition.id == competition_id).first()
+        if not competition:
+            raise HTTPException(status_code=404, detail="Мероприятие не найдено")
+
+        # Обновляем основные данные
+        competition.name = name
+        competition.address = address
+        competition.date = datetime.fromisoformat(date)
+
+        # Удаляем старых студентов и добавляем новых
+        db.query(Сompetition_student).filter(
+            Сompetition_student.competition_id == competition_id
+        ).delete()
+
+        for student_id in student_ids:
+            competition_student = Сompetition_student(
+                competition_id=competition_id,
+                student_id=student_id
+            )
+            db.add(competition_student)
+
+        # Удаляем старых тренеров и добавляем новых
+        db.query(Сompetition_trainer).filter(
+            Сompetition_trainer.competition_id == competition_id
+        ).delete()
+
+        for trainer_id in trainer_ids:
+            competition_trainer = Сompetition_trainer(
+                competition_id=competition_id,
+                trainer_id=trainer_id
+            )
+            db.add(competition_trainer)
+
+        # Удаляем старые справки и добавляем новые
+        db.query(Сompetition_MedCertificat).filter(
+            Сompetition_MedCertificat.competition_id == competition_id
+        ).delete()
+
+        for cert_id in certificate_ids:
+            competition_cert = Сompetition_MedCertificat(
+                competition_id=competition_id,
+                med_certificat_id=cert_id
+            )
+            db.add(competition_cert)
+
+        db.commit()
+
+        return JSONResponse({
+            "status": "success",
+            "message": "Мероприятие успешно обновлено"
+        })
+
+    except Exception as e:
+        db.rollback()
+        print(f"Error in update_competition: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Ошибка обновления мероприятия: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn
