@@ -44,25 +44,15 @@ project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, project_root)
 
 try:
+    from logger_config import logger
     from database.schemas import schema
     import asyncpg
-    import logging
-    from logger_config import logger
     from config import settings
 except ImportError as e:
     logger.error(f"❌ Ошибка импорта: {e}")
     sys.exit(1)
 
-# Настройка логирования
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('/var/log/daily_attendance.log'),
-        logging.StreamHandler(sys.stdout)
-    ]
-)
-logger = logging.getLogger('daily_attendance')
+
 
 async def execute_raw_sql(query: str, *params):
     """Функция выполнения SQL запросов"""
