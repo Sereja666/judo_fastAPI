@@ -1,33 +1,5 @@
 #!/usr/bin/env python3
 """
-Ежедневное вычитание занятий за посещения
-Запускается через cron каждый день в 23:00
-
-## Открыть crontab для редактирования
-crontab -e
-
-# Добавить строку (запуск каждый день в 23:00)
-0 23 * * * /app/judo_fastAPI/handlers/daily_attendance.py
-
-# Или с логированием в отдельный файл
-0 23 * * * /app/judo_fastAPI/handlers/daily_attendance.py >> /var/log/daily_attendance_cron.log 2>&1
-chmod +x /app/judo_fastAPI/handlers/daily_attendance.py
-Прямой запуск
-python3 /app/judo_fastAPI/handlers/daily_attendance.py
-
-# Или через cron вручную (если настроен)
-/app/judo_fastAPI/handlers/daily_attendance.py
-Просмотр логов
-tail -f /var/log/daily_attendance.log
-
-# Проверка cron логов
-grep CRON /var/log/syslog
-
-# Проверка выполнения
-grep "ОБНОВЛЕНО" /var/log/daily_attendance.log
-"""
-#!/usr/bin/env python3
-"""
 Ежедневное вычитание занятий за посещения и расчет даты следующей оплаты
 Запускается через cron каждый день в 23:00
 """
@@ -37,7 +9,6 @@ import sys
 import os
 from datetime import datetime, timedelta
 from math import ceil
-
 
 # Добавляем путь к проекту в PYTHONPATH
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -51,7 +22,6 @@ try:
 except ImportError as e:
     logger.error(f"❌ Ошибка импорта: {e}")
     sys.exit(1)
-
 
 
 async def execute_raw_sql(query: str, *params):
@@ -70,16 +40,17 @@ async def execute_raw_sql(query: str, *params):
         logger.error(f"Database error: {str(e)}")
         raise
 
+
 async def calculate_next_payment_date(student_id: int, current_balance: int, days_per_week: int) -> datetime:
     """
     Рассчитывает следующую дату оплаты на основе:
-    - текущего баланса занятий
+    - текущего баланса занятий (может быть отрицательным)
     - количества тренировочных дней в неделю
     - текущей даты
     """
     try:
         today = datetime.now().date()
-        
+
         # Получаем расписание студента для определения дней недели
         schedule_data = await execute_raw_sql(
             f"""SELECT DISTINCT sched.day_week 
@@ -88,26 +59,31 @@ async def calculate_next_payment_date(student_id: int, current_balance: int, day
             WHERE ss.student = $1""",
             student_id
         )
-        
+
         if not schedule_data:
             logger.warning(f"⚠️ У студента ID {student_id} нет расписания")
             return today + timedelta(days=30)  # По умолчанию через 30 дней
-        
+
         # Определяем дни недели студента
         student_days = [row['day_week'] for row in schedule_data]
         actual_days_per_week = len(student_days)
-        
+
         # Если переданное количество дней не совпадает с фактическим, используем фактическое
         if days_per_week != actual_days_per_week:
-            logger.info(f"📝 Корректировка дней в неделю для студента {student_id}: {days_per_week} -> {actual_days_per_week}")
+            logger.info(
+                f"📝 Корректировка дней в неделю для студента {student_id}: {days_per_week} -> {actual_days_per_week}")
             days_per_week = actual_days_per_week
-        
+
         if days_per_week == 0:
             return today + timedelta(days=30)
-        
-        # Рассчитываем, на сколько недель хватит текущего баланса
-        weeks_remaining = ceil(current_balance / days_per_week)
-        
+
+        # Рассчитываем, на сколько недель хватит текущего баланса (учитываем отрицательный баланс)
+        if current_balance <= 0:
+            # Если баланс отрицательный или нулевой, оплата нужна немедленно
+            weeks_remaining = 0
+        else:
+            weeks_remaining = ceil(current_balance / days_per_week)
+
         # Находим ближайший тренировочный день для расчета даты
         weekdays_ru_to_int = {
             'понедельник': 0,
@@ -118,37 +94,42 @@ async def calculate_next_payment_date(student_id: int, current_balance: int, day
             'суббота': 5,
             'воскресенье': 6
         }
-        
+
         # Преобразуем русские названия дней в числовые
         student_weekdays = [weekdays_ru_to_int[day] for day in student_days]
         student_weekdays.sort()
-        
+
         # Находим следующий тренировочный день после сегодняшнего
         today_weekday = today.weekday()
         next_training_day = None
-        
+
         for day in student_weekdays:
             if day > today_weekday:
                 next_training_day = day
                 break
-        
+
         # Если следующий тренировочный день на следующей неделе
         if next_training_day is None:
             next_training_day = student_weekdays[0]
             days_until_next = 7 - today_weekday + next_training_day
         else:
             days_until_next = next_training_day - today_weekday
-        
-        # Рассчитываем дату последнего занятия
-        last_training_date = today + timedelta(days=days_until_next + (weeks_remaining - 1) * 7)
-        
-        # Добавляем буфер в 3 дня после последнего занятия для оплаты
-        payment_date = last_training_date + timedelta(days=3)
-        
-        logger.debug(f"📅 Студент {student_id}: баланс {current_balance}, дней/неделю {days_per_week}, оплата {payment_date}")
-        
+
+        if weeks_remaining <= 0:
+            # Если баланс отрицательный или нулевой, оплата нужна немедленно
+            payment_date = today + timedelta(days=3)  # +3 дня буфер
+        else:
+            # Рассчитываем дату последнего занятия
+            last_training_date = today + timedelta(days=days_until_next + (weeks_remaining - 1) * 7)
+
+            # Добавляем буфер в 3 дня после последнего занятия для оплаты
+            payment_date = last_training_date + timedelta(days=3)
+
+        logger.debug(
+            f"📅 Студент {student_id}: баланс {current_balance}, дней/неделю {days_per_week}, оплата {payment_date}")
+
         return payment_date
-        
+
     except Exception as e:
         logger.error(f"❌ Ошибка расчета даты оплаты для студента {student_id}: {str(e)}")
         return datetime.now().date() + timedelta(days=30)
@@ -157,9 +138,12 @@ async def calculate_next_payment_date(student_id: int, current_balance: int, day
 async def subtract_classes_and_update_payment_dates():
     """
     Ежедневная функция для:
-    1. Вычитания занятий у студентов по расписанию
-    2. Учитывает особые тарифы (2 занятия по субботам для price_id = 3 или 4)
-    3. Обновления дат следующей оплаты
+    1. Вычитания занятий у студентов по расписанию (разрешено уходить в минус)
+    2. В субботу списывается количество занятий по факту посещений
+    3. В остальные дни списывается по 1 занятию за день по расписанию
+    4. Учитывает особые тарифы (2 занятия по субботам для price_id = 3 или 4)
+    5. Обновления дат следующей оплаты
+    6. ИСКЛЮЧАЕТ студентов с price.classes_in_price = 8
     """
     try:
         # Получаем текущий день недели на русском
@@ -180,32 +164,46 @@ async def subtract_classes_and_update_payment_dates():
 
         logger.info(f"🚀 Запуск вычитания занятий за {today_date} ({today_weekday_ru})")
 
-        # ШАГ 1: Вычитаем занятия у студентов с учетом особых тарифов
+        # ШАГ 1: Вычитаем занятия у студентов
+        # ИСКЛЮЧАЕМ студентов с price.classes_in_price = 8
+        # УБИРАЕМ проверку classes_remaining > 0 - разрешаем уходить в минус
+
         if is_saturday:
-            # Для субботы: особые условия для price_id = 3 или 4
+            # Для субботы: списываем количество занятий по факту посещений
+            # с учетом особых тарифов (price_id = 3 или 4 списывается 2 занятия)
             result = await execute_raw_sql(
                 f"""UPDATE {schema}.student 
                 SET classes_remaining = classes_remaining - 
                     CASE 
                         WHEN price IN (3, 4) THEN 2
-                        ELSE 1
+                        ELSE GREATEST(1, (
+                            SELECT COUNT(*) 
+                            FROM {schema}.visit v
+                            WHERE v.student = {schema}.student.id 
+                            AND DATE(v.data) = $1
+                            AND v.shedule IN (
+                                SELECT ss.schedule 
+                                FROM {schema}.student_schedule ss 
+                                WHERE ss.student = {schema}.student.id
+                            )
+                        ))
                     END
                 WHERE id IN (
                     SELECT DISTINCT ss.student
                     FROM {schema}.student_schedule ss
                     JOIN {schema}.schedule sched ON ss.schedule = sched.id
                     JOIN {schema}.student s ON ss.student = s.id
-                    WHERE sched.day_week = $1
+                    JOIN {schema}.price p ON s.price = p.id
+                    WHERE sched.day_week = $2
                     AND s.active = true
-                    AND s.classes_remaining > 0
+                    AND p.classes_in_price != 8  -- ИСКЛЮЧАЕМ студентов с 8 занятиями
                 )
                 AND active = true
-                AND classes_remaining > 0
                 RETURNING id, name, classes_remaining, price;""",
-                today_weekday_ru
+                today_date, today_weekday_ru
             )
         else:
-            # Для остальных дней: стандартное списание 1 занятия
+            # Для остальных дней: стандартное списание 1 занятия (максимум)
             result = await execute_raw_sql(
                 f"""UPDATE {schema}.student 
                 SET classes_remaining = classes_remaining - 1 
@@ -214,12 +212,12 @@ async def subtract_classes_and_update_payment_dates():
                     FROM {schema}.student_schedule ss
                     JOIN {schema}.schedule sched ON ss.schedule = sched.id
                     JOIN {schema}.student s ON ss.student = s.id
+                    JOIN {schema}.price p ON s.price = p.id
                     WHERE sched.day_week = $1
                     AND s.active = true
-                    AND s.classes_remaining > 0
+                    AND p.classes_in_price != 8  -- ИСКЛЮЧАЕМ студентов с 8 занятиями
                 )
                 AND active = true
-                AND classes_remaining > 0
                 RETURNING id, name, classes_remaining, price;""",
                 today_weekday_ru
             )
@@ -240,10 +238,39 @@ async def subtract_classes_and_update_payment_dates():
         # Анализируем результаты списания
         special_tariff_count = 0
         regular_count = 0
+        multiple_visits_count = 0
+        negative_balance_count = 0
 
         for student in result:
-            if is_saturday and student['price'] in [3, 4]:
-                special_tariff_count += 1
+            # Проверяем ушел ли баланс в минус
+            if student['classes_remaining'] < 0:
+                negative_balance_count += 1
+                logger.warning(f"⚠️ Студент {student['name']} ушел в минус: {student['classes_remaining']} занятий")
+
+            if is_saturday:
+                if student['price'] in [3, 4]:
+                    special_tariff_count += 1
+                else:
+                    # Для обычных тарифов в субботу проверяем количество посещений
+                    visit_count = await execute_raw_sql(
+                        f"""SELECT COUNT(*) as count
+                        FROM {schema}.visit v
+                        WHERE v.student = $1 
+                        AND DATE(v.data) = $2
+                        AND v.shedule IN (
+                            SELECT ss.schedule 
+                            FROM {schema}.student_schedule ss 
+                            WHERE ss.student = $1
+                        )""",
+                        student['id'], today_date
+                    )
+
+                    visit_count = visit_count[0]['count'] if visit_count else 0
+                    if visit_count > 1:
+                        multiple_visits_count += 1
+                        logger.info(f"📊 Студент {student['name']} посетил {visit_count} занятий в субботу")
+                    else:
+                        regular_count += 1
             else:
                 regular_count += 1
 
@@ -251,16 +278,24 @@ async def subtract_classes_and_update_payment_dates():
 
         if is_saturday:
             logger.info(
-                f"🎯 По субботам: {special_tariff_count} студентов списано по 2 занятия, {regular_count} студентов по 1 занятию")
+                f"🎯 По субботам: {special_tariff_count} студентов списано по 2 занятия (особый тариф), "
+                f"{multiple_visits_count} студентов списано по количеству посещений, "
+                f"{regular_count} студентов по 1 занятию")
+
+        if negative_balance_count > 0:
+            logger.warning(f"🔴 {negative_balance_count} студентов ушли в отрицательный баланс!")
 
         # ШАГ 2: Обновляем даты оплаты для всех активных студентов
+        # ИСКЛЮЧАЕМ студентов с price.classes_in_price = 8
         payment_updates = 0
         all_active_students = await execute_raw_sql(
             f"""SELECT s.id, s.name, s.classes_remaining, s.price,
                     COUNT(DISTINCT ss.schedule) as training_days_per_week
             FROM {schema}.student s
             LEFT JOIN {schema}.student_schedule ss ON s.id = ss.student
+            JOIN {schema}.price p ON s.price = p.id
             WHERE s.active = true
+            AND p.classes_in_price != 8  -- ИСКЛЮЧАЕМ студентов с 8 занятиями
             GROUP BY s.id, s.name, s.classes_remaining, s.price
             HAVING COUNT(DISTINCT ss.schedule) > 0"""
         )
@@ -298,7 +333,8 @@ async def subtract_classes_and_update_payment_dates():
                 )
 
                 payment_updates += 1
-                logger.debug(f"📅 Обновлена дата оплаты для {student['name']}: {next_payment_date}")
+                logger.info(
+                    f"📅 Обновлена дата оплаты для {student['name']}: {next_payment_date} (баланс: {student['classes_remaining']})")
 
             except Exception as e:
                 logger.error(f"❌ Ошибка обновления даты оплаты для {student['name']}: {str(e)}")
@@ -308,11 +344,31 @@ async def subtract_classes_and_update_payment_dates():
         # Краткий отчет по списаниям
         logger.info("📊 Отчет по списаниям:")
         for student in result[:5]:
+            balance_status = "🔴 МИНУС" if student['classes_remaining'] < 0 else "🟢"
+
             if is_saturday and student['price'] in [3, 4]:
                 logger.info(
-                    f"   👉 {student['name']} - списано 2 занятия, осталось {student['classes_remaining']} (особый тариф)")
+                    f"   👉 {student['name']} - списано 2 занятия, осталось {student['classes_remaining']} {balance_status} (особый тариф)")
+            elif is_saturday:
+                # Для обычных тарифов в субботу показываем количество посещений
+                visit_count = await execute_raw_sql(
+                    f"""SELECT COUNT(*) as count
+                    FROM {schema}.visit v
+                    WHERE v.student = $1 
+                    AND DATE(v.data) = $2
+                    AND v.shedule IN (
+                        SELECT ss.schedule 
+                        FROM {schema}.student_schedule ss 
+                        WHERE ss.student = $1
+                    )""",
+                    student['id'], today_date
+                )
+                visit_count = visit_count[0]['count'] if visit_count else 1
+                logger.info(
+                    f"   👉 {student['name']} - списано {visit_count} занятий, осталось {student['classes_remaining']} {balance_status}")
             else:
-                logger.info(f"   👉 {student['name']} - списано 1 занятие, осталось {student['classes_remaining']}")
+                logger.info(
+                    f"   👉 {student['name']} - списано 1 занятие, осталось {student['classes_remaining']} {balance_status}")
 
         if updated_count > 5:
             logger.info(f"   ... и еще {updated_count - 5} студентов")
@@ -320,9 +376,13 @@ async def subtract_classes_and_update_payment_dates():
         return {
             "success": True,
             "message": f"✅ Списано занятий у {updated_count} студентов, обновлено {payment_updates} дат оплаты" +
-                       (f", из них {special_tariff_count} по 2 занятия" if is_saturday else ""),
+                       (
+                           f", из них {special_tariff_count} по 2 занятия (особый тариф), {multiple_visits_count} по количеству посещений" if is_saturday else "") +
+                       (f", 🔴 {negative_balance_count} в минусе" if negative_balance_count > 0 else ""),
             "updated": updated_count,
             "special_tariff_count": special_tariff_count if is_saturday else 0,
+            "multiple_visits_count": multiple_visits_count if is_saturday else 0,
+            "negative_balance_count": negative_balance_count,
             "regular_count": regular_count,
             "payment_dates_updated": payment_updates,
             "date": today_date.isoformat(),
@@ -340,23 +400,25 @@ async def subtract_classes_and_update_payment_dates():
             "errors": [str(e)]
         }
 
+
 async def main():
     """Основная функция для запуска через cron"""
     try:
         logger.info("=" * 50)
         logger.info("🏁 НАЧАЛО ВЫПОЛНЕНИЯ СКРИПТА")
-        
+
         result = await subtract_classes_and_update_payment_dates()
-        
+
         logger.info(f"🏁 РЕЗУЛЬТАТ: {result['message']}")
         logger.info("=" * 50)
-        
+
         # Возвращаем код выхода для cron
         sys.exit(0 if result['success'] else 1)
-        
+
     except Exception as e:
         logger.error(f"💥 Фатальная ошибка: {str(e)}")
         sys.exit(1)
+
 
 if __name__ == '__main__':
     asyncio.run(main())

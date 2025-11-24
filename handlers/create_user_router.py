@@ -1,20 +1,15 @@
-import pytz
-from aiogram import Router, F, types
-from aiogram.filters import CommandStart, CommandObject, Command
-from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
+from aiogram import Router, F
+from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from create_bot import bot
 from database.schemas import schema
 
-from db_handler.db_funk import get_user_data, insert_user, execute_raw_sql
-from keyboards.kbs import main_kb, home_page_kb, places_kb
-from utils.utils import get_refer_id, get_now_time, get_current_week_day
-from aiogram.utils.chat_action import ChatActionSender
+from db_handler.db_funk import execute_raw_sql
+from keyboards.kbs import main_kb
+
 from logger_config import logger
-from datetime import datetime, time
+from datetime import datetime
 
 
 

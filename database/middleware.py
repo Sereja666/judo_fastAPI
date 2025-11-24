@@ -7,9 +7,9 @@ import json
 from aiogram import BaseMiddleware
 from typing import Callable, Dict, Any, Awaitable
 from aiogram.types import TelegramObject, Message
-import logging
+from logger_config import logger
 
-logger = logging.getLogger(__name__)
+
 
 
 class DBSessionMiddleware(BaseMiddleware):
@@ -124,25 +124,25 @@ class SupersetAuthMiddleware:
         # Получаем сессионную куку
         session_cookie = request.cookies.get("session")
 
-        print(f"🔹 Проверка аутентификации для пути: {request.url.path}")
-        print(f"🔹 Сессионная кука: {'есть' if session_cookie else 'нет'}")
-        print(f"🔹 Все куки: {dict(request.cookies)}")
-        print(f"🔹 Referer: {request.headers.get('referer')}")
+        logger.info(f"🔹 Проверка аутентификации для пути: {request.url.path}")
+        logger.info(f"🔹 Сессионная кука: {'есть' if session_cookie else 'нет'}")
+        logger.info(f"🔹 Все куки: {dict(request.cookies)}")
+        logger.info(f"🔹 Referer: {request.headers.get('referer')}")
 
         # Если кука есть, проверяем её валидность через Superset API
         if session_cookie:
             try:
                 is_valid = await self.validate_superset_session(session_cookie)
                 if is_valid:
-                    print("✅ Сессия валидна, доступ разрешен")
+                    logger.info("✅ Сессия валидна, доступ разрешен")
                     return await call_next(request)
                 else:
-                    print("❌ Сессия невалидна")
+                    logger.info("❌ Сессия невалидна")
             except Exception as e:
-                print(f"❌ Ошибка проверки сессии: {e}")
+                logger.error(f"❌ Ошибка проверки сессии: {e}")
 
         # Если куки нет или она невалидна - редирект на логин Superset
-        print("🔹 Редирект на страницу логина Superset")
+        logger.info("🔹 Редирект на страницу логина Superset")
         login_url = f"{self.superset_base_url}/login/?next={request.url}"
         return RedirectResponse(url=login_url)
 
@@ -162,12 +162,12 @@ class SupersetAuthMiddleware:
 
                 if response.status_code == 200:
                     user_data = response.json()
-                    print(f"✅ Авторизованный пользователь: {user_data.get('username', 'Unknown')}")
+                    logger.info(f"✅ Авторизованный пользователь: {user_data.get('username', 'Unknown')}")
                     return True
 
-                print(f"❌ Superset API вернул статус: {response.status_code}")
+                logger.info(f"❌ Superset API вернул статус: {response.status_code}")
                 return False
 
         except Exception as e:
-            print(f"❌ Ошибка при проверке сессии Superset: {e}")
+            logger.error(f"❌ Ошибка при проверке сессии Superset: {e}")
             return False
