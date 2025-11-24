@@ -37,7 +37,7 @@ import sys
 import os
 from datetime import datetime, timedelta
 from math import ceil
-from logger_config import logger
+
 
 # Добавляем путь к проекту в PYTHONPATH
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -47,6 +47,7 @@ try:
     from database.schemas import schema
     import asyncpg
     import logging
+    from logger_config import logger
     from config import settings
 except ImportError as e:
     logger.error(f"❌ Ошибка импорта: {e}")
