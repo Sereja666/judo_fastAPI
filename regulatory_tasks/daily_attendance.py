@@ -351,10 +351,10 @@ async def subtract_classes_and_update_payment_dates(target_date=None):
                     WHERE sched.day_week = $2
                     AND s.active = true
                     AND p.classes_in_price != 8
-                    AND s.classes_remaining IS NOT NULL  # Исключаем NULL
+                    AND s.classes_remaining IS NOT NULL 
                 )
                 AND active = true
-                AND classes_remaining IS NOT NULL  # Дополнительная защита
+                AND classes_remaining IS NOT NULL
                 RETURNING id, name, classes_remaining, price;""",
                 today_date, today_weekday_ru
             )
@@ -372,10 +372,10 @@ async def subtract_classes_and_update_payment_dates(target_date=None):
                     WHERE sched.day_week = $1
                     AND s.active = true
                     AND p.classes_in_price != 8
-                    AND s.classes_remaining IS NOT NULL  # Исключаем NULL
+                    AND s.classes_remaining IS NOT NULL  
                 )
                 AND active = true
-                AND classes_remaining IS NOT NULL  # Дополнительная защита
+                AND classes_remaining IS NOT NULL 
                 RETURNING id, name, classes_remaining, price;""",
                 today_weekday_ru
             )
@@ -458,7 +458,7 @@ async def subtract_classes_and_update_payment_dates(target_date=None):
             LEFT JOIN {schema}.student_schedule ss ON s.id = ss.student
             JOIN {schema}.price p ON s.price = p.id
             WHERE s.active = true
-            AND s.classes_remaining IS NOT NULL  # Исключаем NULL
+            AND s.classes_remaining IS NOT NULL 
             GROUP BY s.id, s.name, s.classes_remaining, s.price
             HAVING COUNT(DISTINCT ss.schedule) > 0"""
         )
