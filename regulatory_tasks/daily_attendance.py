@@ -135,6 +135,154 @@ async def calculate_next_payment_date(student_id: int, current_balance: int, day
         return datetime.now().date() + timedelta(days=30)
 
 
+async def process_8_classes_students(today_date, today_weekday_ru, is_saturday):
+    """
+    Обработка студентов с classes_in_price = 8
+    - В понедельник-пятницу: списываем 1 занятие если был visit в этот день
+    - В субботу: списываем по количеству visit + корректируем до 2 занятий в неделю
+    """
+    try:
+        # Определяем начало и конец недели (понедельник - воскресенье)
+        today = datetime.now()
+        start_of_week = today - timedelta(days=today.weekday())  # Понедельник
+        end_of_week = start_of_week + timedelta(days=6)  # Воскресенье
+
+        # Получаем всех активных студентов с тарифом 8 занятий
+        students_8 = await execute_raw_sql(
+            f"""SELECT s.id, s.name, s.classes_remaining, s.price
+            FROM {schema}.student s
+            JOIN {schema}.price p ON s.price = p.id
+            WHERE s.active = true
+            AND p.classes_in_price = 8"""
+        )
+
+        if not students_8:
+            logger.info("ℹ️ Нет студентов с тарифом 8 занятий")
+            return []
+
+        logger.info(f"🔍 Найдено {len(students_8)} студентов с тарифом 8 занятий")
+
+        updated_students = []
+
+        for student in students_8:
+            try:
+                if is_saturday:
+                    # ЛОГИКА ДЛЯ СУББОТЫ
+
+                    # 1. Сначала списываем посещения за субботу
+                    saturday_visits = await execute_raw_sql(
+                        f"""SELECT COUNT(*) as visit_count
+                        FROM {schema}.visit v
+                        WHERE v.student = $1 
+                        AND DATE(v.data) = $2""",
+                        student['id'], today_date
+                    )
+
+                    saturday_visit_count = saturday_visits[0]['visit_count'] if saturday_visits else 0
+
+                    # Списываем посещения за субботу
+                    if saturday_visit_count > 0:
+                        await execute_raw_sql(
+                            f"""UPDATE {schema}.student 
+                            SET classes_remaining = classes_remaining - $1
+                            WHERE id = $2""",
+                            saturday_visit_count, student['id']
+                        )
+                        logger.info(
+                            f"📅 Суббота: студент {student['name']} - списано {saturday_visit_count} занятий за посещения")
+
+                    # 2. Проверяем посещения за всю неделю и корректируем до 2 занятий
+                    weekly_visits = await execute_raw_sql(
+                        f"""SELECT COUNT(*) as visit_count
+                        FROM {schema}.visit v
+                        WHERE v.student = $1 
+                        AND DATE(v.data) >= $2 
+                        AND DATE(v.data) <= $3""",
+                        student['id'], start_of_week.date(), end_of_week.date()
+                    )
+
+                    weekly_visit_count = weekly_visits[0]['visit_count'] if weekly_visits else 0
+                    expected_visits = 2  # Ожидаемое количество посещений в неделю для тарифа 8
+
+                    logger.info(
+                        f"📊 Студент {student['name']}: посещений за неделю {weekly_visit_count}, ожидается {expected_visits}")
+
+                    # Определяем сколько нужно списать дополнительно
+                    if weekly_visit_count < expected_visits:
+                        # Если посещений меньше ожидаемых - списываем разницу
+                        additional_classes_to_subtract = expected_visits - weekly_visit_count
+                        logger.info(
+                            f"📝 {student['name']}: недостаточно посещений, дополнительно списываем {additional_classes_to_subtract} занятий")
+
+                        # Выполняем дополнительное списание
+                        result = await execute_raw_sql(
+                            f"""UPDATE {schema}.student 
+                            SET classes_remaining = classes_remaining - $1
+                            WHERE id = $2
+                            RETURNING id, name, classes_remaining, price;""",
+                            additional_classes_to_subtract, student['id']
+                        )
+
+                        if result:
+                            updated_students.append(result[0])
+                            total_subtracted = saturday_visit_count + additional_classes_to_subtract
+                            logger.info(
+                                f"✅ Студент {student['name']}: всего списано {total_subtracted} занятий, осталось {result[0]['classes_remaining']}")
+                    else:
+                        # Если посещений достаточно - только списываем субботние посещения
+                        result = await execute_raw_sql(
+                            f"""SELECT id, name, classes_remaining, price 
+                            FROM {schema}.student 
+                            WHERE id = $1""",
+                            student['id']
+                        )
+                        if result:
+                            updated_students.append(result[0])
+                            logger.info(
+                                f"✅ Студент {student['name']}: посещений достаточно, списано только {saturday_visit_count} за субботу, осталось {result[0]['classes_remaining']}")
+
+                else:
+                    # ЛОГИКА ДЛЯ ПОНЕДЕЛЬНИКА-ПЯТНИЦЫ
+                    # Списываем 1 занятие если был visit в этот день
+                    today_visits = await execute_raw_sql(
+                        f"""SELECT COUNT(*) as visit_count
+                        FROM {schema}.visit v
+                        WHERE v.student = $1 
+                        AND DATE(v.data) = $2""",
+                        student['id'], today_date
+                    )
+
+                    today_visit_count = today_visits[0]['visit_count'] if today_visits else 0
+
+                    if today_visit_count > 0:
+                        # Был хотя бы один visit - списываем 1 занятие
+                        result = await execute_raw_sql(
+                            f"""UPDATE {schema}.student 
+                            SET classes_remaining = classes_remaining - 1
+                            WHERE id = $1
+                            RETURNING id, name, classes_remaining, price;""",
+                            student['id']
+                        )
+
+                        if result:
+                            updated_students.append(result[0])
+                            logger.info(
+                                f"📅 {today_weekday_ru}: студент {student['name']} - списано 1 занятие за посещение, осталось {result[0]['classes_remaining']}")
+                    else:
+                        # Не было посещений - ничего не списываем
+                        logger.info(
+                            f"📅 {today_weekday_ru}: студент {student['name']} - не было посещений, списание не требуется")
+
+            except Exception as e:
+                logger.error(f"❌ Ошибка обработки студента {student['name']}: {str(e)}")
+
+        return updated_students
+
+    except Exception as e:
+        logger.error(f"❌ Ошибка обработки студентов с тарифом 8: {str(e)}")
+        return []
+
+
 async def subtract_classes_and_update_payment_dates():
     """
     Ежедневная функция для:
@@ -143,7 +291,7 @@ async def subtract_classes_and_update_payment_dates():
     3. В остальные дни списывается по 1 занятию за день по расписанию
     4. Учитывает особые тарифы (2 занятия по субботам для price_id = 3 или 4)
     5. Обновления дат следующей оплаты
-    6. ИСКЛЮЧАЕТ студентов с price.classes_in_price = 8
+    6. Для студентов с price.classes_in_price = 8 - особая логика
     """
     try:
         # Получаем текущий день недели на русском
@@ -164,10 +312,10 @@ async def subtract_classes_and_update_payment_dates():
 
         logger.info(f"🚀 Запуск вычитания занятий за {today_date} ({today_weekday_ru})")
 
-        # ШАГ 1: Вычитаем занятия у студентов
-        # ИСКЛЮЧАЕМ студентов с price.classes_in_price = 8
-        # УБИРАЕМ проверку classes_remaining > 0 - разрешаем уходить в минус
+        # ОБРАБОТКА СТУДЕНТОВ С ТАРИФОМ 8 (отдельная логика)
+        students_8_updated = await process_8_classes_students(today_date, today_weekday_ru, is_saturday)
 
+        # ШАГ 1: Вычитаем занятия у остальных студентов (classes_in_price != 8)
         if is_saturday:
             # Для субботы: списываем количество занятий по факту посещений
             # с учетом особых тарифов (price_id = 3 или 4 списывается 2 занятия)
@@ -222,7 +370,9 @@ async def subtract_classes_and_update_payment_dates():
                 today_weekday_ru
             )
 
-        updated_count = len(result)
+        # Объединяем результаты обычных студентов и студентов с тарифом 8
+        all_updated_students = list(result) + students_8_updated
+        updated_count = len(all_updated_students)
 
         if updated_count == 0:
             logger.info(f"ℹ️ На {today_weekday_ru} не было студентов для списания")
@@ -240,39 +390,41 @@ async def subtract_classes_and_update_payment_dates():
         regular_count = 0
         multiple_visits_count = 0
         negative_balance_count = 0
+        tariff_8_count = len(students_8_updated)
 
-        for student in result:
+        for student in all_updated_students:
             # Проверяем ушел ли баланс в минус
             if student['classes_remaining'] < 0:
                 negative_balance_count += 1
                 logger.warning(f"⚠️ Студент {student['name']} ушел в минус: {student['classes_remaining']} занятий")
 
-            if is_saturday:
-                if student['price'] in [3, 4]:
-                    special_tariff_count += 1
-                else:
-                    # Для обычных тарифов в субботу проверяем количество посещений
-                    visit_count = await execute_raw_sql(
-                        f"""SELECT COUNT(*) as count
-                        FROM {schema}.visit v
-                        WHERE v.student = $1 
-                        AND DATE(v.data) = $2
-                        AND v.shedule IN (
-                            SELECT ss.schedule 
-                            FROM {schema}.student_schedule ss 
-                            WHERE ss.student = $1
-                        )""",
-                        student['id'], today_date
-                    )
-
-                    visit_count = visit_count[0]['count'] if visit_count else 0
-                    if visit_count > 1:
-                        multiple_visits_count += 1
-                        logger.info(f"📊 Студент {student['name']} посетил {visit_count} занятий в субботу")
+            # Проверяем тип тарифа для анализа (только для обычных студентов)
+            if student not in students_8_updated:
+                if is_saturday:
+                    if student['price'] in [3, 4]:
+                        special_tariff_count += 1
                     else:
-                        regular_count += 1
-            else:
-                regular_count += 1
+                        # Для обычных тарифов в субботу проверяем количество посещений
+                        visit_count = await execute_raw_sql(
+                            f"""SELECT COUNT(*) as count
+                            FROM {schema}.visit v
+                            WHERE v.student = $1 
+                            AND DATE(v.data) = $2
+                            AND v.shedule IN (
+                                SELECT ss.schedule 
+                                FROM {schema}.student_schedule ss 
+                                WHERE ss.student = $1
+                            )""",
+                            student['id'], today_date
+                        )
+
+                        visit_count = visit_count[0]['count'] if visit_count else 0
+                        if visit_count > 1:
+                            multiple_visits_count += 1
+                        else:
+                            regular_count += 1
+                else:
+                    regular_count += 1
 
         logger.info(f"✅ Списано занятий у {updated_count} студентов")
 
@@ -280,13 +432,13 @@ async def subtract_classes_and_update_payment_dates():
             logger.info(
                 f"🎯 По субботам: {special_tariff_count} студентов списано по 2 занятия (особый тариф), "
                 f"{multiple_visits_count} студентов списано по количеству посещений, "
-                f"{regular_count} студентов по 1 занятию")
+                f"{regular_count} студентов по 1 занятию, "
+                f"{tariff_8_count} студентов с тарифом 8 обработано")
 
         if negative_balance_count > 0:
             logger.warning(f"🔴 {negative_balance_count} студентов ушли в отрицательный баланс!")
 
         # ШАГ 2: Обновляем даты оплаты для всех активных студентов
-        # ИСКЛЮЧАЕМ студентов с price.classes_in_price = 8
         payment_updates = 0
         all_active_students = await execute_raw_sql(
             f"""SELECT s.id, s.name, s.classes_remaining, s.price,
@@ -295,7 +447,6 @@ async def subtract_classes_and_update_payment_dates():
             LEFT JOIN {schema}.student_schedule ss ON s.id = ss.student
             JOIN {schema}.price p ON s.price = p.id
             WHERE s.active = true
-            AND p.classes_in_price != 8  -- ИСКЛЮЧАЕМ студентов с 8 занятиями
             GROUP BY s.id, s.name, s.classes_remaining, s.price
             HAVING COUNT(DISTINCT ss.schedule) > 0"""
         )
@@ -343,10 +494,13 @@ async def subtract_classes_and_update_payment_dates():
 
         # Краткий отчет по списаниям
         logger.info("📊 Отчет по списаниям:")
-        for student in result[:5]:
+        for student in all_updated_students[:5]:
             balance_status = "🔴 МИНУС" if student['classes_remaining'] < 0 else "🟢"
 
-            if is_saturday and student['price'] in [3, 4]:
+            if student in students_8_updated:
+                logger.info(
+                    f"   👉 {student['name']} - тариф 8, осталось {student['classes_remaining']} {balance_status}")
+            elif is_saturday and student['price'] in [3, 4]:
                 logger.info(
                     f"   👉 {student['name']} - списано 2 занятия, осталось {student['classes_remaining']} {balance_status} (особый тариф)")
             elif is_saturday:
@@ -377,11 +531,12 @@ async def subtract_classes_and_update_payment_dates():
             "success": True,
             "message": f"✅ Списано занятий у {updated_count} студентов, обновлено {payment_updates} дат оплаты" +
                        (
-                           f", из них {special_tariff_count} по 2 занятия (особый тариф), {multiple_visits_count} по количеству посещений" if is_saturday else "") +
+                           f", из них {special_tariff_count} по 2 занятия (особый тариф), {multiple_visits_count} по количеству посещений, {tariff_8_count} с тарифом 8" if is_saturday else "") +
                        (f", 🔴 {negative_balance_count} в минусе" if negative_balance_count > 0 else ""),
             "updated": updated_count,
             "special_tariff_count": special_tariff_count if is_saturday else 0,
             "multiple_visits_count": multiple_visits_count if is_saturday else 0,
+            "tariff_8_count": tariff_8_count,
             "negative_balance_count": negative_balance_count,
             "regular_count": regular_count,
             "payment_dates_updated": payment_updates,
