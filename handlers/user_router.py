@@ -164,6 +164,26 @@ async def get_schedule_time(schedule_id: int) -> Optional[time]:
     return schedule_data[0]['time_start'] if schedule_data else None
 
 
+async def get_belt_emoji(rang_id: int) -> str:
+    """Получает эмодзи пояса по ID из таблицы belt_color"""
+    if not rang_id:
+        return "⚪️"  # По умолчанию белый пояс
+
+    try:
+        # Получаем эмодзи пояса напрямую из базы
+        belt_data = await execute_raw_sql(
+            "SELECT color FROM public.belt_color WHERE id = $1;",
+            rang_id
+        )
+
+        if belt_data and belt_data[0]['color']:
+            return belt_data[0]['color']
+    except Exception as e:
+        print(f"Error getting belt emoji: {e}")
+
+    return "⚪️"  # По умолчанию если что-то пошло не так
+
+
 # --- Обработчики ---
 @user_router.message(F.text.in_(['🥋 ГМР', '🥋 Сормовская', '🥋 Ставрапольская']))
 async def handle_city_selection(message: Message, state: FSMContext):
@@ -571,14 +591,16 @@ async def show_attendance_status(callback: CallbackQuery):
         training = training_info[0]
 
         # Получаем ВСЕХ студентов, которые пришли на тренировку сегодня
-        # Включая тех, кто был добавлен через "+ ученик"
+        # Включая информацию о поясах из таблицы belt_color
         students = await execute_raw_sql(
             f"""SELECT st.id, st.name, st.birthday, st.rang,
+                bc.color as belt_color,
                 CASE 
                     WHEN v.id IS NOT NULL THEN 'present'
                     ELSE 'absent'
                 END as status
             FROM {schema}.student st
+            LEFT JOIN {schema}.belt_color bc ON st.rang = bc.id
             LEFT JOIN {schema}.student_schedule ss ON ss.student = st.id AND ss.schedule = $1
             LEFT JOIN {schema}.visit v ON v.student = st.id 
                 AND v.shedule = $1 
@@ -595,16 +617,15 @@ async def show_attendance_status(callback: CallbackQuery):
             )
             ORDER BY 
                 CASE 
-                    WHEN st.rang IS NULL THEN 999
-                    WHEN st.rang ILIKE '%бел%' THEN 1
-                    WHEN st.rang ILIKE '%желт%' THEN 2
-                    WHEN st.rang ILIKE '%жёлт%' THEN 2 
-                    WHEN st.rang ILIKE '%оранж%' THEN 3
-                    WHEN st.rang ILIKE '%зелен%' THEN 4
-                    WHEN st.rang ILIKE '%син%' THEN 5
-                    WHEN st.rang ILIKE '%коричн%' THEN 6
-                    WHEN st.rang ILIKE '%красн%' THEN 7
-                    WHEN st.rang ILIKE '%черн%' THEN 8
+                    WHEN bc.color IS NULL THEN 999
+                    WHEN bc.color = '⚪️' THEN 1
+                    WHEN bc.color = '🟡' THEN 2
+                    WHEN bc.color = '🟠' THEN 3
+                    WHEN bc.color = '🟢' THEN 4
+                    WHEN bc.color = '🔵' THEN 5
+                    WHEN bc.color = '🟤' THEN 6
+                    WHEN bc.color = '🔴' THEN 7
+                    WHEN bc.color = '⚫️' THEN 8
                     ELSE 999
                 END, st.name;""",
             schedule_id, current_date
@@ -632,7 +653,7 @@ async def show_attendance_status(callback: CallbackQuery):
 
         for student in students:
             birth_year = student['birthday'].year if student['birthday'] else " "
-            belt_emoji = get_belt_emoji(student['rang'])
+            belt_emoji = await get_belt_emoji(student['rang'])
 
             student_line = f"{belt_emoji} {student['name']} {birth_year}"
 
@@ -679,7 +700,7 @@ async def record_extra_student_visit(student_name: str, trainer_telegram_id: int
     try:
         # Ищем ученика
         student_data = await execute_raw_sql(
-            f"""SELECT id, name, classes_remaining 
+            f"""SELECT id, name, classes_remaining, rang
             FROM public.student 
             WHERE active = true 
             AND name ILIKE $1
@@ -756,7 +777,7 @@ async def record_extra_student_visit(student_name: str, trainer_telegram_id: int
                 f"UPDATE public.student SET classes_remaining = $1 WHERE id = $2;",
                 new_balance, student_id
             )
-            logger.info(f'Списние заниятия  у {student['name']} за приход вне расписания')
+            logger.info(f'Списание занятия у {student["name"]} за приход вне расписания')
 
         # Определяем место тренировки
         if not place_id:
@@ -810,17 +831,19 @@ async def record_extra_student_visit(student_name: str, trainer_telegram_id: int
 
         if not visit_result:
             return {"success": False, "error": "Ошибка при записи посещения"}
+
         logger.info(
-            f'Посещение записано для {student['name']}'
-            f' {place['name']},'
-            f' {current_date.strftime('%d.%m.%Y')},'
-            f' {current_time.strftime('%H:%M')},'
+            f'Посещение записано для {student["name"]}'
+            f' {place["name"]},'
+            f' {current_date.strftime("%d.%m.%Y")},'
+            f' {current_time.strftime("%H:%M")},'
             f' {class_deducted},'
             f' {new_balance},'
-            f' {trainer['name']}'
-            f'{sport_name}'
-            f'{schedule_id}'
-            f'')
+            f' {trainer["name"]}'
+            f' {sport_name}'
+            f' {schedule_id}'
+        )
+
         return {
             "success": True,
             "student_name": student['name'],
@@ -912,3 +935,5 @@ async def process_extra_student_name(message: Message, state: FSMContext):
         await message.answer(f"❌ Произошла ошибка: {str(e)}")
         logger.error(f"❌ Произошла ошибка: {str(e)}")
         await state.clear()
+
+
