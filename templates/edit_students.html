@@ -73,15 +73,6 @@
                     <label for="rang" class="form-label">Разряд</label>
                     <input type="text" class="form-control" id="rang" name="rang">
                 </div>
-                 <div class="col-md-4 mb-3">
-                    <label for="sports_rank" class="form-label">Разряд/звание</label>
-                    <select class="form-select" id="sports_rank" name="sports_rank">
-                        <option value="">-- Выберите разряд --</option>
-                        {% for rank in sports_ranks %}
-                        <option value="{{ rank.id }}">{{ rank.rank }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
                 <div class="col-md-4 mb-3">
                     <label for="sex" class="form-label">Пол</label>
                     <select class="form-select" id="sex" name="sex">
@@ -260,7 +251,6 @@
             $('#name').val(student.name || '');
             $('#birthday').val(student.birthday ? student.birthday.split('T')[0] : '');
             $('#sport_discipline').val(student.sport_discipline || '');
-            $('#sports_rank').val(student.sports_rank || '');
             $('#rang').val(student.rang || '');
             $('#sex').val(student.sex || '');
             $('#weight').val(student.weight || '');
