@@ -35,7 +35,7 @@ class Students(Base):
     name = Column(String())
     birthday = Column(DateTime())
     sport_discipline = Column(Integer())
-    rang = Column(String())  # цвет пояса на русском
+    rang = Column(Integer())  # ID из Belt_сolor
     sports_rank = Column(Integer())  # id sports_rank
     sex = Column(String())
     weight = Column(Integer())
