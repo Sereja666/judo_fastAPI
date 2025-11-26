@@ -13,7 +13,7 @@ from database.middleware import SupersetAuthMiddleware
 from config import settings
 from database.schemas import Students, Sport, Schedule, Students_schedule, Trainers, Prices, engine, Visits, \
     Training_place, Сompetition, MedCertificat_type, Сompetition_trainer, Сompetition_student, \
-    Сompetition_MedCertificat, Sports_rank
+    Сompetition_MedCertificat, Sports_rank, Belt_сolor
 from logger_config import logger
 
 
