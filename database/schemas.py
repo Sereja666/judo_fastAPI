@@ -35,7 +35,7 @@ class Students(Base):
     name = Column(String())
     birthday = Column(DateTime())
     sport_discipline = Column(Integer())
-    belt_color = Column(String())
+    rang = Column(String())
     sports_rank = Column(Integer())  # id sports_rank
     sex = Column(String())
     weight = Column(Integer())
@@ -45,8 +45,6 @@ class Students(Base):
     payment_day = Column(Integer())  # день месяца для оплаты (1-31)
     classes_remaining = Column(Integer())  # сколько занятий на остатке в этом месяце
     expected_payment_date = Column(Date())  # ожидаемая дата оплаты
-
-
     telephone = Column(String())
     parent1 = Column(Integer())
     parent2 = Column(Integer())
