@@ -50,6 +50,7 @@ alembic upgrade head
 
 
 python api_Students_shedule.py
+sudo systemctl restart judo_fastapi.service  
 
 ## Работа с ботом
 ### Остановить бота
