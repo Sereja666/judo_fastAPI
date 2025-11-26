@@ -184,7 +184,8 @@ async def edit_students_page(request: Request, db: Session = Depends(get_db)):
     sports = db.query(Sport).all()
     trainers = db.query(Trainers).all()
     prices = db.query(Prices).all()
-    sports_ranks = db.query(Sports_rank).all()  # Добавьте эту строку
+    sports_ranks = db.query(Sports_rank).all()
+    belt_colors = db.query(Belt_сolor).all()  # Добавьте эту строку
 
     return templates.TemplateResponse("edit_students.html", {
         "request": request,
@@ -192,7 +193,8 @@ async def edit_students_page(request: Request, db: Session = Depends(get_db)):
         "sports": sports,
         "trainers": trainers,
         "prices": prices,
-        "sports_ranks": sports_ranks  # Добавьте эту строку
+        "sports_ranks": sports_ranks,
+        "belt_colors": belt_colors  # Добавьте эту строку
     })
 
 @app.get("/edit-students/search-students")
