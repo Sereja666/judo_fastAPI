@@ -243,7 +243,7 @@
             updateStudent();
         });
     });
-unction loadStudentData(studentId) {
+function loadStudentData(studentId) {
     $.get(`/edit-students/get-student-data/${studentId}`, function(student) {
         // Заполняем форму данными ученика
         $('#studentId').val(student.id);
