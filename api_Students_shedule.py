@@ -208,40 +208,54 @@ async def search_students_edit(query: str, db: Session = Depends(get_db)):
     result = [{"id": student.id, "name": student.name} for student in students]
     return JSONResponse(result)
 
+
 @app.get("/edit-students/get-student-data/{student_id}")
 async def get_student_data(student_id: int, db: Session = Depends(get_db)):
     """Получение полных данных ученика"""
-    student = db.query(Students).filter(Students.id == student_id).first()
-    if not student:
-        raise HTTPException(status_code=404, detail="Ученик не найден")
+    try:
+        print(f"🔹 Запрос данных ученика ID: {student_id}")
 
-    # Преобразуем данные для JSON
-    student_data = {
-        "id": student.id,
-        "name": student.name,
-        "birthday": student.birthday.isoformat() if student.birthday else None,
-        "sport_discipline": student.sport_discipline,
-        "rang": student.rang or "",
-        "sex": student.sex or "",
-        "weight": student.weight,
-        "reference1": student.reference1.isoformat() if student.reference1 else None,
-        "reference2": student.reference2.isoformat() if student.reference2 else None,
-        "reference3": student.reference3.isoformat() if student.reference3 else None,
-        "head_trainer_id": student.head_trainer_id,
-        "second_trainer_id": student.second_trainer_id,
-        "price": student.price,
-        "payment_day": student.payment_day,
-        "classes_remaining": student.classes_remaining,
-        "expected_payment_date": student.expected_payment_date.isoformat() if student.expected_payment_date else None,
-        "telephone": student.telephone or "",
-        "parent1": student.parent1,
-        "parent2": student.parent2,
-        "date_start": student.date_start.isoformat() if student.date_start else None,
-        "telegram_id": student.telegram_id,
-        "active": student.active
-    }
+        student = db.query(Students).filter(Students.id == student_id).first()
+        if not student:
+            raise HTTPException(status_code=404, detail="Ученик не найден")
 
-    return JSONResponse(student_data)
+        # Безопасное преобразование данных
+        def safe_isoformat(date_obj):
+            if date_obj and hasattr(date_obj, 'isoformat'):
+                return date_obj.isoformat()
+            return None
+
+        student_data = {
+            "id": student.id,
+            "name": student.name or "",
+            "birthday": safe_isoformat(student.birthday),
+            "sport_discipline": student.sport_discipline,
+            "sports_rank": student.sports_rank,
+            "rang": student.rang or "",
+            "sex": student.sex or "",
+            "weight": student.weight,
+            "head_trainer_id": student.head_trainer_id,
+            "second_trainer_id": student.second_trainer_id,
+            "price": student.price,
+            "payment_day": student.payment_day,
+            "classes_remaining": student.classes_remaining,
+            "expected_payment_date": safe_isoformat(student.expected_payment_date),
+            "telephone": student.telephone or "",
+            "parent1": student.parent1,
+            "parent2": student.parent2,
+            "date_start": safe_isoformat(student.date_start),
+            "telegram_id": student.telegram_id,
+            "active": bool(student.active) if student.active is not None else True
+        }
+
+        print(f"✅ Успешно загружены данные ученика: {student_data['name']}")
+        return JSONResponse(student_data)
+
+    except Exception as e:
+        print(f"❌ Ошибка загрузки данных ученика: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Ошибка загрузки данных: {str(e)}")
 
 @app.post("/edit-students/update-student")
 async def update_student(
@@ -252,9 +266,6 @@ async def update_student(
     rang: Optional[str] = Form(None),
     sex: Optional[str] = Form(None),
     weight: Optional[str] = Form(None),
-    reference1: Optional[str] = Form(None),
-    reference2: Optional[str] = Form(None),
-    reference3: Optional[str] = Form(None),
     head_trainer_id: Optional[str] = Form(None),
     second_trainer_id: Optional[str] = Form(None),
     price: Optional[str] = Form(None),
@@ -303,9 +314,6 @@ async def update_student(
         student.rang = parse_value(rang)
         student.sex = parse_value(sex)
         student.weight = parse_int(weight)
-        student.reference1 = datetime.fromisoformat(reference1).date() if reference1 else None
-        student.reference2 = datetime.fromisoformat(reference2).date() if reference2 else None
-        student.reference3 = datetime.fromisoformat(reference3).date() if reference3 else None
         student.head_trainer_id = parse_int(head_trainer_id)
         student.second_trainer_id = parse_int(second_trainer_id)
         student.price = parse_int(price)
@@ -336,9 +344,6 @@ async def create_student(
     rang: Optional[str] = Form(None),
     sex: Optional[str] = Form(None),
     weight: Optional[str] = Form(None),
-    reference1: Optional[str] = Form(None),
-    reference2: Optional[str] = Form(None),
-    reference3: Optional[str] = Form(None),
     head_trainer_id: Optional[str] = Form(None),
     second_trainer_id: Optional[str] = Form(None),
     price: Optional[str] = Form(None),
@@ -384,9 +389,6 @@ async def create_student(
             rang=parse_value(rang),
             sex=parse_value(sex),
             weight=parse_int(weight),
-            reference1=datetime.fromisoformat(reference1).date() if reference1 else None,
-            reference2=datetime.fromisoformat(reference2).date() if reference2 else None,
-            reference3=datetime.fromisoformat(reference3).date() if reference3 else None,
             head_trainer_id=parse_int(head_trainer_id),
             second_trainer_id=parse_int(second_trainer_id),
             price=parse_int(price),

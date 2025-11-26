@@ -165,24 +165,24 @@
             </div>
         </div>
 
-        <!-- Медицинские справки -->
-        <div class="form-section">
-            <h5 class="section-title">Медицинские справки</h5>
-            <div class="row">
-                <div class="col-md-4 mb-3">
-                    <label for="reference1" class="form-label">Справка 1 (действует до)</label>
-                    <input type="date" class="form-control" id="reference1" name="reference1">
-                </div>
-                <div class="col-md-4 mb-3">
-                    <label for="reference2" class="form-label">Справка 2 (действует до)</label>
-                    <input type="date" class="form-control" id="reference2" name="reference2">
-                </div>
-                <div class="col-md-4 mb-3">
-                    <label for="reference3" class="form-label">Справка 3 (действует до)</label>
-                    <input type="date" class="form-control" id="reference3" name="reference3">
-                </div>
-            </div>
-        </div>
+<!--        &lt;!&ndash; Медицинские справки &ndash;&gt;-->
+<!--        <div class="form-section">-->
+<!--            <h5 class="section-title">Медицинские справки</h5>-->
+<!--            <div class="row">-->
+<!--                <div class="col-md-4 mb-3">-->
+<!--                    <label for="reference1" class="form-label">Справка 1 (действует до)</label>-->
+<!--                    <input type="date" class="form-control" id="reference1" name="reference1">-->
+<!--                </div>-->
+<!--                <div class="col-md-4 mb-3">-->
+<!--                    <label for="reference2" class="form-label">Справка 2 (действует до)</label>-->
+<!--                    <input type="date" class="form-control" id="reference2" name="reference2">-->
+<!--                </div>-->
+<!--                <div class="col-md-4 mb-3">-->
+<!--                    <label for="reference3" class="form-label">Справка 3 (действует до)</label>-->
+<!--                    <input type="date" class="form-control" id="reference3" name="reference3">-->
+<!--                </div>-->
+<!--            </div>-->
+<!--        </div>-->
 
         <!-- Дополнительно -->
         <div class="form-section">
@@ -243,55 +243,54 @@
             updateStudent();
         });
     });
+unction loadStudentData(studentId) {
+    $.get(`/edit-students/get-student-data/${studentId}`, function(student) {
+        // Заполняем форму данными ученика
+        $('#studentId').val(student.id);
+        $('#name').val(student.name || '');
+        $('#birthday').val(student.birthday ? student.birthday.split('T')[0] : '');
+        $('#sport_discipline').val(student.sport_discipline || '');
+        $('#sports_rank').val(student.sports_rank || '');
+        $('#rang').val(student.rang || '');
+        $('#sex').val(student.sex || '');
+        $('#weight').val(student.weight || '');
+        $('#telephone').val(student.telephone || '');
+        $('#head_trainer_id').val(student.head_trainer_id || '');
+        $('#second_trainer_id').val(student.second_trainer_id || '');
+        $('#price').val(student.price || '');
+        $('#payment_day').val(student.payment_day || '');
+        $('#classes_remaining').val(student.classes_remaining || '');
+        $('#expected_payment_date').val(student.expected_payment_date ? student.expected_payment_date.split('T')[0] : '');
+        // УДАЛЕНЫ поля reference1, reference2, reference3
+        $('#parent1').val(student.parent1 || '');
+        $('#parent2').val(student.parent2 || '');
+        $('#date_start').val(student.date_start ? student.date_start.replace('Z', '').substring(0, 16) : '');
+        $('#telegram_id').val(student.telegram_id || '');
+        $('#active').prop('checked', student.active !== false);
 
-    function loadStudentData(studentId) {
-        $.get(`/edit-students/get-student-data/${studentId}`, function(student) {
-            // Заполняем форму данными ученика
-            $('#studentId').val(student.id);
-            $('#name').val(student.name || '');
-            $('#birthday').val(student.birthday ? student.birthday.split('T')[0] : '');
-            $('#sport_discipline').val(student.sport_discipline || '');
-            $('#rang').val(student.rang || '');
-            $('#sex').val(student.sex || '');
-            $('#weight').val(student.weight || '');
-            $('#telephone').val(student.telephone || '');
-            $('#head_trainer_id').val(student.head_trainer_id || '');
-            $('#second_trainer_id').val(student.second_trainer_id || '');
-            $('#price').val(student.price || '');
-            $('#payment_day').val(student.payment_day || '');
-            $('#classes_remaining').val(student.classes_remaining || '');
-            $('#expected_payment_date').val(student.expected_payment_date ? student.expected_payment_date.split('T')[0] : '');
-            $('#reference1').val(student.reference1 ? student.reference1.split('T')[0] : '');
-            $('#reference2').val(student.reference2 ? student.reference2.split('T')[0] : '');
-            $('#reference3').val(student.reference3 ? student.reference3.split('T')[0] : '');
-            $('#parent1').val(student.parent1 || '');
-            $('#parent2').val(student.parent2 || '');
-            $('#date_start').val(student.date_start ? student.date_start.replace('Z', '').substring(0, 16) : '');
-            $('#telegram_id').val(student.telegram_id || '');
-            $('#active').prop('checked', student.active !== false);
+        // Обновляем информацию о выбранном тарифе
+        if (student.price) {
+            const selectedOption = $('#price').find(`option[value="${student.price}"]`);
+            if (selectedOption.length) {
+                const priceAmount = selectedOption.data('price-amount');
+                const classesCount = selectedOption.data('classes-count');
 
-            // Обновляем информацию о выбранном тарифе
-            if (student.price) {
-                const selectedOption = $('#price').find(`option[value="${student.price}"]`);
-                if (selectedOption.length) {
-                    const priceAmount = selectedOption.data('price-amount');
-                    const classesCount = selectedOption.data('classes-count');
-
-                    let infoText = '';
-                    if (priceAmount) {
-                        infoText += `Стоимость: ${priceAmount} руб. `;
-                    }
-                    if (classesCount) {
-                        infoText += `Занятий в тарифе: ${classesCount}`;
-                    }
-
-                    $('#priceInfo').text(infoText);
+                let infoText = '';
+                if (priceAmount) {
+                    infoText += `Стоимость: ${priceAmount} руб. `;
                 }
+                if (classesCount) {
+                    infoText += `Занятий в тарифе: ${classesCount}`;
+                }
+
+                $('#priceInfo').text(infoText);
             }
-        }).fail(function() {
-            showMessage('Ошибка загрузки данных ученика', 'danger');
-        });
-    }
+        }
+    }).fail(function(xhr, status, error) {
+        console.error('Ошибка загрузки данных ученика:', error);
+        showMessage('Ошибка загрузки данных ученика: ' + error, 'danger');
+    });
+}
 
     function updateStudent() {
         const formData = new FormData(document.getElementById('studentForm'));
