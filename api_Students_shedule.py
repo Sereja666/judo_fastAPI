@@ -12,7 +12,8 @@ from datetime import datetime, timedelta
 from database.middleware import SupersetAuthMiddleware
 from config import settings
 from database.schemas import Students, Sport, Schedule, Students_schedule, Trainers, Prices, engine, Visits, \
-    Training_place, Сompetition, MedCertificat_type, Сompetition_trainer, Сompetition_student, Сompetition_MedCertificat
+    Training_place, Сompetition, MedCertificat_type, Сompetition_trainer, Сompetition_student, \
+    Сompetition_MedCertificat, Sports_rank
 from logger_config import logger
 
 
@@ -183,13 +184,15 @@ async def edit_students_page(request: Request, db: Session = Depends(get_db)):
     sports = db.query(Sport).all()
     trainers = db.query(Trainers).all()
     prices = db.query(Prices).all()
+    sports_ranks = db.query(Sports_rank).all()  # Добавьте эту строку
 
     return templates.TemplateResponse("edit_students.html", {
         "request": request,
         "students": students,
         "sports": sports,
         "trainers": trainers,
-        "prices": prices
+        "prices": prices,
+        "sports_ranks": sports_ranks  # Добавьте эту строку
     })
 
 @app.get("/edit-students/search-students")
