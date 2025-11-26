@@ -70,15 +70,17 @@
                     </select>
                 </div>
                 <div class="col-md-4 mb-3">
-                    <label for="rang" class="form-label">Разряд</label>
-                    <input type="text" class="form-control" id="rang" name="rang">
+                    <label for="rang" class="form-label">Цвет пояса</label>
+                    <input type="text" class="form-control" id="rang" name="rang" placeholder="Например: белый, желтый, оранжевый...">
+                    <div class="form-text">Цвет пояса на русском языке</div>
                 </div>
                 <div class="col-md-4 mb-3">
-                    <label for="sex" class="form-label">Пол</label>
-                    <select class="form-select" id="sex" name="sex">
-                        <option value="">-- Выберите пол --</option>
-                        <option value="М">Мужской</option>
-                        <option value="Ж">Женский</option>
+                    <label for="sports_rank" class="form-label">Разряд/звание</label>
+                    <select class="form-select" id="sports_rank" name="sports_rank">
+                        <option value="">-- Выберите разряд --</option>
+                        {% for rank in sports_ranks %}
+                        <option value="{{ rank.id }}">{{ rank.rank }}</option>
+                        {% endfor %}
                     </select>
                 </div>
             </div>
@@ -250,8 +252,8 @@ function loadStudentData(studentId) {
         $('#name').val(student.name || '');
         $('#birthday').val(student.birthday ? student.birthday.split('T')[0] : '');
         $('#sport_discipline').val(student.sport_discipline || '');
-        $('#sports_rank').val(student.sports_rank || '');
-        $('#rang').val(student.rang || '');
+        $('#rang').val(student.rang || '');  // цвет пояса
+        $('#sports_rank').val(student.sports_rank || '');  // спортивный разряд
         $('#sex').val(student.sex || '');
         $('#weight').val(student.weight || '');
         $('#telephone').val(student.telephone || '');
@@ -261,7 +263,6 @@ function loadStudentData(studentId) {
         $('#payment_day').val(student.payment_day || '');
         $('#classes_remaining').val(student.classes_remaining || '');
         $('#expected_payment_date').val(student.expected_payment_date ? student.expected_payment_date.split('T')[0] : '');
-        // УДАЛЕНЫ поля reference1, reference2, reference3
         $('#parent1').val(student.parent1 || '');
         $('#parent2').val(student.parent2 || '');
         $('#date_start').val(student.date_start ? student.date_start.replace('Z', '').substring(0, 16) : '');
@@ -286,8 +287,11 @@ function loadStudentData(studentId) {
                 $('#priceInfo').text(infoText);
             }
         }
+
+        console.log('✅ Данные ученика загружены успешно');
+
     }).fail(function(xhr, status, error) {
-        console.error('Ошибка загрузки данных ученика:', error);
+        console.error('❌ Ошибка загрузки данных ученика:', error);
         showMessage('Ошибка загрузки данных ученика: ' + error, 'danger');
     });
 }

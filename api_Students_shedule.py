@@ -211,7 +211,7 @@ async def search_students_edit(query: str, db: Session = Depends(get_db)):
 
 @app.get("/edit-students/get-student-data/{student_id}")
 async def get_student_data(student_id: int, db: Session = Depends(get_db)):
-    """Получение полных данных ученика"""
+    """Получение данных ученика"""
     try:
         print(f"🔹 Запрос данных ученика ID: {student_id}")
 
@@ -230,8 +230,8 @@ async def get_student_data(student_id: int, db: Session = Depends(get_db)):
             "name": student.name or "",
             "birthday": safe_isoformat(student.birthday),
             "sport_discipline": student.sport_discipline,
-            "sports_rank": student.sports_rank,
-            "rang": student.rang or "",
+            "rang": student.rang or "",  # цвет пояса на русском
+            "sports_rank": student.sports_rank,  # id из таблицы sport_rank
             "sex": student.sex or "",
             "weight": student.weight,
             "head_trainer_id": student.head_trainer_id,
@@ -248,37 +248,39 @@ async def get_student_data(student_id: int, db: Session = Depends(get_db)):
             "active": bool(student.active) if student.active is not None else True
         }
 
-        print(f"✅ Успешно загружены данные ученика: {student_data['name']}")
+        logger.success(f"✅ Успешно загружены данные ученика: {student_data['name']}")
         return JSONResponse(student_data)
 
     except Exception as e:
-        print(f"❌ Ошибка загрузки данных ученика: {str(e)}")
+        logger.error(f"❌ Ошибка загрузки данных ученика: {str(e)}")
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Ошибка загрузки данных: {str(e)}")
 
+
 @app.post("/edit-students/update-student")
 async def update_student(
-    student_id: int = Form(...),
-    name: str = Form(...),
-    birthday: Optional[str] = Form(None),
-    sport_discipline: Optional[str] = Form(None),
-    rang: Optional[str] = Form(None),
-    sex: Optional[str] = Form(None),
-    weight: Optional[str] = Form(None),
-    head_trainer_id: Optional[str] = Form(None),
-    second_trainer_id: Optional[str] = Form(None),
-    price: Optional[str] = Form(None),
-    payment_day: Optional[str] = Form(None),
-    classes_remaining: Optional[str] = Form(None),
-    expected_payment_date: Optional[str] = Form(None),
-    telephone: Optional[str] = Form(None),
-    parent1: Optional[str] = Form(None),
-    parent2: Optional[str] = Form(None),
-    date_start: Optional[str] = Form(None),
-    telegram_id: Optional[str] = Form(None),
-    active: Optional[str] = Form(None),
-    db: Session = Depends(get_db)
+        student_id: int = Form(...),
+        name: str = Form(...),
+        birthday: Optional[str] = Form(None),
+        sport_discipline: Optional[str] = Form(None),
+        rang: Optional[str] = Form(None),  # цвет пояса
+        sports_rank: Optional[str] = Form(None),  # спортивный разряд
+        sex: Optional[str] = Form(None),
+        weight: Optional[str] = Form(None),
+        head_trainer_id: Optional[str] = Form(None),
+        second_trainer_id: Optional[str] = Form(None),
+        price: Optional[str] = Form(None),
+        payment_day: Optional[str] = Form(None),
+        classes_remaining: Optional[str] = Form(None),
+        expected_payment_date: Optional[str] = Form(None),
+        telephone: Optional[str] = Form(None),
+        parent1: Optional[str] = Form(None),
+        parent2: Optional[str] = Form(None),
+        date_start: Optional[str] = Form(None),
+        telegram_id: Optional[str] = Form(None),
+        active: Optional[str] = Form(None),
+        db: Session = Depends(get_db)
 ):
     """Обновление данных ученика"""
     try:
@@ -288,13 +290,12 @@ async def update_student(
         if not student:
             raise HTTPException(status_code=404, detail="Ученик не найден")
 
-        # Функция для безопасного преобразования пустых строк в None
+        # Функция для безопасного преобразования
         def parse_value(value):
             if value is None or value == "":
                 return None
             return value
 
-        # Функция для преобразования в int или None
         def parse_int(value):
             if value is None or value == "":
                 return None
@@ -303,7 +304,6 @@ async def update_student(
             except (ValueError, TypeError):
                 return None
 
-        # Функция для преобразования checkbox в boolean
         def parse_bool(value):
             return value == "on"
 
@@ -311,7 +311,8 @@ async def update_student(
         student.name = name
         student.birthday = datetime.fromisoformat(birthday) if birthday else None
         student.sport_discipline = parse_int(sport_discipline)
-        student.rang = parse_value(rang)
+        student.rang = parse_value(rang)  # цвет пояса
+        student.sports_rank = parse_int(sports_rank)  # спортивный разряд
         student.sex = parse_value(sex)
         student.weight = parse_int(weight)
         student.head_trainer_id = parse_int(head_trainer_id)
@@ -319,7 +320,8 @@ async def update_student(
         student.price = parse_int(price)
         student.payment_day = parse_int(payment_day)
         student.classes_remaining = parse_int(classes_remaining)
-        student.expected_payment_date = datetime.fromisoformat(expected_payment_date).date() if expected_payment_date else None
+        student.expected_payment_date = datetime.fromisoformat(
+            expected_payment_date).date() if expected_payment_date else None
         student.telephone = parse_value(telephone)
         student.parent1 = parse_int(parent1)
         student.parent2 = parse_int(parent2)
@@ -333,41 +335,43 @@ async def update_student(
 
     except Exception as e:
         db.rollback()
-        print(f"Ошибка при сохранении: {str(e)}")
+        logger.error(f"Ошибка при сохранении: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Ошибка обновления: {str(e)}")
+
 
 @app.post("/edit-students/create-student")
 async def create_student(
-    name: str = Form(...),
-    birthday: Optional[str] = Form(None),
-    sport_discipline: Optional[str] = Form(None),
-    rang: Optional[str] = Form(None),
-    sex: Optional[str] = Form(None),
-    weight: Optional[str] = Form(None),
-    head_trainer_id: Optional[str] = Form(None),
-    second_trainer_id: Optional[str] = Form(None),
-    price: Optional[str] = Form(None),
-    payment_day: Optional[str] = Form(None),
-    classes_remaining: Optional[str] = Form(None),
-    expected_payment_date: Optional[str] = Form(None),
-    telephone: Optional[str] = Form(None),
-    parent1: Optional[str] = Form(None),
-    parent2: Optional[str] = Form(None),
-    date_start: Optional[str] = Form(None),
-    telegram_id: Optional[str] = Form(None),
-    active: Optional[str] = Form(None),
-    db: Session = Depends(get_db)
+        name: str = Form(...),
+        birthday: Optional[str] = Form(None),
+        sport_discipline: Optional[str] = Form(None),
+        rang: Optional[str] = Form(None),
+        sports_rank: Optional[str] = Form(None),
+        sex: Optional[str] = Form(None),
+        weight: Optional[str] = Form(None),
+        head_trainer_id: Optional[str] = Form(None),
+        second_trainer_id: Optional[str] = Form(None),
+        price: Optional[str] = Form(None),
+        payment_day: Optional[str] = Form(None),
+        classes_remaining: Optional[str] = Form(None),
+        expected_payment_date: Optional[str] = Form(None),
+        telephone: Optional[str] = Form(None),
+        parent1: Optional[str] = Form(None),
+        parent2: Optional[str] = Form(None),
+        date_start: Optional[str] = Form(None),
+        telegram_id: Optional[str] = Form(None),
+        active: Optional[str] = Form(None),
+        db: Session = Depends(get_db)
 ):
     """Создание нового ученика"""
     try:
-        print("Создание нового ученика")
-        
+        print("🎯 Создание нового ученика")
+
         # Функция для безопасного преобразования пустых строк в None
         def parse_value(value):
             if value is None or value == "":
                 return None
             return value
-        
+
         # Функция для преобразования в int или None
         def parse_int(value):
             if value is None or value == "":
@@ -387,6 +391,7 @@ async def create_student(
             birthday=datetime.fromisoformat(birthday) if birthday else None,
             sport_discipline=parse_int(sport_discipline),
             rang=parse_value(rang),
+            sports_rank=parse_int(sports_rank),
             sex=parse_value(sex),
             weight=parse_int(weight),
             head_trainer_id=parse_int(head_trainer_id),
@@ -394,7 +399,8 @@ async def create_student(
             price=parse_int(price),
             payment_day=parse_int(payment_day),
             classes_remaining=parse_int(classes_remaining),
-            expected_payment_date=datetime.fromisoformat(expected_payment_date).date() if expected_payment_date else None,
+            expected_payment_date=datetime.fromisoformat(
+                expected_payment_date).date() if expected_payment_date else None,
             telephone=parse_value(telephone),
             parent1=parse_int(parent1),
             parent2=parse_int(parent2),
@@ -402,22 +408,24 @@ async def create_student(
             telegram_id=parse_int(telegram_id),
             active=parse_bool(active) if active is not None else True
         )
-        
+
         db.add(new_student)
         db.commit()
         db.refresh(new_student)
-        
-        print(f"Создан новый ученик с ID: {new_student.id}")
-        
+
+        logger.info(f"✅ Создан новый ученик с ID: {new_student.id}, имя: {new_student.name}")
+
         return JSONResponse({
-            "status": "success", 
+            "status": "success",
             "message": "Ученик успешно создан",
             "student_id": new_student.id
         })
-    
+
     except Exception as e:
         db.rollback()
-        print(f"Ошибка при создании ученика: {str(e)}")
+        logger.error(f"❌ Ошибка при создании ученика: {str(e)}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Ошибка создания: {str(e)}")
 
 @app.get("/edit-students/get-prices")
