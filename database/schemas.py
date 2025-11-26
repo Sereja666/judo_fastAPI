@@ -35,12 +35,10 @@ class Students(Base):
     name = Column(String())
     birthday = Column(DateTime())
     sport_discipline = Column(Integer())
-    rang = Column(String())
+    belt_color = Column(String())
+    sports_rank = Column(Integer())  # id sports_rank
     sex = Column(String())
     weight = Column(Integer())
-    reference1 = Column(Date())  # до какого числа действует справка
-    reference2 = Column(Date())  # до какого числа действует справка
-    reference3 = Column(Date())  # до какого числа действует справка
     head_trainer_id = Column(Integer()) # айди главного тренера
     second_trainer_id = Column(Integer()) # айди второго тренера
     price = Column(Integer(), default=0, server_default='0')
@@ -151,6 +149,19 @@ class Sport(Base):
     id = Column(Integer(), primary_key=True, autoincrement=True)
     name = Column(String())
 
+class Sports_rank(Base):
+    """спортивные разряды и звания"""
+    __tablename__ = 'sport_rank'
+    __table_args__ = {'schema': schema}
+    id = Column(Integer(), primary_key=True, autoincrement=True)
+    rank = Column(String())
+
+class Belt_сolor(Base):
+    __tablename__ = 'belt_color'
+    __table_args__ = {'schema': schema}
+    id = Column(Integer(), primary_key=True, autoincrement=True)
+    name = Column(String())
+    color = Column(String())
 
 class Telegram_user(Base):
     __tablename__ = 'telegram_user'
