@@ -71,3 +71,7 @@ sudo journalctl -u judo-bot.service --lines=50
  
 ## Ручное списание занятий
  python regulatory_tasks/daily_attendance.py --date 2025-11-25
+ 
+## SQL:
+-- Восстановить последовательность для таблицы student
+SELECT setval('public.student_id_seq', (SELECT MAX(id) FROM public.student));
