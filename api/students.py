@@ -405,6 +405,7 @@ async def update_medical_certificate(
     """Обновление медицинской справки"""
     try:
         print(f"🔹 Обновление справки ID: {certificate_id}")
+        print(f"🔹 Данные: cert_id={cert_id}, date_start={date_start}, date_end={date_end}, active={active}")
 
         certificate = db.query(MedCertificat_received).filter(
             MedCertificat_received.id == certificate_id
@@ -419,6 +420,8 @@ async def update_medical_certificate(
         certificate.date_end = datetime.fromisoformat(date_end).date() if date_end else None
         certificate.active = active == "on"
 
+        print(f"🔹 После обновления: date_start={certificate.date_start}, date_end={certificate.date_end}")
+
         db.commit()
 
         return JSONResponse({
@@ -429,6 +432,8 @@ async def update_medical_certificate(
     except Exception as e:
         db.rollback()
         logger.error(f"❌ Ошибка при обновлении справки: {str(e)}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Ошибка обновления справки: {str(e)}")
 
 

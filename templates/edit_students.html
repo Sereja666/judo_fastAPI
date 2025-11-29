@@ -279,6 +279,7 @@
 {% endblock %}
 
 {% block scripts %}
+{% block scripts %}
 <script>
     $(document).ready(function() {
         // Инициализация Select2 для поиска учеников
@@ -315,6 +316,11 @@
             const formData = new FormData(this);
             const certificateId = $('#certificateId').val();
 
+            // Для отладки - выводим все данные формы
+            for (let [key, value] of formData.entries()) {
+                console.log(`${key}: ${value}`);
+            }
+
             const url = certificateId ? '/edit-students/update-medical-certificate' : '/edit-students/add-medical-certificate';
 
             fetch(url, {
@@ -323,7 +329,9 @@
             })
             .then(response => {
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    return response.text().then(text => {
+                        throw new Error(`HTTP error! status: ${response.status}, message: ${text}`);
+                    });
                 }
                 return response.json();
             })
@@ -603,6 +611,7 @@
         $('#certificateId').val('');
         $('#certificateStudentId').val(studentId);
         $('#certificateForm')[0].reset();
+        $('#cert_id').prop('disabled', false); // Разрешаем выбирать тип справки при добавлении
         $('#cert_active').prop('checked', true);
         $('#deleteCertificateBtn').addClass('hidden');
         $('#certificateFormContainer').removeClass('hidden');
@@ -614,6 +623,7 @@
     // Скрыть форму справки
     function hideCertificateForm() {
         $('#certificateFormContainer').addClass('hidden');
+        $('#cert_id').prop('disabled', false); // Всегда разблокируем поле при скрытии формы
     }
 
     // Редактирование справки
@@ -623,36 +633,45 @@
         $('#certificateFormTitle').text('Редактирование справки');
         $('#certificateId').val(certificateId);
         $('#certificateStudentId').val($('#studentId').val());
-        $('#cert_id').val(certId);
-        $('#cert_date_start').val(dateStart ? dateStart.split('T')[0] : '');
-        $('#cert_date_end').val(dateEnd ? dateEnd.split('T')[0] : '');
-        $('#cert_active').prop('checked', active);
-        $('#deleteCertificateBtn').removeClass('hidden');
-        $('#certificateFormContainer').removeClass('hidden');
 
-        loadCertificateTypes();
+        // Загружаем типы справок и устанавливаем выбранный тип
+        loadCertificateTypes().then(() => {
+            $('#cert_id').val(certId);
+            $('#cert_id').prop('disabled', true); // Запрещаем изменять тип справки при редактировании
+
+            $('#cert_date_start').val(dateStart ? dateStart.split('T')[0] : '');
+            $('#cert_date_end').val(dateEnd ? dateEnd.split('T')[0] : '');
+            $('#cert_active').prop('checked', active);
+            $('#deleteCertificateBtn').removeClass('hidden');
+            $('#certificateFormContainer').removeClass('hidden');
+        });
     }
 
     // Загрузка типов справок
     function loadCertificateTypes() {
         console.log('🔄 Загрузка типов справок');
 
-        if ($('#cert_id option').length > 1) {
-            console.log('Типы справок уже загружены');
-            return; // Уже загружены
-        }
+        return new Promise((resolve, reject) => {
+            if ($('#cert_id option').length > 1) {
+                console.log('Типы справок уже загружены');
+                resolve();
+                return;
+            }
 
-        $.get('/edit-students/get-certificate-types', function(types) {
-            console.log('✅ Получены типы справок:', types);
+            $.get('/edit-students/get-certificate-types', function(types) {
+                console.log('✅ Получены типы справок:', types);
 
-            let options = '<option value="">-- Выберите тип справки --</option>';
-            types.forEach(type => {
-                options += `<option value="${type.id}">${type.name}</option>`;
+                let options = '<option value="">-- Выберите тип справки --</option>';
+                types.forEach(type => {
+                    options += `<option value="${type.id}">${type.name}</option>`;
+                });
+                $('#cert_id').html(options);
+                resolve();
+            }).fail(function(xhr, status, error) {
+                console.error('❌ Ошибка загрузки типов справок:', error);
+                showMessage('Ошибка загрузки типов справок', 'danger');
+                reject(error);
             });
-            $('#cert_id').html(options);
-        }).fail(function(xhr, status, error) {
-            console.error('❌ Ошибка загрузки типов справок:', error);
-            showMessage('Ошибка загрузки типов справок', 'danger');
         });
     }
 
@@ -704,3 +723,4 @@
 }
 </style>
 {% endblock %}
+
