@@ -6,8 +6,8 @@ from sqlalchemy import and_
 from typing import List
 from datetime import datetime, timedelta
 from config import templates, settings
-from database.schemas import get_db, Сompetition, MedCertificat_type, Students, Trainers, \
-    Сompetition_student, Сompetition_trainer, Сompetition_MedCertificat
+from database.schemas import Сompetition, MedCertificat_type, Students, Trainers, \
+    Сompetition_student, Сompetition_trainer, Сompetition_MedCertificat, get_db
 from config import templates
 from logger_config import logger
 

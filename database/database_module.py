@@ -16,6 +16,8 @@ from db_handler.db_funk import execute_raw_sql
 #         result = await session.execute("SELECT * FROM training_place")
 #         return result.fetchall()
 
+# Зависимость для получения сессии БД
+
 
 async def save_selection(schedule_id: int, student_ids: list):
     """

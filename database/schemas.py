@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 
 from sqlalchemy import create_engine, Column, Integer, String, MetaData, Date, Boolean, ForeignKey, DateTime, Time, \
     BigInteger
-from sqlalchemy.orm import declarative_base, relationship
+from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
 from config import settings
 
@@ -11,6 +11,16 @@ Base = declarative_base()
 metadata = MetaData()
 
 schema = 'public'
+
+# Создаем сессию базы данных
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# Зависимость для получения сессии БД
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 
 # Посещения

@@ -8,6 +8,15 @@ import asyncpg
 from database.schemas import schema
 
 
+
+# Зависимость для получения сессии БД
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
 # функция, для получения информации по конкретному пользователю
 async def get_user_data(user_id: int, table_name=f'{schema}.telegram_user'):
     conn = await asyncpg.connect(**settings.db.pg_link)
