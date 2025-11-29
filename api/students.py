@@ -6,7 +6,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy import and_
 from typing import Optional, List
 from datetime import datetime
-from database.schemas import get_db, Students, Sport, Trainers, Prices, Sports_rank, Belt_сolor
+from database.schemas import get_db, Students, Sport, Trainers, Prices, Sports_rank, Belt_сolor, MedCertificat_received, \
+    MedCertificat_type
 from config import templates
 from logger_config import logger
 
@@ -286,3 +287,173 @@ async def get_prices(db: Session = Depends(get_db)):
         })
 
     return JSONResponse(result)
+
+
+@router.get("/edit-students/get-medical-certificates/{student_id}")
+async def get_medical_certificates(student_id: int, db: Session = Depends(get_db)):
+    """Получение медицинских справок ученика"""
+    try:
+        print(f"🔹 Запрос медицинских справок ученика ID: {student_id}")
+
+        # Получаем активные справки ученика
+        certificates = db.query(MedCertificat_received).filter(
+            and_(
+                MedCertificat_received.student_id == student_id,
+                MedCertificat_received.active == True
+            )
+        ).all()
+
+        result = []
+        for cert in certificates:
+            # Получаем информацию о типе справки
+            cert_type = db.query(MedCertificat_type).filter(
+                MedCertificat_type.id == cert.cert_id
+            ).first()
+
+            result.append({
+                "id": cert.id,
+                "cert_id": cert.cert_id,
+                "cert_name": cert_type.name_cert if cert_type else "Неизвестная справка",
+                "date_start": cert.date_start.isoformat() if cert.date_start else None,
+                "date_end": cert.date_end.isoformat() if cert.date_end else None,
+                "active": cert.active
+            })
+
+        return JSONResponse(result)
+
+    except Exception as e:
+        logger.error(f"❌ Ошибка загрузки медицинских справок: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Ошибка загрузки справок: {str(e)}")
+
+
+@router.get("/edit-students/get-certificate-types")
+async def get_certificate_types(db: Session = Depends(get_db)):
+    """Получение списка типов медицинских справок"""
+    try:
+        cert_types = db.query(MedCertificat_type).all()
+
+        result = [{"id": cert.id, "name": cert.name_cert} for cert in cert_types]
+        return JSONResponse(result)
+
+    except Exception as e:
+        logger.error(f"❌ Ошибка загрузки типов справок: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Ошибка загрузки типов справок: {str(e)}")
+
+
+@router.post("/edit-students/add-medical-certificate")
+async def add_medical_certificate(
+        student_id: int = Form(...),
+        cert_id: int = Form(...),
+        date_start: str = Form(...),
+        date_end: str = Form(...),
+        db: Session = Depends(get_db)
+):
+    """Добавление новой медицинской справки"""
+    try:
+        print(f"🔹 Добавление справки для ученика ID: {student_id}")
+
+        # Проверяем существование ученика
+        student = db.query(Students).filter(Students.id == student_id).first()
+        if not student:
+            raise HTTPException(status_code=404, detail="Ученик не найден")
+
+        # Проверяем существование типа справки
+        cert_type = db.query(MedCertificat_type).filter(MedCertificat_type.id == cert_id).first()
+        if not cert_type:
+            raise HTTPException(status_code=404, detail="Тип справки не найден")
+
+        # Создаем новую справку
+        new_cert = MedCertificat_received(
+            student_id=student_id,
+            cert_id=cert_id,
+            date_start=datetime.fromisoformat(date_start).date() if date_start else None,
+            date_end=datetime.fromisoformat(date_end).date() if date_end else None,
+            active=True
+        )
+
+        db.add(new_cert)
+        db.commit()
+        db.refresh(new_cert)
+
+        logger.info(f"✅ Добавлена справка для ученика {student.name}, тип: {cert_type.name_cert}")
+
+        return JSONResponse({
+            "status": "success",
+            "message": "Справка успешно добавлена",
+            "certificate_id": new_cert.id
+        })
+
+    except Exception as e:
+        db.rollback()
+        logger.error(f"❌ Ошибка при добавлении справки: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Ошибка добавления справки: {str(e)}")
+
+
+@router.post("/edit-students/update-medical-certificate")
+async def update_medical_certificate(
+        certificate_id: int = Form(...),
+        cert_id: int = Form(...),
+        date_start: str = Form(...),
+        date_end: str = Form(...),
+        active: str = Form(None),
+        db: Session = Depends(get_db)
+):
+    """Обновление медицинской справки"""
+    try:
+        print(f"🔹 Обновление справки ID: {certificate_id}")
+
+        certificate = db.query(MedCertificat_received).filter(
+            MedCertificat_received.id == certificate_id
+        ).first()
+
+        if not certificate:
+            raise HTTPException(status_code=404, detail="Справка не найдена")
+
+        # Обновляем поля
+        certificate.cert_id = cert_id
+        certificate.date_start = datetime.fromisoformat(date_start).date() if date_start else None
+        certificate.date_end = datetime.fromisoformat(date_end).date() if date_end else None
+        certificate.active = active == "on"
+
+        db.commit()
+
+        return JSONResponse({
+            "status": "success",
+            "message": "Справка успешно обновлена"
+        })
+
+    except Exception as e:
+        db.rollback()
+        logger.error(f"❌ Ошибка при обновлении справки: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Ошибка обновления справки: {str(e)}")
+
+
+@router.delete("/edit-students/delete-medical-certificate/{certificate_id}")
+async def delete_medical_certificate(certificate_id: int, db: Session = Depends(get_db)):
+    """Удаление медицинской справки"""
+    try:
+        print(f"🔹 Удаление справки ID: {certificate_id}")
+
+        certificate = db.query(MedCertificat_received).filter(
+            MedCertificat_received.id == certificate_id
+        ).first()
+
+        if not certificate:
+            raise HTTPException(status_code=404, detail="Справка не найдена")
+
+        db.delete(certificate)
+        db.commit()
+
+        return JSONResponse({
+            "status": "success",
+            "message": "Справка успешно удалена"
+        })
+
+    except Exception as e:
+        db.rollback()
+        logger.error(f"❌ Ошибка при удалении справки: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Ошибка удаления справки: {str(e)}")

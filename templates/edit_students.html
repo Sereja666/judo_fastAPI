@@ -173,24 +173,80 @@
             </div>
         </div>
 
-<!--        &lt;!&ndash; Медицинские справки &ndash;&gt;-->
-<!--        <div class="form-section">-->
-<!--            <h5 class="section-title">Медицинские справки</h5>-->
-<!--            <div class="row">-->
-<!--                <div class="col-md-4 mb-3">-->
-<!--                    <label for="reference1" class="form-label">Справка 1 (действует до)</label>-->
-<!--                    <input type="date" class="form-control" id="reference1" name="reference1">-->
-<!--                </div>-->
-<!--                <div class="col-md-4 mb-3">-->
-<!--                    <label for="reference2" class="form-label">Справка 2 (действует до)</label>-->
-<!--                    <input type="date" class="form-control" id="reference2" name="reference2">-->
-<!--                </div>-->
-<!--                <div class="col-md-4 mb-3">-->
-<!--                    <label for="reference3" class="form-label">Справка 3 (действует до)</label>-->
-<!--                    <input type="date" class="form-control" id="reference3" name="reference3">-->
-<!--                </div>-->
-<!--            </div>-->
-<!--        </div>-->
+        <!-- Медицинские справки -->
+        <div class="form-section">
+            <h5 class="section-title">Медицинские справки</h5>
+
+            <!-- Список существующих справок -->
+            <div id="certificatesList" class="mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0">Текущие справки</h6>
+                    <button type="button" class="btn btn-sm btn-success" onclick="showAddCertificateForm()">
+                        <i class="fas fa-plus"></i> Добавить справку
+                    </button>
+                </div>
+                <div id="certificatesContainer">
+                    <!-- Справки будут загружаться здесь -->
+                </div>
+            </div>
+
+            <!-- Форма добавления/редактирования справки -->
+            <div id="certificateFormContainer" class="hidden">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0" id="certificateFormTitle">Добавление справки</h6>
+                    </div>
+                    <div class="card-body">
+                        <form id="certificateForm">
+                            <input type="hidden" id="certificateId" name="certificate_id">
+                            <input type="hidden" id="certificateStudentId" name="student_id">
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="cert_id" class="form-label">Тип справки *</label>
+                                    <select class="form-select" id="cert_id" name="cert_id" required>
+                                        <option value="">-- Выберите тип справки --</option>
+                                        <!-- Типы справок будут загружены динамически -->
+                                    </select>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="cert_date_start" class="form-label">Дата начала *</label>
+                                    <input type="date" class="form-control" id="cert_date_start" name="date_start" required>
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label for="cert_date_end" class="form-label">Дата окончания *</label>
+                                    <input type="date" class="form-control" id="cert_date_end" name="date_end" required>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="cert_active" name="active" checked>
+                                        <label class="form-check-label" for="cert_active">
+                                            Справка активна
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Сохранить справку
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="hideCertificateForm()">
+                                    Отмена
+                                </button>
+                                <button type="button" id="deleteCertificateBtn" class="btn btn-danger ms-auto hidden"
+                                        onclick="deleteCertificate()">
+                                    <i class="fas fa-trash"></i> Удалить
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- Дополнительно -->
         <div class="form-section">
@@ -426,5 +482,192 @@ function loadStudentData(studentId) {
 
         showMessage('Заполните данные для нового ученика', 'info');
     }
+    // Загрузка медицинских справок
+function loadMedicalCertificates(studentId) {
+    if (!studentId || studentId === 'new') {
+        $('#certificatesContainer').html('<div class="text-muted">Справки будут доступны после сохранения ученика</div>');
+        return;
+    }
+
+    $.get(`/edit-students/get-medical-certificates/${studentId}`, function(certificates) {
+        console.log('✅ Получены медицинские справки:', certificates);
+
+        if (certificates.length === 0) {
+            $('#certificatesContainer').html('<div class="text-muted">Нет активных медицинских справок</div>');
+            return;
+        }
+
+        let html = '';
+        certificates.forEach(cert => {
+            const startDate = cert.date_start ? new Date(cert.date_start).toLocaleDateString('ru-RU') : '—';
+            const endDate = cert.date_end ? new Date(cert.date_end).toLocaleDateString('ru-RU') : '—';
+            const isExpired = cert.date_end ? new Date(cert.date_end) < new Date() : false;
+            const statusClass = isExpired ? 'text-danger' : (cert.active ? 'text-success' : 'text-muted');
+            const statusText = isExpired ? 'Просрочена' : (cert.active ? 'Активна' : 'Неактивна');
+
+            html += `
+                <div class="card mb-2 ${isExpired ? 'border-danger' : ''}">
+                    <div class="card-body py-2">
+                        <div class="row align-items-center">
+                            <div class="col-md-4">
+                                <strong>${cert.cert_name}</strong>
+                            </div>
+                            <div class="col-md-2">
+                                <small class="text-muted">Начало:</small><br>
+                                ${startDate}
+                            </div>
+                            <div class="col-md-2">
+                                <small class="text-muted">Окончание:</small><br>
+                                ${endDate}
+                            </div>
+                            <div class="col-md-2">
+                                <span class="badge ${statusClass}">${statusText}</span>
+                            </div>
+                            <div class="col-md-2 text-end">
+                                <button type="button" class="btn btn-sm btn-outline-primary"
+                                        onclick="editCertificate(${cert.id}, ${cert.cert_id}, '${cert.date_start}', '${cert.date_end}', ${cert.active})">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        $('#certificatesContainer').html(html);
+    }).fail(function(xhr, status, error) {
+        console.error('❌ Ошибка загрузки справок:', error);
+        $('#certificatesContainer').html('<div class="text-danger">Ошибка загрузки справок</div>');
+    });
+}
+
+// Показать форму добавления справки
+function showAddCertificateForm() {
+    const studentId = $('#studentId').val();
+    if (!studentId || studentId === 'new') {
+        showMessage('Сначала сохраните данные ученика', 'warning');
+        return;
+    }
+
+    $('#certificateFormTitle').text('Добавление справки');
+    $('#certificateId').val('');
+    $('#certificateStudentId').val(studentId);
+    $('#certificateForm')[0].reset();
+    $('#cert_active').prop('checked', true);
+    $('#deleteCertificateBtn').addClass('hidden');
+    $('#certificateFormContainer').removeClass('hidden');
+
+    // Загружаем типы справок если еще не загружены
+    loadCertificateTypes();
+}
+
+// Скрыть форму справки
+function hideCertificateForm() {
+    $('#certificateFormContainer').addClass('hidden');
+}
+
+// Редактирование справки
+function editCertificate(certificateId, certId, dateStart, dateEnd, active) {
+    $('#certificateFormTitle').text('Редактирование справки');
+    $('#certificateId').val(certificateId);
+    $('#certificateStudentId').val($('#studentId').val());
+    $('#cert_id').val(certId);
+    $('#cert_date_start').val(dateStart ? dateStart.split('T')[0] : '');
+    $('#cert_date_end').val(dateEnd ? dateEnd.split('T')[0] : '');
+    $('#cert_active').prop('checked', active);
+    $('#deleteCertificateBtn').removeClass('hidden');
+    $('#certificateFormContainer').removeClass('hidden');
+
+    loadCertificateTypes();
+}
+
+// Загрузка типов справок
+function loadCertificateTypes() {
+    if ($('#cert_id option').length > 1) return; // Уже загружены
+
+    $.get('/edit-students/get-certificate-types', function(types) {
+        let options = '<option value="">-- Выберите тип справки --</option>';
+        types.forEach(type => {
+            options += `<option value="${type.id}">${type.name}</option>`;
+        });
+        $('#cert_id').html(options);
+    });
+}
+
+// Удаление справки
+function deleteCertificate() {
+    const certificateId = $('#certificateId').val();
+    if (!certificateId) return;
+
+    if (!confirm('Вы уверены, что хотите удалить эту справку?')) {
+        return;
+    }
+
+    $.ajax({
+        url: `/edit-students/delete-medical-certificate/${certificateId}`,
+        type: 'DELETE',
+        success: function(response) {
+            showMessage(response.message, 'success');
+            hideCertificateForm();
+            loadMedicalCertificates($('#studentId').val());
+        },
+        error: function(xhr, status, error) {
+            showMessage('Ошибка удаления справки: ' + error, 'danger');
+        }
+    });
+}
+
+// Обработка формы справки
+$('#certificateForm').submit(function(e) {
+    e.preventDefault();
+
+    const formData = new FormData(this);
+    const certificateId = $('#certificateId').val();
+
+    const url = certificateId ? '/edit-students/update-medical-certificate' : '/edit-students/add-medical-certificate';
+
+    fetch(url, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        showMessage(data.message, 'success');
+        hideCertificateForm();
+        loadMedicalCertificates($('#studentId').val());
+    })
+    .catch(error => {
+        console.error('Ошибка:', error);
+        showMessage('Ошибка сохранения справки: ' + error.message, 'danger');
+    });
+});
+
+// Обновляем функцию loadStudentData для загрузки справок
+function loadStudentData(studentId) {
+    console.log('🔄 Загрузка данных ученика ID:', studentId);
+
+    $.get(`/edit-students/get-student-data/${studentId}`, function(student) {
+        // ... существующий код заполнения формы ...
+
+        // Загружаем медицинские справки
+        loadMedicalCertificates(studentId);
+
+    }).fail(function(xhr, status, error) {
+        console.error('❌ Ошибка загрузки данных ученика:', error);
+        showMessage('Ошибка загрузки данных ученика: ' + error, 'danger');
+    });
+}
+
+// Обновляем функцию createNewStudent для скрытия справок
+function createNewStudent() {
+    // ... существующий код ...
+
+    // Скрываем справки для нового ученика
+    $('#certificatesContainer').html('<div class="text-muted">Справки будут доступны после сохранения ученика</div>');
+    $('#certificateFormContainer').addClass('hidden');
+
+    showMessage('Заполните данные для нового ученика', 'info');
+}
 </script>
 {% endblock %}
