@@ -279,7 +279,6 @@
 {% endblock %}
 
 {% block scripts %}
-{% block scripts %}
 <script>
     $(document).ready(function() {
         // Инициализация Select2 для поиска учеников
@@ -360,7 +359,7 @@
             $('#name').val(student.name || '');
             $('#birthday').val(student.birthday ? student.birthday.split('T')[0] : '');
             $('#sport_discipline').val(student.sport_discipline || '');
-            $('#rang').val(student.rang || '');  // Теперь это ID цвета пояса
+            $('#rang').val(student.rang || '');
             $('#sports_rank').val(student.sports_rank || '');
             $('#sex').val(student.sex || '');
             $('#weight').val(student.weight || '');
@@ -376,9 +375,6 @@
             $('#date_start').val(student.date_start ? student.date_start.replace('Z', '').substring(0, 16) : '');
             $('#telegram_id').val(student.telegram_id || '');
             $('#active').prop('checked', student.active !== false);
-
-            console.log('rang (belt color ID):', student.rang);
-            console.log('sports_rank:', student.sports_rank);
 
             // Обновляем информацию о выбранном тарифе
             if (student.price) {
@@ -436,7 +432,7 @@
 
             if (studentId === 'new') {
                 // После создания нового ученика
-                $('#studentId').val(data.student_id); // Устанавливаем реальный ID
+                $('#studentId').val(data.student_id);
                 $('#studentCard h3').text('Карточка ученика');
                 $('#studentForm button[type="submit"]').text('Сохранить изменения');
 
@@ -611,7 +607,7 @@
         $('#certificateId').val('');
         $('#certificateStudentId').val(studentId);
         $('#certificateForm')[0].reset();
-        $('#cert_id').prop('disabled', false); // Разрешаем выбирать тип справки при добавлении
+        $('#cert_id').prop('disabled', false);
         $('#cert_active').prop('checked', true);
         $('#deleteCertificateBtn').addClass('hidden');
         $('#certificateFormContainer').removeClass('hidden');
@@ -623,7 +619,7 @@
     // Скрыть форму справки
     function hideCertificateForm() {
         $('#certificateFormContainer').addClass('hidden');
-        $('#cert_id').prop('disabled', false); // Всегда разблокируем поле при скрытии формы
+        $('#cert_id').prop('disabled', false);
     }
 
     // Редактирование справки
@@ -637,7 +633,7 @@
         // Загружаем типы справок и устанавливаем выбранный тип
         loadCertificateTypes().then(() => {
             $('#cert_id').val(certId);
-            $('#cert_id').prop('disabled', true); // Запрещаем изменять тип справки при редактировании
+            $('#cert_id').prop('disabled', true);
 
             $('#cert_date_start').val(dateStart ? dateStart.split('T')[0] : '');
             $('#cert_date_end').val(dateEnd ? dateEnd.split('T')[0] : '');
@@ -723,4 +719,3 @@
 }
 </style>
 {% endblock %}
-
