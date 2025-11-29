@@ -12,8 +12,8 @@
     </div>
     <div class="card-body">
         <div class="row">
-    <div class="col-md-6">
-        <label for="studentSelect" class="form-label">Выберите ученика:</label>
+            <div class="col-md-6">
+                <label for="studentSelect" class="form-label">Выберите ученика:</label>
                 <select id="studentSelect" class="form-select" required>
                     <option value="">-- Выберите ученика --</option>
                     {% for student in students %}
@@ -267,11 +267,11 @@
             </div>
         </div>
 
-     <button type="submit" class="btn btn-primary btn-lg">
-    <i class="fas fa-save"></i>
-    Сохранить изменения
-</button>
-<a href="/" class="btn btn-secondary">← Назад к расписанию</a>
+        <button type="submit" class="btn btn-primary btn-lg">
+            <i class="fas fa-save"></i>
+            Сохранить изменения
+        </button>
+        <a href="/" class="btn btn-secondary">← Назад к расписанию</a>
     </form>
 </div>
 
@@ -679,3 +679,28 @@
         });
     }
 </script>
+
+<style>
+.hidden {
+    display: none !important;
+}
+
+.card.border-danger {
+    border: 2px solid #dc3545 !important;
+}
+
+.badge.text-success {
+    background-color: #d1e7dd;
+    color: #0f5132;
+}
+
+.badge.text-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.student-card.hidden {
+    display: none;
+}
+</style>
+{% endblock %}
