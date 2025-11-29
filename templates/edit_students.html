@@ -308,7 +308,7 @@
         });
     });
 
-function loadStudentData(studentId) {
+function function loadStudentData(studentId) {
     console.log('🔄 Загрузка данных ученика ID:', studentId);
 
     $.get(`/edit-students/get-student-data/${studentId}`, function(student) {
@@ -357,6 +357,9 @@ function loadStudentData(studentId) {
                 $('#priceInfo').text(infoText);
             }
         }
+
+        // Загружаем медицинские справки ПОСЛЕ загрузки основных данных
+        loadMedicalCertificates(studentId);
 
     }).fail(function(xhr, status, error) {
         console.error('❌ Ошибка загрузки данных ученика:', error);
@@ -450,40 +453,44 @@ function loadStudentData(studentId) {
         }
     });
 
-    function createNewStudent() {
-        // Скрываем карточку текущего ученика
-        $('#studentCard').addClass('hidden');
+<!--    function createNewStudent() {-->
+<!--        // Скрываем карточку текущего ученика-->
+<!--        $('#studentCard').addClass('hidden');-->
 
-        // Очищаем форму
-        $('#studentForm')[0].reset();
+<!--        // Очищаем форму-->
+<!--        $('#studentForm')[0].reset();-->
 
-        // Убираем выбранного ученика из select
-        $('#studentSelect').val('').trigger('change');
+<!--        // Убираем выбранного ученика из select-->
+<!--        $('#studentSelect').val('').trigger('change');-->
 
-        // Устанавливаем текущую дату в поле "Дата начала тренировок"
-        const now = new Date();
-        const localDateTime = now.toISOString().slice(0, 16);
-        $('#date_start').val(localDateTime);
+<!--        // Устанавливаем текущую дату в поле "Дата начала тренировок"-->
+<!--        const now = new Date();-->
+<!--        const localDateTime = now.toISOString().slice(0, 16);-->
+<!--        $('#date_start').val(localDateTime);-->
 
-        // Устанавливаем активный статус (галочка включена)
-        $('#active').prop('checked', true);
+<!--        // Устанавливаем активный статус (галочка включена)-->
+<!--        $('#active').prop('checked', true);-->
 
-        // Устанавливаем специальное значение для нового ученика
-        $('#studentId').val('new');
+<!--        // Устанавливаем специальное значение для нового ученика-->
+<!--        $('#studentId').val('new');-->
 
-        // Показываем карточку с пустой формой
-        $('#studentCard').removeClass('hidden');
+<!--        // Показываем карточку с пустой формой-->
+<!--        $('#studentCard').removeClass('hidden');-->
 
-        // Меняем заголовок
-        $('#studentCard h3').text('Новый ученик');
+<!--        // Меняем заголовок-->
+<!--        $('#studentCard h3').text('Новый ученик');-->
 
-        // Меняем текст кнопки сохранения
-        $('#studentForm button[type="submit"]').html('<i class="fas fa-user-plus"></i> Сохранить анкету');
+<!--        // Меняем текст кнопки сохранения-->
+<!--        $('#studentForm button[type="submit"]').html('<i class="fas fa-user-plus"></i> Сохранить анкету');-->
 
-        showMessage('Заполните данные для нового ученика', 'info');
-    }
-    // Загрузка медицинских справок
+<!--        showMessage('Заполните данные для нового ученика', 'info');-->
+<!--    }-->
+// ================== МЕДИЦИНСКИЕ СПРАВКИ ==================
+
+// Загрузка медицинских справок
 function loadMedicalCertificates(studentId) {
+    console.log('🔄 Загрузка медицинских справок для ученика:', studentId);
+
     if (!studentId || studentId === 'new') {
         $('#certificatesContainer').html('<div class="text-muted">Справки будут доступны после сохранения ученика</div>');
         return;
@@ -544,7 +551,11 @@ function loadMedicalCertificates(studentId) {
 
 // Показать форму добавления справки
 function showAddCertificateForm() {
+    console.log('🔄 Показать форму добавления справки');
+
     const studentId = $('#studentId').val();
+    console.log('Student ID:', studentId);
+
     if (!studentId || studentId === 'new') {
         showMessage('Сначала сохраните данные ученика', 'warning');
         return;
@@ -569,6 +580,8 @@ function hideCertificateForm() {
 
 // Редактирование справки
 function editCertificate(certificateId, certId, dateStart, dateEnd, active) {
+    console.log('🔄 Редактирование справки:', certificateId);
+
     $('#certificateFormTitle').text('Редактирование справки');
     $('#certificateId').val(certificateId);
     $('#certificateStudentId').val($('#studentId').val());
@@ -584,14 +597,24 @@ function editCertificate(certificateId, certId, dateStart, dateEnd, active) {
 
 // Загрузка типов справок
 function loadCertificateTypes() {
-    if ($('#cert_id option').length > 1) return; // Уже загружены
+    console.log('🔄 Загрузка типов справок');
+
+    if ($('#cert_id option').length > 1) {
+        console.log('Типы справок уже загружены');
+        return; // Уже загружены
+    }
 
     $.get('/edit-students/get-certificate-types', function(types) {
+        console.log('✅ Получены типы справок:', types);
+
         let options = '<option value="">-- Выберите тип справки --</option>';
         types.forEach(type => {
             options += `<option value="${type.id}">${type.name}</option>`;
         });
         $('#cert_id').html(options);
+    }).fail(function(xhr, status, error) {
+        console.error('❌ Ошибка загрузки типов справок:', error);
+        showMessage('Ошибка загрузки типов справок', 'danger');
     });
 }
 
@@ -619,49 +642,69 @@ function deleteCertificate() {
 }
 
 // Обработка формы справки
-$('#certificateForm').submit(function(e) {
-    e.preventDefault();
+$(document).ready(function() {
+    // Обработчик для формы справки
+    $('#certificateForm').submit(function(e) {
+        e.preventDefault();
+        console.log('🔄 Отправка формы справки');
 
-    const formData = new FormData(this);
-    const certificateId = $('#certificateId').val();
+        const formData = new FormData(this);
+        const certificateId = $('#certificateId').val();
 
-    const url = certificateId ? '/edit-students/update-medical-certificate' : '/edit-students/add-medical-certificate';
+        const url = certificateId ? '/edit-students/update-medical-certificate' : '/edit-students/add-medical-certificate';
 
-    fetch(url, {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        showMessage(data.message, 'success');
-        hideCertificateForm();
-        loadMedicalCertificates($('#studentId').val());
-    })
-    .catch(error => {
-        console.error('Ошибка:', error);
-        showMessage('Ошибка сохранения справки: ' + error.message, 'danger');
+        fetch(url, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            showMessage(data.message, 'success');
+            hideCertificateForm();
+            loadMedicalCertificates($('#studentId').val());
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            showMessage('Ошибка сохранения справки: ' + error.message, 'danger');
+        });
     });
 });
 
-// Обновляем функцию loadStudentData для загрузки справок
-function loadStudentData(studentId) {
-    console.log('🔄 Загрузка данных ученика ID:', studentId);
-
-    $.get(`/edit-students/get-student-data/${studentId}`, function(student) {
-        // ... существующий код заполнения формы ...
-
-        // Загружаем медицинские справки
-        loadMedicalCertificates(studentId);
-
-    }).fail(function(xhr, status, error) {
-        console.error('❌ Ошибка загрузки данных ученика:', error);
-        showMessage('Ошибка загрузки данных ученика: ' + error, 'danger');
-    });
-}
-
-// Обновляем функцию createNewStudent для скрытия справок
+// Обновляем функцию createNewStudent для справок
 function createNewStudent() {
-    // ... существующий код ...
+    // Скрываем карточку текущего ученика
+    $('#studentCard').addClass('hidden');
+
+    // Очищаем форму
+    $('#studentForm')[0].reset();
+
+    // Убираем выбранного ученика из select
+    $('#studentSelect').val('').trigger('change');
+
+    // Устанавливаем текущую дату в поле "Дата начала тренировок"
+    const now = new Date();
+    const localDateTime = now.toISOString().slice(0, 16);
+    $('#date_start').val(localDateTime);
+
+    // Устанавливаем активный статус (галочка включена)
+    $('#active').prop('checked', true);
+
+    // Устанавливаем специальное значение для нового ученика
+    $('#studentId').val('new');
+
+    // Показываем карточку с пустой формой
+    $('#studentCard').removeClass('hidden');
+
+    // Меняем заголовок
+    $('#studentCard h3').text('Новый ученик');
+
+    // Меняем текст кнопки сохранения
+    $('#studentForm button[type="submit"]').html('<i class="fas fa-user-plus"></i> Сохранить анкету');
 
     // Скрываем справки для нового ученика
     $('#certificatesContainer').html('<div class="text-muted">Справки будут доступны после сохранения ученика</div>');
