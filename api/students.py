@@ -344,11 +344,12 @@ async def get_certificate_types(db: Session = Depends(get_db)):
 
 @router.post("/edit-students/add-medical-certificate")
 async def add_medical_certificate(
-        student_id: int = Form(...),
-        cert_id: int = Form(...),
-        date_start: str = Form(...),
-        date_end: str = Form(...),
-        db: Session = Depends(get_db)
+    student_id: int = Form(...),
+    cert_id: int = Form(...),
+    date_start: str = Form(...),
+    date_end: str = Form(...),
+    active: Optional[str] = Form(None),
+    db: Session = Depends(get_db)
 ):
     """Добавление новой медицинской справки"""
     try:
@@ -370,7 +371,7 @@ async def add_medical_certificate(
             cert_id=cert_id,
             date_start=datetime.fromisoformat(date_start).date() if date_start else None,
             date_end=datetime.fromisoformat(date_end).date() if date_end else None,
-            active=True
+            active=active == "on" if active else True
         )
 
         db.add(new_cert)
@@ -396,16 +397,18 @@ async def add_medical_certificate(
 @router.post("/edit-students/update-medical-certificate")
 async def update_medical_certificate(
         certificate_id: int = Form(...),
+        student_id: int = Form(...),
         cert_id: int = Form(...),
         date_start: str = Form(...),
         date_end: str = Form(...),
-        active: str = Form(None),
+        active: Optional[str] = Form(None),
         db: Session = Depends(get_db)
 ):
     """Обновление медицинской справки"""
     try:
         print(f"🔹 Обновление справки ID: {certificate_id}")
-        print(f"🔹 Данные: cert_id={cert_id}, date_start={date_start}, date_end={date_end}, active={active}")
+        print(
+            f"🔹 Данные: student_id={student_id}, cert_id={cert_id}, date_start={date_start}, date_end={date_end}, active={active}")
 
         certificate = db.query(MedCertificat_received).filter(
             MedCertificat_received.id == certificate_id
