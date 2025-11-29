@@ -342,18 +342,94 @@ async def get_certificate_types(db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"Ошибка загрузки типов справок: {str(e)}")
 
 
+@router.post("/edit-students/update-medical-certificate")
+async def update_medical_certificate(
+        request: Request,
+        db: Session = Depends(get_db)
+):
+    """Обновление медицинской справки"""
+    try:
+        # Получаем данные формы
+        form_data = await request.form()
+        print("🔹 Получены данные формы для обновления справки:")
+        for key, value in form_data.items():
+            print(f"  {key}: {value} (тип: {type(value)})")
+
+        # Извлекаем данные с преобразованием типов
+        certificate_id = int(form_data.get('certificate_id')) if form_data.get('certificate_id') else None
+        student_id = int(form_data.get('student_id')) if form_data.get('student_id') else None
+        cert_id = int(form_data.get('cert_id')) if form_data.get('cert_id') else None
+        date_start = form_data.get('date_start')
+        date_end = form_data.get('date_end')
+        active = form_data.get('active')
+
+        if not certificate_id:
+            raise HTTPException(status_code=400, detail="ID справки обязательно")
+
+        certificate = db.query(MedCertificat_received).filter(
+            MedCertificat_received.id == certificate_id
+        ).first()
+
+        if not certificate:
+            raise HTTPException(status_code=404, detail="Справка не найдена")
+
+        # Обновляем поля
+        if cert_id:
+            certificate.cert_id = cert_id
+        if date_start:
+            certificate.date_start = datetime.fromisoformat(date_start).date()
+        if date_end:
+            certificate.date_end = datetime.fromisoformat(date_end).date()
+        if active is not None:
+            certificate.active = active == "on"
+
+        db.commit()
+
+        return JSONResponse({
+            "status": "success",
+            "message": "Справка успешно обновлена"
+        })
+
+    except ValueError as e:
+        db.rollback()
+        logger.error(f"❌ Ошибка преобразования типов: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Ошибка в данных: {str(e)}")
+    except Exception as e:
+        db.rollback()
+        logger.error(f"❌ Ошибка при обновлении справки: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Ошибка обновления справки: {str(e)}")
+
+
 @router.post("/edit-students/add-medical-certificate")
 async def add_medical_certificate(
-    student_id: int = Form(...),
-    cert_id: int = Form(...),
-    date_start: str = Form(...),
-    date_end: str = Form(...),
-    active: Optional[str] = Form(None),
-    db: Session = Depends(get_db)
+        request: Request,
+        db: Session = Depends(get_db)
 ):
     """Добавление новой медицинской справки"""
     try:
-        print(f"🔹 Добавление справки для ученика ID: {student_id}")
+        # Получаем данные формы
+        form_data = await request.form()
+        print("🔹 Получены данные формы для добавления справки:")
+        for key, value in form_data.items():
+            print(f"  {key}: {value} (тип: {type(value)})")
+
+        # Извлекаем данные с преобразованием типов
+        student_id = int(form_data.get('student_id')) if form_data.get('student_id') else None
+        cert_id = int(form_data.get('cert_id')) if form_data.get('cert_id') else None
+        date_start = form_data.get('date_start')
+        date_end = form_data.get('date_end')
+        active = form_data.get('active')
+
+        if not student_id:
+            raise HTTPException(status_code=400, detail="ID ученика обязательно")
+        if not cert_id:
+            raise HTTPException(status_code=400, detail="Тип справки обязателен")
+        if not date_start:
+            raise HTTPException(status_code=400, detail="Дата начала обязательна")
+        if not date_end:
+            raise HTTPException(status_code=400, detail="Дата окончания обязательна")
 
         # Проверяем существование ученика
         student = db.query(Students).filter(Students.id == student_id).first()
@@ -369,8 +445,8 @@ async def add_medical_certificate(
         new_cert = MedCertificat_received(
             student_id=student_id,
             cert_id=cert_id,
-            date_start=datetime.fromisoformat(date_start).date() if date_start else None,
-            date_end=datetime.fromisoformat(date_end).date() if date_end else None,
+            date_start=datetime.fromisoformat(date_start).date(),
+            date_end=datetime.fromisoformat(date_end).date(),
             active=active == "on" if active else True
         )
 
@@ -386,58 +462,16 @@ async def add_medical_certificate(
             "certificate_id": new_cert.id
         })
 
+    except ValueError as e:
+        db.rollback()
+        logger.error(f"❌ Ошибка преобразования типов: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Ошибка в данных: {str(e)}")
     except Exception as e:
         db.rollback()
         logger.error(f"❌ Ошибка при добавлении справки: {str(e)}")
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Ошибка добавления справки: {str(e)}")
-
-
-@router.post("/edit-students/update-medical-certificate")
-async def update_medical_certificate(
-        certificate_id: int = Form(...),
-        student_id: int = Form(...),
-        cert_id: int = Form(...),
-        date_start: str = Form(...),
-        date_end: str = Form(...),
-        active: Optional[str] = Form(None),
-        db: Session = Depends(get_db)
-):
-    """Обновление медицинской справки"""
-    try:
-        print(f"🔹 Обновление справки ID: {certificate_id}")
-        print(
-            f"🔹 Данные: student_id={student_id}, cert_id={cert_id}, date_start={date_start}, date_end={date_end}, active={active}")
-
-        certificate = db.query(MedCertificat_received).filter(
-            MedCertificat_received.id == certificate_id
-        ).first()
-
-        if not certificate:
-            raise HTTPException(status_code=404, detail="Справка не найдена")
-
-        # Обновляем поля
-        certificate.cert_id = cert_id
-        certificate.date_start = datetime.fromisoformat(date_start).date() if date_start else None
-        certificate.date_end = datetime.fromisoformat(date_end).date() if date_end else None
-        certificate.active = active == "on"
-
-        print(f"🔹 После обновления: date_start={certificate.date_start}, date_end={certificate.date_end}")
-
-        db.commit()
-
-        return JSONResponse({
-            "status": "success",
-            "message": "Справка успешно обновлена"
-        })
-
-    except Exception as e:
-        db.rollback()
-        logger.error(f"❌ Ошибка при обновлении справки: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Ошибка обновления справки: {str(e)}")
 
 
 @router.delete("/edit-students/delete-medical-certificate/{certificate_id}")
