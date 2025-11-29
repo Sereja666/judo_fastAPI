@@ -4,6 +4,8 @@ from dotenv import load_dotenv
 from pydantic_settings import BaseSettings
 import os
 from typing import Dict, Any
+from fastapi.templating import Jinja2Templates
+
 # BASE_DIR = Path(__file__).parent
 
 config = configparser.ConfigParser()
@@ -54,3 +56,10 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+# Создаем папку templates если её нет
+if not os.path.exists("templates"):
+    os.makedirs("templates")
+
+# Инициализируем templates для использования во всех роутерах
+templates = Jinja2Templates(directory="templates")
