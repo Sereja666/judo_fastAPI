@@ -3,17 +3,18 @@ from fastapi import Request, HTTPException
 from fastapi.responses import RedirectResponse
 import httpx
 import json
-from urllib.parse import urlparse, urlencode
+from urllib.parse import urlencode
+from starlette.middleware.base import BaseHTTPMiddleware
 from logger_config import logger
 
 
-class SupersetAuthMiddleware:
+class SupersetAuthMiddleware(BaseHTTPMiddleware):
     def __init__(self, app, superset_base_url: str):
-        self.app = app
+        super().__init__(app)
         self.superset_base_url = superset_base_url.rstrip('/')
         self.excluded_paths = ["/static/", "/health", "/auth/callback", "/logout"]
 
-    async def __call__(self, request: Request, call_next):
+    async def dispatch(self, request: Request, call_next):
         # Пропускаем исключенные пути
         if any(request.url.path.startswith(path) for path in self.excluded_paths):
             return await call_next(request)
