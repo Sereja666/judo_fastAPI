@@ -3,13 +3,11 @@ import os
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 import httpx
 
 # Импортируем middleware
-from database.middleware import StrictSupersetAuthMiddleware, CookieOnlyAuthMiddleware, SmartCookieAuthMiddleware, \
-    RedirectBasedAuthMiddleware
+from database.middleware import RedirectBasedAuthMiddleware
 from config import settings
 
 # Импортируем роутеры
@@ -23,17 +21,14 @@ from logger_config import logger
 
 app = FastAPI(title="Student Management System")
 
-# Trusted Hosts middleware для правильных URL (ДОЛЖЕН БЫТЬ ПЕРВЫМ)
-app.add_middleware(RedirectBasedAuthMiddleware, allowed_hosts=["api.srm-1legion.ru", "localhost", "127.0.0.1"])
-
 # Монтируем статические файлы
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # URL вашего Superset
 SUPERSET_BASE_URL = settings.superset_conf.base_url
 
-# Middleware аутентификации (ВАЖНО: после TrustedHostMiddleware)
-app.add_middleware(SmartCookieAuthMiddleware, superset_base_url=SUPERSET_BASE_URL)
+# Middleware аутентификации (ПЕРВЫМ!)
+app.add_middleware(RedirectBasedAuthMiddleware, superset_base_url=SUPERSET_BASE_URL)
 
 # CORS
 app.add_middleware(
@@ -69,32 +64,18 @@ async def auth_callback(request: Request, return_url: str = "/"):
         # Используем HTTPS URL для редиректа
         safe_return_url = return_url.replace('http://', 'https://')
 
-        # Проверяем, что сессия действительно валидна
-        try:
-            async with httpx.AsyncClient() as client:
-                response = await client.get(
-                    f"{SUPERSET_BASE_URL}/api/v1/security/current",
-                    cookies={"session": session_cookie},
-                    timeout=10.0
-                )
-                if response.status_code == 200:
-                    response = RedirectResponse(url=safe_return_url)
-                    response.set_cookie(
-                        key="session",
-                        value=session_cookie,
-                        httponly=True,
-                        secure=True,  # Важно для HTTPS!
-                        max_age=24 * 60 * 60,
-                        samesite="lax"
-                    )
-                    logger.info("✅ Успешная аутентификация через callback")
-                    return response
-                else:
-                    logger.warning(f"⚠️ Невалидная сессия в callback: статус {response.status_code}")
-        except Exception as e:
-            logger.error(f"❌ Ошибка проверки сессии в callback: {e}")
+        response = RedirectResponse(url=safe_return_url)
+        response.set_cookie(
+            key="session",
+            value=session_cookie,
+            httponly=True,
+            secure=True,  # Важно для HTTPS!
+            max_age=24 * 60 * 60,
+            samesite="lax"
+        )
+        logger.info("✅ Успешная аутентификация через callback")
+        return response
 
-    # Если что-то пошло не так - снова на логин
     logger.warning("⚠️ Неудачная аутентификация в callback")
     safe_login_url = f"{SUPERSET_BASE_URL}/login/"
     return RedirectResponse(url=safe_login_url)
@@ -149,17 +130,25 @@ async def debug_middleware_check(request: Request):
     }
 
 
-@app.get("/debug/request-info")
-async def debug_request_info(request: Request):
-    """Информация о запросе"""
+@app.get("/debug/auth-check")
+async def debug_auth_check(request: Request):
+    """Проверка текущей авторизации"""
+    session_cookie = request.cookies.get("session")
+
+    if not session_cookie:
+        return {"authenticated": False, "reason": "No session cookie"}
+
+    # Используем ту же логику проверки, что и в middleware
+    from database.middleware import RedirectBasedAuthMiddleware
+    checker = RedirectBasedAuthMiddleware(app=None, superset_base_url=SUPERSET_BASE_URL)
+
+    is_authenticated = await checker._verify_via_redirect(session_cookie, request)
+
     return {
-        "method": request.method,
-        "url": str(request.url),
-        "base_url": str(request.base_url),
-        "headers": dict(request.headers),
-        "cookies": dict(request.cookies),
-        "client": request.client,
-        "scheme": request.url.scheme
+        "authenticated": is_authenticated,
+        "session_cookie_present": True,
+        "cookie_length": len(session_cookie),
+        "superset_url": SUPERSET_BASE_URL
     }
 
 
@@ -173,32 +162,10 @@ async def root(request: Request):
     })
 
 
-# api_main.py
-@app.get("/debug/auth-check")
-async def debug_auth_check(request: Request):
-    """Проверка текущей авторизации"""
-    session_cookie = request.cookies.get("session")
-
-    if not session_cookie:
-        return {"authenticated": False, "reason": "No session cookie"}
-
-    # Используем ту же логику проверки, что и в middleware
-    from database.middleware import SmartCookieAuthMiddleware
-    checker = SmartCookieAuthMiddleware(app=None, superset_base_url=SUPERSET_BASE_URL)
-
-    is_authenticated = await checker._check_if_authenticated(session_cookie)
-
-    return {
-        "authenticated": is_authenticated,
-        "session_cookie_present": True,
-        "cookie_length": len(session_cookie),
-        "superset_url": SUPERSET_BASE_URL
-    }
-
 if __name__ == "__main__":
     import uvicorn
 
-    logger.info("🚀 Starting server with STRICT Superset authentication")
+    logger.info("🚀 Starting server with RedirectBasedAuthMiddleware")
     uvicorn.run(
         app,
         host="0.0.0.0",
