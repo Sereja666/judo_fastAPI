@@ -279,3 +279,132 @@ class LocalSupersetAuthMiddleware(BaseHTTPMiddleware):
 
         logger.info(f"🔀 Редирект на: {redirect_url}")
         return RedirectResponse(url=redirect_url, status_code=307)
+
+
+# middleware.py
+class LocalHttpsSupersetAuthMiddleware(BaseHTTPMiddleware):
+    """
+    Middleware для работы с локальным Superset по HTTPS
+    """
+
+    def __init__(self, app: ASGIApp, superset_base_url: str):
+        super().__init__(app)
+        self.original_url = superset_base_url.rstrip('/')
+        self.excluded_paths = [
+            "/static",
+            "/health",
+            "/auth/callback",
+            "/logout",
+            "/debug/"
+        ]
+
+        # Локальные HTTPS URL
+        self.local_urls = [
+            "https://localhost:8088",
+            "https://172.17.0.1:8088",
+            self.original_url  # оригинальный URL
+        ]
+
+        self.current_url = self.original_url
+
+    async def dispatch(self, request: Request, call_next):
+        if self._should_exclude_path(request.url.path):
+            return await call_next(request)
+
+        logger.info(f"🔐 LOCAL HTTPS проверка для: {request.url.path}")
+
+        session_cookie = request.cookies.get("session")
+
+        if session_cookie:
+            user_info = await self._check_with_local_https(session_cookie)
+
+            if user_info and user_info.get("authenticated"):
+                username = user_info.get("username", "unknown")
+                logger.info(f"✅ Пользователь авторизован: {username}")
+                request.state.user = user_info
+                return await call_next(request)
+            else:
+                logger.warning("❌ Пользователь не авторизован")
+        else:
+            logger.warning("❌ Сессионная кука отсутствует")
+
+        return self._create_login_redirect(request)
+
+    async def _check_with_local_https(self, session_cookie: str) -> dict:
+        """Проверяет авторизацию через локальные HTTPS URL"""
+        for local_url in self.local_urls:
+            logger.debug(f"🔹 Пробуем локальный HTTPS: {local_url}")
+            user_info = await self._check_single_url_https(session_cookie, local_url)
+            if user_info:
+                logger.info(f"✅ Найден работающий URL: {local_url}")
+                self.current_url = local_url
+                return user_info
+
+        return None
+
+    async def _check_single_url_https(self, session_cookie: str, base_url: str) -> dict:
+        """Проверка авторизации через конкретный HTTPS URL"""
+        try:
+            # Для локальных HTTPS отключаем проверку SSL
+            verify_ssl = not (base_url.startswith('https://localhost') or
+                              base_url.startswith('https://172.17.0.1'))
+
+            async with httpx.AsyncClient(verify=verify_ssl) as client:
+                endpoints = ["/api/v1/me", "/api/v1/security/current"]
+
+                for endpoint in endpoints:
+                    try:
+                        response = await client.get(
+                            f"{base_url}{endpoint}",
+                            cookies={"session": session_cookie},
+                            timeout=3.0,  # Короткий таймаут для локальных
+                            follow_redirects=False
+                        )
+
+                        logger.debug(f"🔹 {base_url}{endpoint}: статус {response.status_code}")
+
+                        if response.status_code == 200:
+                            user_data = response.json()
+                            return {
+                                "authenticated": True,
+                                "username": user_data.get('username', 'unknown'),
+                                "user_id": user_data.get('user_id'),
+                                "email": user_data.get('email'),
+                                "roles": user_data.get('roles', []),
+                                "user_data": user_data
+                            }
+                        elif response.status_code == 401:
+                            return {"authenticated": False}
+
+                    except Exception as e:
+                        logger.debug(f"🔹 Ошибка {endpoint}: {e}")
+                        continue
+
+                return None
+
+        except Exception as e:
+            logger.debug(f"🔹 Общая ошибка для {base_url}: {e}")
+            return None
+
+    def _should_exclude_path(self, path: str) -> bool:
+        for excluded in self.excluded_paths:
+            if path.startswith(excluded + "/") or path == excluded:
+                return True
+        return False
+
+    def _create_login_redirect(self, request: Request) -> RedirectResponse:
+        base_url = str(request.base_url)
+        return_url = str(request.url)
+
+        if "api.srm-1legion.ru" in base_url:
+            base_url = base_url.replace('http://', 'https://')
+            return_url = return_url.replace('http://', 'https://')
+
+        login_url = f"{self.current_url}/login/"
+        callback_url = f"{base_url}auth/callback?return_url={return_url}"
+
+        params = {"next": callback_url}
+        redirect_url = f"{login_url}?{urlencode(params)}"
+
+        logger.info(f"🔀 Редирект на: {redirect_url}")
+        return RedirectResponse(url=redirect_url, status_code=307)
