@@ -47,7 +47,20 @@ async def health_check():
 
 @app.get("/")
 async def root():
-    return {"message": "Student Management System API", "version": "1.0.0"}
+    """Корневая страница API"""
+    return {
+        "service": "Student Management System",
+        "version": "1.0.0",
+        "endpoints": {
+            "schedule": "/schedule/",
+            "students": "/edit-students",
+            "trainers": "/edit-trainers",
+            "visits": "/visits/",
+            "competitions": "/competitions/",
+            "health": "/health",
+            "debug": "/debug-routes"
+        }
+    }
 
 if __name__ == "__main__":
     import uvicorn
