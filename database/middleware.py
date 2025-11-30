@@ -6,12 +6,14 @@ from urllib.parse import urlencode
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 from logger_config import logger
+import json
+import base64
 
 
 class StrictRedirectBasedAuthMiddleware(BaseHTTPMiddleware):
     """
     Строгий middleware который надежно проверяет авторизацию
-    и отличает куки гостя от куки авторизованного пользователя
+    и получает информацию о пользователе
     """
 
     def __init__(self, app: ASGIApp, superset_base_url: str):
@@ -24,7 +26,7 @@ class StrictRedirectBasedAuthMiddleware(BaseHTTPMiddleware):
             "/logout",
             "/debug/"
         ]
-        # Кэш проверенных сессий
+        # Кэш проверенных сессий с информацией о пользователе
         self.verified_sessions = {}
 
     async def dispatch(self, request: Request, call_next):
@@ -38,61 +40,113 @@ class StrictRedirectBasedAuthMiddleware(BaseHTTPMiddleware):
         if session_cookie:
             # Проверяем в кэше
             if session_cookie in self.verified_sessions:
-                if self.verified_sessions[session_cookie]:
-                    logger.info("✅ Сессия проверена (кэш), доступ разрешен")
+                cache_data = self.verified_sessions[session_cookie]
+                if cache_data["authenticated"]:
+                    username = cache_data.get("username", "unknown")
+                    logger.info(f"✅ Сессия проверена (кэш), пользователь: {username}")
+
+                    # Добавляем информацию о пользователе в request state
+                    request.state.user = cache_data
                     return await call_next(request)
                 else:
                     logger.warning("❌ Сессия невалидна (кэш)")
             else:
-                # Нет в кэше - проверяем через несколько методов
-                is_authenticated = await self._strict_authentication_check(session_cookie)
-                if is_authenticated:
-                    logger.info("✅ Пользователь авторизован, доступ разрешен")
-                    self.verified_sessions[session_cookie] = True
+                # Нет в кэше - проверяем и получаем информацию о пользователе
+                auth_result = await self._strict_authentication_check(session_cookie)
+                if auth_result["authenticated"]:
+                    username = auth_result.get("username", "unknown")
+                    logger.info(f"✅ Пользователь авторизован: {username}")
+
+                    # Сохраняем в кэш
+                    self.verified_sessions[session_cookie] = auth_result
+
+                    # Добавляем информацию о пользователе в request state
+                    request.state.user = auth_result
                     return await call_next(request)
                 else:
                     logger.warning("❌ Пользователь не авторизован")
-                    self.verified_sessions[session_cookie] = False
+                    self.verified_sessions[session_cookie] = {"authenticated": False}
         else:
             logger.warning("❌ Куки нет")
 
         # Редирект на логин
         return self._create_login_redirect(request)
 
-    async def _strict_authentication_check(self, session_cookie: str) -> bool:
+    async def _strict_authentication_check(self, session_cookie: str) -> dict:
         """
-        Строгая проверка авторизации через несколько методов
+        Строгая проверка авторизации и получение информации о пользователе
         """
+        # Сначала пробуем получить информацию о пользователе через API
+        user_info = await self._get_user_info(session_cookie)
+        if user_info and user_info.get("authenticated"):
+            return user_info
+
+        # Если не удалось получить информацию, пробуем другие методы проверки
         checks = [
-            self._check_api_access,  # Проверка доступа к API
-            self._check_main_page,  # Проверка главной страницы
-            self._check_user_profile,  # Проверка профиля пользователя
+            self._check_api_access,
+            self._check_main_page,
         ]
 
-        results = []
+        authenticated = False
         for check in checks:
             try:
                 result = await check(session_cookie)
-                results.append(result)
-                logger.debug(f"🔹 Check {check.__name__}: {result}")
-
-                # Если хотя бы одна проверка показала False - сразу возвращаем False
-                if result is False:
-                    return False
-                # Если проверка показала True - продолжаем для надежности
-                elif result is True:
-                    continue
-
+                if result is True:
+                    authenticated = True
+                    break
+                elif result is False:
+                    authenticated = False
+                    break
             except Exception as e:
                 logger.debug(f"🔹 Check {check.__name__} error: {e}")
                 continue
 
-        # Если все проверки прошли или показали True - считаем авторизованным
-        if any(results) and not any(r is False for r in results):
-            return True
-
         # Fallback проверка
-        return await self._fallback_check(session_cookie)
+        if authenticated is False:
+            authenticated = await self._fallback_check(session_cookie)
+
+        return {
+            "authenticated": authenticated,
+            "username": "unknown",
+            "user_id": None,
+            "roles": []
+        }
+
+    async def _get_user_info(self, session_cookie: str) -> dict:
+        """
+        Получает информацию о пользователе через Superset API
+        """
+        try:
+            async with httpx.AsyncClient() as client:
+                # Пробуем endpoint текущего пользователя
+                response = await client.get(
+                    f"{self.superset_base_url}/api/v1/security/current",
+                    cookies={"session": session_cookie},
+                    timeout=8.0,
+                    follow_redirects=False
+                )
+
+                if response.status_code == 200:
+                    user_data = response.json()
+                    username = user_data.get('username', 'unknown')
+                    user_id = user_data.get('user_id')
+                    roles = user_data.get('roles', [])
+
+                    logger.info(f"🔹 Получена информация о пользователе: {username}")
+
+                    return {
+                        "authenticated": True,
+                        "username": username,
+                        "user_id": user_id,
+                        "roles": roles,
+                        "user_data": user_data
+                    }
+                else:
+                    return None
+
+        except Exception as e:
+            logger.debug(f"🔹 Ошибка получения информации о пользователе: {e}")
+            return None
 
     async def _check_api_access(self, session_cookie: str) -> bool:
         """Проверка доступа к API дашбордов"""
@@ -105,24 +159,20 @@ class StrictRedirectBasedAuthMiddleware(BaseHTTPMiddleware):
                     follow_redirects=False
                 )
 
-                # 200 = авторизован и есть доступ
                 if response.status_code == 200:
                     return True
-                # 403 = авторизован, но нет прав на дашборды
                 elif response.status_code == 403:
                     return True
-                # 401 = неавторизован
                 elif response.status_code == 401:
                     return False
-                # Редирект на логин = неавторизован
                 elif response.status_code in [301, 302, 307, 308]:
                     location = response.headers.get('location', '')
                     if '/login/' in location:
                         return False
                     else:
-                        return None  # Неопределенный результат
+                        return None
                 else:
-                    return None  # Неопределенный результат
+                    return None
 
         except Exception as e:
             logger.debug(f"🔹 API check error: {e}")
@@ -136,11 +186,10 @@ class StrictRedirectBasedAuthMiddleware(BaseHTTPMiddleware):
                     f"{self.superset_base_url}/",
                     cookies={"session": session_cookie},
                     timeout=8.0,
-                    follow_redirects=True  # Разрешаем редиректы
+                    follow_redirects=True
                 )
 
                 final_url = str(response.url)
-                # Если после всех редиректов попали на главную страницу (не на логин) - авторизован
                 if '/login/' in final_url or '/superset/welcome/' in final_url:
                     return False
                 else:
@@ -150,51 +199,21 @@ class StrictRedirectBasedAuthMiddleware(BaseHTTPMiddleware):
             logger.debug(f"🔹 Main page check error: {e}")
             return None
 
-    async def _check_user_profile(self, session_cookie: str) -> bool:
-        """Проверка доступа к профилю пользователя"""
-        try:
-            async with httpx.AsyncClient() as client:
-                response = await client.get(
-                    f"{self.superset_base_url}/api/v1/me/",
-                    cookies={"session": session_cookie},
-                    timeout=8.0,
-                    follow_redirects=False
-                )
-
-                if response.status_code == 200:
-                    return True
-                elif response.status_code == 401:
-                    return False
-                else:
-                    return None
-
-        except Exception as e:
-            logger.debug(f"🔹 Profile check error: {e}")
-            return None
-
     async def _fallback_check(self, session_cookie: str) -> bool:
         """
         Fallback-проверка когда Superset недоступен
-        Использует строгие эвристики
         """
         try:
-            # Куки гостя обычно короче и имеют другую структуру
             cookie_length = len(session_cookie)
 
-            # Эвристика 1: очень короткие куки (< 50) - точно гости
             if cookie_length < 50:
                 logger.debug(f"🔹 Fallback: очень короткая кука ({cookie_length}) - гость")
                 return False
-
-            # Эвристика 2: средние куки (50-200) - подозрительные, считаем гостями
             elif cookie_length < 200:
                 logger.debug(f"🔹 Fallback: средняя кука ({cookie_length}) - вероятно гость")
                 return False
-
-            # Эвристика 3: длинные куки (> 200) - возможно авторизованный
             else:
                 logger.debug(f"🔹 Fallback: длинная кука ({cookie_length}) - возможно авторизован")
-                # Но все равно осторожно - лучше запретить доступ
                 return False
 
         except:

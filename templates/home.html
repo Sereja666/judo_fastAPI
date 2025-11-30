@@ -15,6 +15,12 @@
                     <i class="fas fa-dumbbell fa-4x text-primary mb-3"></i>
                     <h1 class="display-4 fw-bold text-dark">Привет, пользователь!</h1>
                 </div>
+                <!-- home.html -->
+                    {% if user_authenticated %}
+                        <div class="user-info">
+                            Вы вошли как: <strong>{{ username }}</strong>
+                        </div>
+                    {% endif %}
 
                 <p class="lead text-muted mb-4">
                     Добро пожаловать в систему управления спортивной школой "Первый Легион"

@@ -1,4 +1,5 @@
 # main.py
+import base64
 import os
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
@@ -155,15 +156,106 @@ async def debug_cookie_analysis(request: Request):
     analysis["final_decision"] = await checker._strict_authentication_check(session_cookie)
 
     return analysis
+#
+# @app.get("/", response_class=HTMLResponse)
+# async def root(request: Request):
+#     """Главная страница системы"""
+#     # Если пользователь здесь - он уже прошел аутентификацию
+#     return templates.TemplateResponse("home.html", {
+#         "request": request,
+#         "user_authenticated": True
+#     })
+
+
+# api_main.py - добавьте эти эндпоинты
+
+@app.get("/debug/user-info")
+async def debug_user_info(request: Request):
+    """Информация о текущем пользователе"""
+    user_info = getattr(request.state, 'user', None)
+
+    if user_info and user_info.get("authenticated"):
+        return {
+            "authenticated": True,
+            "username": user_info.get("username"),
+            "user_id": user_info.get("user_id"),
+            "roles": user_info.get("roles", []),
+            "message": f"Добро пожаловать, {user_info.get('username')}!"
+        }
+    else:
+        return {
+            "authenticated": False,
+            "message": "Пользователь не авторизован"
+        }
+
 
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
     """Главная страница системы"""
-    # Если пользователь здесь - он уже прошел аутентификацию
+    user_info = getattr(request.state, 'user', None)
+    username = user_info.get("username", "Гость") if user_info and user_info.get("authenticated") else "Гость"
+
     return templates.TemplateResponse("home.html", {
         "request": request,
-        "user_authenticated": True
+        "user_authenticated": user_info.get("authenticated", False) if user_info else False,
+        "username": username
     })
+
+
+# В других роутерах вы тоже можете использовать request.state.user
+@app.get("/profile")
+async def user_profile(request: Request):
+    """Профиль пользователя"""
+    user_info = getattr(request.state, 'user', None)
+
+    if not user_info or not user_info.get("authenticated"):
+        return RedirectResponse(url="/")
+
+    return {
+        "username": user_info.get("username"),
+        "user_id": user_info.get("user_id"),
+        "roles": user_info.get("roles", [])
+    }
+
+
+# api_main.py
+@app.get("/debug/cookie-decode")
+async def debug_cookie_decode(request: Request):
+    """Попытка декодировать куку сессии"""
+    session_cookie = request.cookies.get("session")
+
+    if not session_cookie:
+        return {"error": "No session cookie"}
+
+    analysis = {
+        "cookie_length": len(session_cookie),
+        "cookie_preview": session_cookie[:100] + "..." if len(session_cookie) > 100 else session_cookie,
+    }
+
+    # Пробуем декодировать как base64
+    try:
+        # Убираем возможные префиксы
+        cookie_data = session_cookie
+        if '.' in session_cookie:
+            parts = session_cookie.split('.')
+            for part in parts:
+                try:
+                    decoded = base64.b64decode(part + '=' * (-len(part) % 4))
+                    analysis["base64_decoded"] = decoded.decode('utf-8', errors='ignore')
+                    break
+                except:
+                    continue
+    except Exception as e:
+        analysis["decode_error"] = str(e)
+
+    # Проверяем через middleware
+    from database.middleware import StrictRedirectBasedAuthMiddleware
+    checker = StrictRedirectBasedAuthMiddleware(app=None, superset_base_url=SUPERSET_BASE_URL)
+
+    user_info = await checker._get_user_info(session_cookie)
+    analysis["user_info"] = user_info
+
+    return analysis
 
 
 if __name__ == "__main__":
