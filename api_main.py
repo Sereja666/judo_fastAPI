@@ -2,6 +2,7 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse  # ← Добавить импорт
 from database.middleware import SupersetAuthMiddleware
 from config import settings
 
@@ -33,7 +34,7 @@ app.add_middleware(
 )
 
 # Подключаем роутеры
-app.include_router(schedule_router, tags=["schedule"])
+app.include_router(schedule_router, prefix="/schedule", tags=["schedule"])
 app.include_router(students_router, tags=["students"])
 app.include_router(trainers_router, tags=["trainers"])
 app.include_router(visits_router, tags=["visits"])

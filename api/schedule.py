@@ -1,16 +1,16 @@
 # api/schedule.py
 from fastapi import APIRouter, Request, Form, Depends, HTTPException
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
 from typing import List
-from config import templates, settings
+from config import templates  # ← ТОЛЬКО ОДИН ИМПОРТ
 from database.schemas import get_db, Students, Sport, Schedule, Students_schedule
-from config import templates
 
 router = APIRouter()
 
-@router.get("/schedule/", response_class=HTMLResponse)
+# УБРАТЬ /schedule/ из всех путей, так как роутер сам добавит префикс
+@router.get("/", response_class=HTMLResponse)  # ← Без /schedule/
 async def main_page(request: Request, db: Session = Depends(get_db)):
     """Главная страница с формой выбора ученика и расписания"""
     students = db.query(Students).filter(Students.active == True).all()
@@ -22,7 +22,7 @@ async def main_page(request: Request, db: Session = Depends(get_db)):
         "sports": sports
     })
 
-@router.get("/schedule/search-students")
+@router.get("/search-students")  # ← Без /schedule/
 async def search_students(query: str, db: Session = Depends(get_db)):
     """Поиск учеников по имени для автозаполнения"""
     if not query or len(query) < 2:
@@ -38,7 +38,7 @@ async def search_students(query: str, db: Session = Depends(get_db)):
     result = [{"id": student.id, "name": student.name} for student in students]
     return JSONResponse(result)
 
-@router.get("/schedule/get-schedules")
+@router.get("/get-schedules")  # ← Без /schedule/
 async def get_schedules(sport_id: int, db: Session = Depends(get_db)):
     """Получение расписания по выбранной дисциплине с сортировкой только по описанию"""
     schedules = db.query(Schedule).filter(Schedule.sport_discipline == sport_id).all()
@@ -58,7 +58,7 @@ async def get_schedules(sport_id: int, db: Session = Depends(get_db)):
 
     return JSONResponse(result)
 
-@router.get("/schedule/get-student-schedules")
+@router.get("/get-student-schedules")  # ← Без /schedule/
 async def get_student_schedules(student_id: int, db: Session = Depends(get_db)):
     """Получение текущего расписания ученика"""
     student_schedules = db.query(Students_schedule).filter(
@@ -68,7 +68,7 @@ async def get_student_schedules(student_id: int, db: Session = Depends(get_db)):
     result = [ss.schedule for ss in student_schedules]
     return JSONResponse(result)
 
-@router.post("/schedule/save-schedule")
+@router.post("/save-schedule")  # ← Без /schedule/
 async def save_schedule(
         student_id: int = Form(...),
         sport_id: int = Form(...),
@@ -98,7 +98,7 @@ async def save_schedule(
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Ошибка сохранения: {str(e)}")
 
-@router.get("/schedule/student-schedule/{student_id}", response_class=HTMLResponse)
+@router.get("/student-schedule/{student_id}", response_class=HTMLResponse)  # ← Без /schedule/
 async def student_schedule_page(request: Request, student_id: int, db: Session = Depends(get_db)):
     """Страница управления расписанием конкретного ученика"""
     student = db.query(Students).filter(Students.id == student_id).first()
