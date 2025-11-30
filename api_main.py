@@ -2,6 +2,8 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi import Request
+from fastapi.responses import HTMLResponse
 from fastapi.responses import RedirectResponse  # ← Добавить импорт
 from database.middleware import SupersetAuthMiddleware
 from config import settings
@@ -12,6 +14,7 @@ from api.schedule import router as schedule_router
 from api.trainers import router as trainers_router
 from api.visits import router as visits_router
 from api.competitions import router as competitions_router
+from config import templates
 
 app = FastAPI(title="Student Management System")
 
@@ -48,10 +51,12 @@ async def health_check():
 # api_main.py
 from fastapi.responses import RedirectResponse
 
-@app.get("/")
-async def root():
-    """Редирект на расписание - главный модуль"""
-    return RedirectResponse(url="/schedule/")
+@app.get("/", response_class=HTMLResponse)
+async def root(request: Request):
+    """Главная страница системы"""
+    return templates.TemplateResponse("home.html", {
+        "request": request
+    })
 
 if __name__ == "__main__":
     import uvicorn
