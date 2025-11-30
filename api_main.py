@@ -8,7 +8,8 @@ from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 import httpx
 
 # Импортируем middleware
-from database.middleware import StrictSupersetAuthMiddleware, CookieOnlyAuthMiddleware, SmartCookieAuthMiddleware
+from database.middleware import StrictSupersetAuthMiddleware, CookieOnlyAuthMiddleware, SmartCookieAuthMiddleware, \
+    RedirectBasedAuthMiddleware
 from config import settings
 
 # Импортируем роутеры
@@ -23,7 +24,7 @@ from logger_config import logger
 app = FastAPI(title="Student Management System")
 
 # Trusted Hosts middleware для правильных URL (ДОЛЖЕН БЫТЬ ПЕРВЫМ)
-app.add_middleware(TrustedHostMiddleware, allowed_hosts=["api.srm-1legion.ru", "localhost", "127.0.0.1"])
+app.add_middleware(RedirectBasedAuthMiddleware, allowed_hosts=["api.srm-1legion.ru", "localhost", "127.0.0.1"])
 
 # Монтируем статические файлы
 app.mount("/static", StaticFiles(directory="static"), name="static")
