@@ -1,44 +1,55 @@
-<!-- home.html -->
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Management System</title>
-    <style>
-        .user-info { background: #f0f8ff; padding: 10px; border-radius: 5px; margin-bottom: 20px; border-left: 4px solid #007bff; }
-        .guest-info { background: #fff3cd; padding: 10px; border-radius: 5px; margin-bottom: 20px; border-left: 4px solid #ffc107; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Student Management System</h1>
+<!-- templates/home.html -->
+{% extends "base.html" %}
 
-        {% if user_authenticated %}
-        <div class="user-info">
-            ✅ Вы вошли как: <strong>{{ username }}</strong>
-            <br>
-            <small>
-                <a href="/logout">Выйти</a>
-            </small>
-        </div>
+{% block title %}Главная страница{% endblock %}
 
-        <nav>
-            <h2>Доступные разделы:</h2>
-            <ul>
-                <li><a href="/schedule/">Расписание</a></li>
-                <li><a href="/students/">Студенты</a></li>
-                <li><a href="/trainers/">Тренеры</a></li>
-                <li><a href="/visits/">Посещения</a></li>
-                <li><a href="/competitions/">Соревнования</a></li>
-            </ul>
-        </nav>
-        {% else %}
-        <div class="guest-info">
-            🔐 Для доступа к системе необходимо
-            <a href="/login">авторизоваться через Superset</a>
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header text-center">
+                <h3 class="mb-0">🏆 Добро пожаловать!</h3>
+            </div>
+            <div class="card-body text-center py-5">
+                <div class="mb-4">
+                    <i class="fas fa-dumbbell fa-4x text-primary mb-3"></i>
+                    <h1 class="display-4 fw-bold text-dark">Привет, пользователь!</h1>
+                </div>
+                <!-- home.html -->
+                    {% if user_authenticated %}
+                        <div class="user-info">
+                            Вы вошли как: <strong>{{ username }}</strong>
+                        </div>
+                    {% endif %}
+
+                <p class="lead text-muted mb-4">
+                    Добро пожаловать в систему управления спортивной школой "Первый Легион"
+                </p>
+
+                <div class="row mt-5">
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body text-center">
+                                <i class="fas fa-calendar-alt fa-2x text-primary mb-3"></i>
+                                <h5>Расписание</h5>
+                                <p class="text-muted small">Управление расписанием тренировок</p>
+                                <a href="/schedule/" class="btn btn-primary btn-sm">Перейти</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body text-center">
+                                <i class="fas fa-users fa-2x text-success mb-3"></i>
+                                <h5>Ученики</h5>
+                                <p class="text-muted small">Редактирование данных учеников</p>
+                                <a href="/edit-students" class="btn btn-success btn-sm">Перейти</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        {% endif %}
     </div>
-</body>
-</html>
+</div>
+{% endblock %}
