@@ -28,16 +28,16 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 SUPERSET_BASE_URL = settings.superset_conf.base_url
 
 # Middleware аутентификации (ПЕРВЫМ!)
-app.add_middleware(StrictRedirectBasedAuthMiddleware, superset_base_url=SUPERSET_BASE_URL)
+# app.add_middleware(StrictRedirectBasedAuthMiddleware, superset_base_url=SUPERSET_BASE_URL)
 
-# CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# # CORS
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=["*"],
+#     allow_credentials=True,
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
 
 # Подключаем роутеры
 app.include_router(schedule_router, prefix="/schedule", tags=["schedule"])
