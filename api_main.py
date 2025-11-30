@@ -1,5 +1,4 @@
 # main.py
-import base64
 import os
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
@@ -7,8 +6,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 import httpx
 
-# Импортируем middleware
-from database.middleware import  StrictRedirectBasedAuthMiddleware
+# Импортируем упрощенный middleware
+from database.middleware import SimpleSupersetAuthMiddleware
 from config import settings
 
 # Импортируем роутеры
@@ -28,17 +27,18 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # URL вашего Superset
 SUPERSET_BASE_URL = settings.superset_conf.base_url
 
-# Middleware аутентификации (ПЕРВЫМ!)
-# app.add_middleware(StrictRedirectBasedAuthMiddleware, superset_base_url=SUPERSET_BASE_URL)
+# Подключаем упрощенный middleware
+app.add_middleware(SimpleSupersetAuthMiddleware, superset_base_url=SUPERSET_BASE_URL)
+logger.info(f"🔐 Используется SimpleSupersetAuthMiddleware с проверкой через {SUPERSET_BASE_URL}")
 
-# # CORS
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=["*"],
-#     allow_credentials=True,
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
+# CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Подключаем роутеры
 app.include_router(schedule_router, prefix="/schedule", tags=["schedule"])
@@ -62,20 +62,25 @@ async def auth_callback(request: Request, return_url: str = "/"):
     logger.info(f"🔹 Auth callback received, return_url: {return_url}")
 
     if session_cookie:
-        # Используем HTTPS URL для редиректа
-        safe_return_url = return_url.replace('http://', 'https://')
+        # Проверяем, что сессия действительно валидна
+        from database.middleware import SimpleSupersetAuthMiddleware
+        checker = SimpleSupersetAuthMiddleware(app=None, superset_base_url=SUPERSET_BASE_URL)
+        user_info = await checker._check_superset_auth(session_cookie)
 
-        response = RedirectResponse(url=safe_return_url)
-        response.set_cookie(
-            key="session",
-            value=session_cookie,
-            httponly=True,
-            secure=True,  # Важно для HTTPS!
-            max_age=24 * 60 * 60,
-            samesite="lax"
-        )
-        logger.info("✅ Успешная аутентификация через callback")
-        return response
+        if user_info and user_info.get("authenticated"):
+            safe_return_url = return_url.replace('http://', 'https://')
+
+            response = RedirectResponse(url=safe_return_url)
+            response.set_cookie(
+                key="session",
+                value=session_cookie,
+                httponly=True,
+                secure=True,
+                max_age=24 * 60 * 60,
+                samesite="lax"
+            )
+            logger.info(f"✅ Успешная аутентификация: {user_info.get('username')}")
+            return response
 
     logger.warning("⚠️ Неудачная аутентификация в callback")
     safe_login_url = f"{SUPERSET_BASE_URL}/login/"
@@ -90,88 +95,9 @@ async def logout():
     return response
 
 
-@app.get("/debug/superset-status")
-async def debug_superset_status():
-    """Проверка статуса Superset"""
-    try:
-        async with httpx.AsyncClient() as client:
-            response = await client.get(SUPERSET_BASE_URL, timeout=5.0)
-            return {
-                "superset_url": SUPERSET_BASE_URL,
-                "status": "available",
-                "status_code": response.status_code,
-                "response_time": f"{response.elapsed.total_seconds():.2f}s"
-            }
-    except Exception as e:
-        return {
-            "superset_url": SUPERSET_BASE_URL,
-            "status": "unavailable",
-            "error": str(e)
-        }
-
-
-@app.get("/debug/middleware-check")
-async def debug_middleware_check(request: Request):
-    """Проверка подключенных middleware"""
-    middleware_info = []
-    for i, middleware in enumerate(app.user_middleware):
-        middleware_info.append({
-            "position": i,
-            "cls": str(middleware.cls),
-            "options": middleware.options
-        })
-
-    return {
-        "total_middleware": len(app.user_middleware),
-        "middleware_list": middleware_info,
-        "request_path": request.url.path,
-        "cookies": dict(request.cookies),
-        "base_url": str(request.base_url),
-        "url": str(request.url)
-    }
-
-
-@app.get("/debug/cookie-analysis")
-async def debug_cookie_analysis(request: Request):
-    """Анализ куки сессии"""
-    session_cookie = request.cookies.get("session")
-
-    if not session_cookie:
-        return {"error": "No session cookie"}
-
-    analysis = {
-        "cookie_present": True,
-        "cookie_length": len(session_cookie),
-        "cookie_preview": session_cookie[:100] + "..." if len(session_cookie) > 100 else session_cookie,
-        "estimated_status": "guest" if len(session_cookie) < 200 else "possibly_authenticated"
-    }
-
-    # Проверяем через middleware
-    from database.middleware import StrictRedirectBasedAuthMiddleware
-    checker = StrictRedirectBasedAuthMiddleware(app=None, superset_base_url=SUPERSET_BASE_URL)
-
-    analysis["api_check"] = await checker._check_api_access(session_cookie)
-    analysis["main_page_check"] = await checker._check_main_page(session_cookie)
-    analysis["profile_check"] = await checker._check_user_profile(session_cookie)
-    analysis["final_decision"] = await checker._strict_authentication_check(session_cookie)
-
-    return analysis
-#
-# @app.get("/", response_class=HTMLResponse)
-# async def root(request: Request):
-#     """Главная страница системы"""
-#     # Если пользователь здесь - он уже прошел аутентификацию
-#     return templates.TemplateResponse("home.html", {
-#         "request": request,
-#         "user_authenticated": True
-#     })
-
-
-# api_main.py - добавьте эти эндпоинты
-
-@app.get("/debug/user-info")
-async def debug_user_info(request: Request):
-    """Информация о текущем пользователе"""
+@app.get("/debug/auth-status")
+async def debug_auth_status(request: Request):
+    """Проверка текущего статуса авторизации"""
     user_info = getattr(request.state, 'user', None)
 
     if user_info and user_info.get("authenticated"):
@@ -179,21 +105,55 @@ async def debug_user_info(request: Request):
             "authenticated": True,
             "username": user_info.get("username"),
             "user_id": user_info.get("user_id"),
+            "email": user_info.get("email"),
             "roles": user_info.get("roles", []),
-            "message": f"Добро пожаловать, {user_info.get('username')}!"
+            "message": f"Авторизован как {user_info.get('username')}"
         }
     else:
         return {
             "authenticated": False,
-            "message": "Пользователь не авторизован"
+            "message": "Не авторизован"
         }
+
+
+@app.get("/debug/test-superset-connection")
+async def debug_test_superset_connection():
+    """Тест подключения к Superset API"""
+    try:
+        async with httpx.AsyncClient() as client:
+            endpoints = [
+                "/api/v1/me",
+                "/api/v1/security/current",
+                "/api/v1/user/current"
+            ]
+
+            results = {}
+            for endpoint in endpoints:
+                try:
+                    response = await client.get(
+                        f"{SUPERSET_BASE_URL}{endpoint}",
+                        timeout=3.0
+                    )
+                    results[endpoint] = {
+                        "status_code": response.status_code,
+                        "headers": dict(response.headers)
+                    }
+                except Exception as e:
+                    results[endpoint] = {"error": str(e)}
+
+            return {
+                "superset_url": SUPERSET_BASE_URL,
+                "endpoints_test": results
+            }
+    except Exception as e:
+        return {"error": str(e)}
 
 
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
     """Главная страница системы"""
     user_info = getattr(request.state, 'user', None)
-    username = user_info.get("username", "Гость") if user_info and user_info.get("authenticated") else "Гость"
+    username = user_info.get("username") if user_info and user_info.get("authenticated") else None
 
     return templates.TemplateResponse("home.html", {
         "request": request,
@@ -202,71 +162,14 @@ async def root(request: Request):
     })
 
 
-# В других роутерах вы тоже можете использовать request.state.user
-@app.get("/profile")
-async def user_profile(request: Request):
-    """Профиль пользователя"""
-    user_info = getattr(request.state, 'user', None)
-
-    if not user_info or not user_info.get("authenticated"):
-        return RedirectResponse(url="/")
-
-    return {
-        "username": user_info.get("username"),
-        "user_id": user_info.get("user_id"),
-        "roles": user_info.get("roles", [])
-    }
-
-
-# api_main.py
-@app.get("/debug/cookie-decode")
-async def debug_cookie_decode(request: Request):
-    """Попытка декодировать куку сессии"""
-    session_cookie = request.cookies.get("session")
-
-    if not session_cookie:
-        return {"error": "No session cookie"}
-
-    analysis = {
-        "cookie_length": len(session_cookie),
-        "cookie_preview": session_cookie[:100] + "..." if len(session_cookie) > 100 else session_cookie,
-    }
-
-    # Пробуем декодировать как base64
-    try:
-        # Убираем возможные префиксы
-        cookie_data = session_cookie
-        if '.' in session_cookie:
-            parts = session_cookie.split('.')
-            for part in parts:
-                try:
-                    decoded = base64.b64decode(part + '=' * (-len(part) % 4))
-                    analysis["base64_decoded"] = decoded.decode('utf-8', errors='ignore')
-                    break
-                except:
-                    continue
-    except Exception as e:
-        analysis["decode_error"] = str(e)
-
-    # Проверяем через middleware
-    from database.middleware import StrictRedirectBasedAuthMiddleware
-    checker = StrictRedirectBasedAuthMiddleware(app=None, superset_base_url=SUPERSET_BASE_URL)
-
-    user_info = await checker._get_user_info(session_cookie)
-    analysis["user_info"] = user_info
-
-    return analysis
-
-
 if __name__ == "__main__":
     import uvicorn
 
-    logger.info("🚀 Starting server with RedirectBasedAuthMiddleware")
+    logger.info("🚀 Starting server with SimpleSupersetAuthMiddleware")
     uvicorn.run(
         app,
         host="0.0.0.0",
         port=8000,
         log_config=None,
-        proxy_headers=True,  # Важно для работы за reverse proxy
-        forwarded_allow_ips="*"  # Разрешаем forwarded headers
+        proxy_headers=True
     )
