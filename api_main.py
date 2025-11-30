@@ -46,10 +46,8 @@ async def health_check():
     return {"status": "healthy", "service": "Student Management System"}
 
 @app.get("/")
-async def root_redirect():
-    """Редирект с корня на главную страницу расписания"""
-    from fastapi.responses import RedirectResponse
-    return RedirectResponse(url="/schedule/")
+async def root():
+    return {"message": "Student Management System API", "version": "1.0.0"}
 
 if __name__ == "__main__":
     import uvicorn
