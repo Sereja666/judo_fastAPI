@@ -7,7 +7,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 import httpx
 
 # Импортируем middleware
-from database.middleware import RedirectBasedAuthMiddleware
+from database.middleware import  StrictRedirectBasedAuthMiddleware
 from config import settings
 
 # Импортируем роутеры
@@ -28,7 +28,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 SUPERSET_BASE_URL = settings.superset_conf.base_url
 
 # Middleware аутентификации (ПЕРВЫМ!)
-app.add_middleware(RedirectBasedAuthMiddleware, superset_base_url=SUPERSET_BASE_URL)
+app.add_middleware(StrictRedirectBasedAuthMiddleware, superset_base_url=SUPERSET_BASE_URL)
 
 # CORS
 app.add_middleware(
@@ -130,27 +130,31 @@ async def debug_middleware_check(request: Request):
     }
 
 
-@app.get("/debug/auth-check")
-async def debug_auth_check(request: Request):
-    """Проверка текущей авторизации"""
+@app.get("/debug/cookie-analysis")
+async def debug_cookie_analysis(request: Request):
+    """Анализ куки сессии"""
     session_cookie = request.cookies.get("session")
 
     if not session_cookie:
-        return {"authenticated": False, "reason": "No session cookie"}
+        return {"error": "No session cookie"}
 
-    # Используем ту же логику проверки, что и в middleware
-    from database.middleware import RedirectBasedAuthMiddleware
-    checker = RedirectBasedAuthMiddleware(app=None, superset_base_url=SUPERSET_BASE_URL)
-
-    is_authenticated = await checker._verify_via_redirect(session_cookie, request)
-
-    return {
-        "authenticated": is_authenticated,
-        "session_cookie_present": True,
+    analysis = {
+        "cookie_present": True,
         "cookie_length": len(session_cookie),
-        "superset_url": SUPERSET_BASE_URL
+        "cookie_preview": session_cookie[:100] + "..." if len(session_cookie) > 100 else session_cookie,
+        "estimated_status": "guest" if len(session_cookie) < 200 else "possibly_authenticated"
     }
 
+    # Проверяем через middleware
+    from database.middleware import StrictRedirectBasedAuthMiddleware
+    checker = StrictRedirectBasedAuthMiddleware(app=None, superset_base_url=SUPERSET_BASE_URL)
+
+    analysis["api_check"] = await checker._check_api_access(session_cookie)
+    analysis["main_page_check"] = await checker._check_main_page(session_cookie)
+    analysis["profile_check"] = await checker._check_user_profile(session_cookie)
+    analysis["final_decision"] = await checker._strict_authentication_check(session_cookie)
+
+    return analysis
 
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
