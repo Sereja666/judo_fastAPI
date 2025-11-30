@@ -1,10 +1,8 @@
 # main.py
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Depends
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi import Request
-from fastapi.responses import HTMLResponse
-from fastapi.responses import RedirectResponse  # ← Добавить импорт
+from fastapi.responses import HTMLResponse, RedirectResponse
 from database.middleware import SupersetAuthMiddleware
 from config import settings
 
@@ -24,8 +22,8 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # URL вашего Superset
 SUPERSET_BASE_URL = settings.superset_conf.base_url
 
-# Добавляем middleware
-# app.add_middleware(SupersetAuthMiddleware, superset_base_url=SUPERSET_BASE_URL)
+# Добавляем middleware ПРАВИЛЬНО (исправлено)
+app.add_middleware(SupersetAuthMiddleware, superset_base_url=SUPERSET_BASE_URL)
 
 # CORS (если нужно)
 app.add_middleware(
@@ -43,21 +41,48 @@ app.include_router(trainers_router, tags=["trainers"])
 app.include_router(visits_router, tags=["visits"])
 app.include_router(competitions_router, tags=["competitions"])
 
+
 @app.get("/health")
 async def health_check():
     """Эндпоинт для проверки здоровья приложения"""
     return {"status": "healthy", "service": "Student Management System"}
 
-# api_main.py
-from fastapi.responses import RedirectResponse
+
+@app.get("/auth/callback")
+async def auth_callback(request: Request):
+    """Callback endpoint для обработки редиректа после авторизации Superset"""
+    # Получаем сессионную куку из запроса
+    session_cookie = request.cookies.get("session")
+
+    if session_cookie:
+        # Перенаправляем пользователя на главную страницу
+        response = RedirectResponse(url="/")
+        response.set_cookie(key="session", value=session_cookie, httponly=True)
+        return response
+
+    # Если куки нет, возвращаем на логин
+    return RedirectResponse(url=f"{SUPERSET_BASE_URL}/login/")
+
 
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
     """Главная страница системы"""
+    # Middleware уже проверил аутентификацию
     return templates.TemplateResponse("home.html", {
-        "request": request
+        "request": request,
+        "user_authenticated": True  # Если мы здесь, пользователь аутентифицирован
     })
+
+
+@app.get("/logout")
+async def logout():
+    """Выход из системы"""
+    response = RedirectResponse(url=f"{SUPERSET_BASE_URL}/logout/")
+    response.delete_cookie("session")
+    return response
+
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)
