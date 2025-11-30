@@ -29,7 +29,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 SUPERSET_BASE_URL = settings.superset_conf.base_url
 
 # Middleware аутентификации (ПЕРВЫМ!)
-app.add_middleware(StrictRedirectBasedAuthMiddleware, superset_base_url=SUPERSET_BASE_URL)
+# app.add_middleware(StrictRedirectBasedAuthMiddleware, superset_base_url=SUPERSET_BASE_URL)
 
 # # CORS
 # app.add_middleware(
