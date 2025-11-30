@@ -125,6 +125,25 @@ async def root(request: Request):
     })
 
 
+@app.get("/debug/middleware-check")
+async def debug_middleware_check(request: Request):
+    """Проверка подключенных middleware"""
+    middleware_info = []
+    for i, middleware in enumerate(app.user_middleware):
+        middleware_info.append({
+            "position": i,
+            "cls": str(middleware.cls),
+            "options": middleware.options
+        })
+
+    return {
+        "total_middleware": len(app.user_middleware),
+        "middleware_list": middleware_info,
+        "request_path": request.url.path,
+        "cookies": dict(request.cookies)
+    }
+
+
 if __name__ == "__main__":
     import uvicorn
 
