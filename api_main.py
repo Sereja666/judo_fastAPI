@@ -1,14 +1,10 @@
 # main.py
-from fastapi import FastAPI, Depends, Request
+from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse  # ← Добавить импорт
-from sqlalchemy.orm import Session
-from starlette.responses import HTMLResponse
-
 from database.middleware import SupersetAuthMiddleware
 from config import settings
-from config import templates
 
 # Импортируем роутеры
 from api.students import router as students_router
@@ -16,7 +12,6 @@ from api.schedule import router as schedule_router
 from api.trainers import router as trainers_router
 from api.visits import router as visits_router
 from api.competitions import router as competitions_router
-from database.schemas import Students, get_db, Sport
 
 app = FastAPI(title="Student Management System")
 
@@ -50,17 +45,13 @@ async def health_check():
     """Эндпоинт для проверки здоровья приложения"""
     return {"status": "healthy", "service": "Student Management System"}
 
-@app.get("/", response_class=HTMLResponse)
-async def root(request: Request, db: Session = Depends(get_db)):
-    """Главная страница расписания"""
-    students = db.query(Students).filter(Students.active == True).all()
-    sports = db.query(Sport).all()
+# api_main.py
+from fastapi.responses import RedirectResponse
 
-    return templates.TemplateResponse("index.html", {
-        "request": request,
-        "students": students,
-        "sports": sports
-    })
+@app.get("/")
+async def root():
+    """Редирект на расписание - главный модуль"""
+    return RedirectResponse(url="/schedule/")
 
 if __name__ == "__main__":
     import uvicorn
