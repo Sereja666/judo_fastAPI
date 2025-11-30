@@ -1,33 +1,34 @@
-from fastapi import Request, HTTPException
-from fastapi.responses import RedirectResponse, JSONResponse
+# middleware.py
+from fastapi import Request
+from fastapi.responses import RedirectResponse
 import httpx
-from urllib.parse import urlencode, urlparse
+from urllib.parse import urlencode
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.types import ASGIApp, Scope, Receive, Send
+from starlette.types import ASGIApp
 from logger_config import logger
+
 
 class StrictSupersetAuthMiddleware(BaseHTTPMiddleware):
     """
     Строгий middleware - всегда требует авторизацию через Superset
-    Работает на уровне ASGI для надежности
     """
 
     def __init__(self, app: ASGIApp, superset_base_url: str):
         super().__init__(app)
         self.superset_base_url = superset_base_url.rstrip('/')
-        # Более строгий список исключений - только то, что действительно нужно
         self.excluded_paths = [
-            "/static",  # Без слеша в конце, чтобы ловило /static/...
+            "/static",
             "/health",
             "/auth/callback",
             "/logout",
             "/debug/superset-status",
-            "/debug/middleware-check"
+            "/debug/middleware-check",
+            "/debug/request-info"
         ]
 
     async def dispatch(self, request: Request, call_next):
-        # Логируем ВСЕ запросы для отладки
-        logger.debug(f"🔄 Middleware получил запрос: {request.method} {request.url.path}")
+        # Логируем запрос для отладки
+        logger.debug(f"🔄 Middleware: {request.method} {request.url.path}")
 
         # Проверяем, нужно ли исключить путь
         if self._should_exclude_path(request.url.path):
@@ -57,15 +58,9 @@ class StrictSupersetAuthMiddleware(BaseHTTPMiddleware):
 
     def _should_exclude_path(self, path: str) -> bool:
         """Проверяет, нужно ли исключить путь из проверки аутентификации"""
-        # Точное совпадение
-        if path in self.excluded_paths:
-            return True
-
-        # Пути, начинающиеся с исключенных префиксов
         for excluded in self.excluded_paths:
             if path.startswith(excluded + "/") or path == excluded:
                 return True
-
         return False
 
     async def _validate_session(self, session_cookie: str) -> bool:
@@ -88,9 +83,10 @@ class StrictSupersetAuthMiddleware(BaseHTTPMiddleware):
                         username = user_data.get('username', 'unknown')
                         logger.info(f"✅ Авторизован пользователь: {username}")
                         return True
-                    except:
-                        logger.warning("⚠️ Не удалось распарсить ответ Superset")
-                        return False
+                    except Exception as e:
+                        logger.warning(f"⚠️ Не удалось распарсить ответ Superset: {e}")
+                        # Но все равно считаем валидным, так как статус 200
+                        return True
 
                 # Если редирект на логин - сессия невалидна
                 if response.status_code in [301, 302, 307, 308]:
@@ -99,10 +95,14 @@ class StrictSupersetAuthMiddleware(BaseHTTPMiddleware):
                         logger.info("🔹 Superset перенаправляет на логин - сессия невалидна")
                         return False
 
+                logger.warning(f"🔹 Superset вернул статус: {response.status_code}")
                 return False
 
         except httpx.ConnectError:
             logger.error("❌ Не удалось подключиться к Superset")
+            return False
+        except httpx.TimeoutException:
+            logger.error("❌ Таймаут подключения к Superset")
             return False
         except Exception as e:
             logger.error(f"❌ Ошибка проверки сессии: {e}")
@@ -110,11 +110,18 @@ class StrictSupersetAuthMiddleware(BaseHTTPMiddleware):
 
     def _create_login_redirect(self, request: Request) -> RedirectResponse:
         """Создает редирект на страницу логина Superset"""
+        # Используем HTTPS URL для callback
+        base_url = str(request.base_url)
         return_url = str(request.url)
-        login_url = f"{self.superset_base_url}/login/"
 
-        # Кодируем URL для возврата после авторизации
-        callback_url = f"{request.base_url}auth/callback?return_url={return_url}"
+        # Принудительно используем HTTPS если это продакшн
+        if "api.srm-1legion.ru" in base_url:
+            base_url = base_url.replace('http://', 'https://')
+            return_url = return_url.replace('http://', 'https://')
+
+        login_url = f"{self.superset_base_url}/login/"
+        callback_url = f"{base_url}auth/callback?return_url={return_url}"
+
         params = {"next": callback_url}
         redirect_url = f"{login_url}?{urlencode(params)}"
 
@@ -122,115 +129,20 @@ class StrictSupersetAuthMiddleware(BaseHTTPMiddleware):
         return RedirectResponse(url=redirect_url, status_code=307)
 
 
-class SupersetAuthMiddleware(BaseHTTPMiddleware):
-    def __init__(self, app, superset_base_url: str):
-        super().__init__(app)
-        self.superset_base_url = superset_base_url.rstrip('/')
-        self.excluded_paths = ["/static/", "/health", "/auth/callback", "/logout", "/debug/superset-test"]
-        self.superset_available = True  # Предполагаем, что доступен
+# Резервный middleware для отладки (не использовать в продакшн)
+class TestAuthMiddleware(BaseHTTPMiddleware):
+    """Простой тестовый middleware для проверки работы"""
 
     async def dispatch(self, request: Request, call_next):
-        # Пропускаем исключенные пути
-        if any(request.url.path.startswith(path) for path in self.excluded_paths):
-            return await call_next(request)
+        logger.info(f"🚨 TEST MIDDLEWARE: Запрос к {request.url.path}")
 
-        logger.info(f"🔹 Проверка аутентификации для пути: {request.url.path}")
+        # Блокируем ВСЕ запросы кроме статических и debug
+        if not any(request.url.path.startswith(path) for path in ["/static/", "/debug/", "/health"]):
+            logger.info("🚨 TEST: Блокируем запрос!")
+            from fastapi.responses import JSONResponse
+            return JSONResponse(
+                {"error": "Доступ запрещен - middleware работает!", "path": request.url.path},
+                status_code=403
+            )
 
-        # Получаем сессионную куку
-        session_cookie = request.cookies.get("session")
-
-        logger.info(f"🔹 Сессионная кука: {'есть' if session_cookie else 'нет'}")
-
-        # Если кука есть, проверяем её валидность через Superset API
-        if session_cookie:
-            try:
-                is_valid, debug_info = await self.validate_superset_session(session_cookie)
-                if is_valid:
-                    logger.info("✅ Сессия валидна, доступ разрешен")
-                    return await call_next(request)
-                else:
-                    logger.warning(f"❌ Сессия невалидна: {debug_info}")
-            except Exception as e:
-                logger.error(f"❌ Ошибка проверки сессии: {e}")
-
-        # Если куки нет или она невалидна - редирект на логин Superset
-        logger.info("🔹 Редирект на страницу логина Superset")
-
-        # Создаем URL для возврата после авторизации
-        return_url = str(request.url)
-        login_url = f"{self.superset_base_url}/login/"
-
-        # Добавляем параметр next для возврата
-        params = {"next": f"{request.base_url}auth/callback?return_url={return_url}"}
-        redirect_url = f"{login_url}?{urlencode(params)}"
-
-        return RedirectResponse(url=redirect_url)
-
-    async def validate_superset_session(self, session_cookie: str) -> tuple[bool, str]:
-        """Проверяет валидность сессии через Superset API с улучшенной обработкой ошибок"""
-        debug_info = ""
-        try:
-            async with httpx.AsyncClient() as client:
-                # Создаем куки для запроса
-                cookies = {"session": session_cookie}
-
-                # Пробуем несколько endpoint'ов Superset
-                endpoints_to_try = [
-                    "/api/v1/security/current",
-                    "/api/v1/me/",  # Альтернативный endpoint
-                    "/login/",  # Если редиректит на логин - сессия невалидна
-                ]
-
-                for endpoint in endpoints_to_try:
-                    check_url = f"{self.superset_base_url}{endpoint}"
-                    logger.debug(f"🔹 Попытка проверки через: {check_url}")
-
-                    try:
-                        response = await client.get(
-                            check_url,
-                            cookies=cookies,
-                            timeout=10.0,
-                            follow_redirects=False
-                        )
-
-                        logger.debug(f"🔹 Ответ от {endpoint}: {response.status_code}")
-
-                        if response.status_code == 200 and endpoint != "/login/":
-                            # Успешная аутентификация
-                            try:
-                                user_data = response.json()
-                                username = user_data.get('username', 'Unknown')
-                                logger.info(f"✅ Авторизованный пользователь: {username}")
-                                return True, f"User: {username}"
-                            except:
-                                # Если не JSON, но 200 - возможно главная страница
-                                continue
-
-                        elif response.status_code in [301, 302, 307, 308]:
-                            location = response.headers.get('location', '')
-                            if '/login/' in location:
-                                logger.info("🔹 Редирект на логин - сессия невалидна")
-                                return False, "Redirect to login"
-                            else:
-                                continue
-
-                        elif response.status_code == 401:
-                            return False, "Unauthorized"
-
-                    except Exception as e:
-                        logger.debug(f"🔹 Ошибка при проверке {endpoint}: {e}")
-                        continue
-
-                # Если ни один endpoint не сработал
-                return False, "All endpoints failed"
-
-        except httpx.ConnectError as e:
-            debug_info = f"ConnectError: {e}"
-            logger.error(f"❌ Не удалось подключиться к Superset")
-            # Если не можем подключиться к Superset, НЕ пропускаем пользователя
-            return False, "Superset unavailable"
-
-        except Exception as e:
-            debug_info = f"Exception: {str(e)}"
-            logger.error(f"❌ Ошибка при проверке сессии Superset: {e}")
-            return False, debug_info
+        return await call_next(request)

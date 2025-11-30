@@ -3,14 +3,13 @@ import os
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 import httpx
 
-# Импортируем ТОЛЬКО Superset middleware
+# Импортируем middleware
 from database.middleware import StrictSupersetAuthMiddleware
 from config import settings
-from config import templates
-from logger_config import logger
 
 # Импортируем роутеры
 from api.students import router as students_router
@@ -18,8 +17,13 @@ from api.schedule import router as schedule_router
 from api.trainers import router as trainers_router
 from api.visits import router as visits_router
 from api.competitions import router as competitions_router
+from config import templates
+from logger_config import logger
 
 app = FastAPI(title="Student Management System")
+
+# Trusted Hosts middleware для правильных URL (ДОЛЖЕН БЫТЬ ПЕРВЫМ)
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=["api.srm-1legion.ru", "localhost", "127.0.0.1"])
 
 # Монтируем статические файлы
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -27,7 +31,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # URL вашего Superset
 SUPERSET_BASE_URL = settings.superset_conf.base_url
 
-# ВСЕГДА используем Strict Superset auth
+# Middleware аутентификации (ВАЖНО: после TrustedHostMiddleware)
 app.add_middleware(StrictSupersetAuthMiddleware, superset_base_url=SUPERSET_BASE_URL)
 
 # CORS
@@ -61,6 +65,9 @@ async def auth_callback(request: Request, return_url: str = "/"):
     logger.info(f"🔹 Auth callback received, return_url: {return_url}")
 
     if session_cookie:
+        # Используем HTTPS URL для редиректа
+        safe_return_url = return_url.replace('http://', 'https://')
+
         # Проверяем, что сессия действительно валидна
         try:
             async with httpx.AsyncClient() as client:
@@ -70,21 +77,26 @@ async def auth_callback(request: Request, return_url: str = "/"):
                     timeout=10.0
                 )
                 if response.status_code == 200:
-                    response = RedirectResponse(url=return_url)
+                    response = RedirectResponse(url=safe_return_url)
                     response.set_cookie(
                         key="session",
                         value=session_cookie,
                         httponly=True,
-                        max_age=24 * 60 * 60
+                        secure=True,  # Важно для HTTPS!
+                        max_age=24 * 60 * 60,
+                        samesite="lax"
                     )
                     logger.info("✅ Успешная аутентификация через callback")
                     return response
+                else:
+                    logger.warning(f"⚠️ Невалидная сессия в callback: статус {response.status_code}")
         except Exception as e:
             logger.error(f"❌ Ошибка проверки сессии в callback: {e}")
 
     # Если что-то пошло не так - снова на логин
     logger.warning("⚠️ Неудачная аутентификация в callback")
-    return RedirectResponse(url=f"{SUPERSET_BASE_URL}/login/")
+    safe_login_url = f"{SUPERSET_BASE_URL}/login/"
+    return RedirectResponse(url=safe_login_url)
 
 
 @app.get("/logout")
@@ -115,16 +127,6 @@ async def debug_superset_status():
         }
 
 
-@app.get("/", response_class=HTMLResponse)
-async def root(request: Request):
-    """Главная страница системы"""
-    # Если пользователь здесь - он уже прошел аутентификацию
-    return templates.TemplateResponse("home.html", {
-        "request": request,
-        "user_authenticated": True
-    })
-
-
 @app.get("/debug/middleware-check")
 async def debug_middleware_check(request: Request):
     """Проверка подключенных middleware"""
@@ -140,12 +142,45 @@ async def debug_middleware_check(request: Request):
         "total_middleware": len(app.user_middleware),
         "middleware_list": middleware_info,
         "request_path": request.url.path,
-        "cookies": dict(request.cookies)
+        "cookies": dict(request.cookies),
+        "base_url": str(request.base_url),
+        "url": str(request.url)
     }
+
+
+@app.get("/debug/request-info")
+async def debug_request_info(request: Request):
+    """Информация о запросе"""
+    return {
+        "method": request.method,
+        "url": str(request.url),
+        "base_url": str(request.base_url),
+        "headers": dict(request.headers),
+        "cookies": dict(request.cookies),
+        "client": request.client,
+        "scheme": request.url.scheme
+    }
+
+
+@app.get("/", response_class=HTMLResponse)
+async def root(request: Request):
+    """Главная страница системы"""
+    # Если пользователь здесь - он уже прошел аутентификацию
+    return templates.TemplateResponse("home.html", {
+        "request": request,
+        "user_authenticated": True
+    })
 
 
 if __name__ == "__main__":
     import uvicorn
 
     logger.info("🚀 Starting server with STRICT Superset authentication")
-    uvicorn.run(app, host="0.0.0.0", port=8000, log_config=None)
+    uvicorn.run(
+        app,
+        host="0.0.0.0",
+        port=8000,
+        log_config=None,
+        proxy_headers=True,  # Важно для работы за reverse proxy
+        forwarded_allow_ips="*"  # Разрешаем forwarded headers
+    )
