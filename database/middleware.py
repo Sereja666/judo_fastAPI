@@ -8,6 +8,114 @@ from starlette.types import ASGIApp
 from logger_config import logger
 
 
+# middleware.py
+class SmartCookieAuthMiddleware(BaseHTTPMiddleware):
+    """
+    Умный middleware - проверяет не просто наличие куки, а факт авторизации в Superset
+    через проверку доступности защищенных страниц
+    """
+
+    def __init__(self, app: ASGIApp, superset_base_url: str):
+        super().__init__(app)
+        self.superset_base_url = superset_base_url.rstrip('/')
+        self.excluded_paths = [
+            "/static",
+            "/health",
+            "/auth/callback",
+            "/logout",
+            "/debug/"
+        ]
+
+    async def dispatch(self, request: Request, call_next):
+        if self._should_exclude_path(request.url.path):
+            return await call_next(request)
+
+        logger.info(f"🔐 SMART проверка для: {request.url.path}")
+
+        session_cookie = request.cookies.get("session")
+
+        if session_cookie:
+            # Проверяем, это кука авторизованного пользователя или гостя
+            is_authenticated = await self._check_if_authenticated(session_cookie)
+            if is_authenticated:
+                logger.info("✅ Пользователь авторизован в Superset, доступ разрешен")
+                return await call_next(request)
+            else:
+                logger.warning("❌ Кука есть, но пользователь не авторизован в Superset")
+        else:
+            logger.warning("❌ Куки нет")
+
+        # Редирект на логин
+        return self._create_login_redirect(request)
+
+    async def _check_if_authenticated(self, session_cookie: str) -> bool:
+        """
+        Проверяет, авторизован ли пользователь в Superset
+        путем проверки доступа к защищенным ресурсам
+        """
+        try:
+            async with httpx.AsyncClient() as client:
+                # Пробуем получить дашборды - доступно только авторизованным
+                dashboards_url = f"{self.superset_base_url}/api/v1/dashboard/"
+
+                response = await client.get(
+                    dashboards_url,
+                    cookies={"session": session_cookie},
+                    timeout=10.0,
+                    follow_redirects=False
+                )
+
+                logger.debug(f"🔹 Проверка авторизации: статус {response.status_code}")
+
+                # 200 = авторизован и есть доступ к API
+                if response.status_code == 200:
+                    return True
+
+                # 302/redirect на логин = неавторизован
+                if response.status_code in [301, 302, 307, 308]:
+                    location = response.headers.get('location', '')
+                    if '/login/' in location:
+                        return False
+
+                # 403 = авторизован, но нет прав (все равно авторизован!)
+                if response.status_code == 403:
+                    return True
+
+                # 401 = неавторизован
+                if response.status_code == 401:
+                    return False
+
+                # Другие статусы - осторожно, считаем неавторизованным
+                return False
+
+        except Exception as e:
+            logger.error(f"❌ Ошибка проверки авторизации: {e}")
+            # Если не можем проверить - считаем неавторизованным (безопаснее)
+            return False
+
+    def _should_exclude_path(self, path: str) -> bool:
+        for excluded in self.excluded_paths:
+            if path.startswith(excluded + "/") or path == excluded:
+                return True
+        return False
+
+    def _create_login_redirect(self, request: Request) -> RedirectResponse:
+        base_url = str(request.base_url)
+        return_url = str(request.url)
+
+        if "api.srm-1legion.ru" in base_url:
+            base_url = base_url.replace('http://', 'https://')
+            return_url = return_url.replace('http://', 'https://')
+
+        login_url = f"{self.superset_base_url}/login/"
+        callback_url = f"{base_url}auth/callback?return_url={return_url}"
+
+        params = {"next": callback_url}
+        redirect_url = f"{login_url}?{urlencode(params)}"
+
+        logger.info(f"🔀 Редирект на логин: {redirect_url}")
+        return RedirectResponse(url=redirect_url, status_code=307)
+
 class StrictSupersetAuthMiddleware(BaseHTTPMiddleware):
     """
     Строгий middleware - всегда требует авторизацию через Superset

@@ -8,7 +8,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 import httpx
 
 # Импортируем middleware
-from database.middleware import StrictSupersetAuthMiddleware, CookieOnlyAuthMiddleware
+from database.middleware import StrictSupersetAuthMiddleware, CookieOnlyAuthMiddleware, SmartCookieAuthMiddleware
 from config import settings
 
 # Импортируем роутеры
@@ -32,7 +32,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 SUPERSET_BASE_URL = settings.superset_conf.base_url
 
 # Middleware аутентификации (ВАЖНО: после TrustedHostMiddleware)
-app.add_middleware(CookieOnlyAuthMiddleware, superset_base_url=SUPERSET_BASE_URL)
+app.add_middleware(SmartCookieAuthMiddleware, superset_base_url=SUPERSET_BASE_URL)
 
 # CORS
 app.add_middleware(
@@ -171,6 +171,28 @@ async def root(request: Request):
         "user_authenticated": True
     })
 
+
+# api_main.py
+@app.get("/debug/auth-check")
+async def debug_auth_check(request: Request):
+    """Проверка текущей авторизации"""
+    session_cookie = request.cookies.get("session")
+
+    if not session_cookie:
+        return {"authenticated": False, "reason": "No session cookie"}
+
+    # Используем ту же логику проверки, что и в middleware
+    from database.middleware import SmartCookieAuthMiddleware
+    checker = SmartCookieAuthMiddleware(app=None, superset_base_url=SUPERSET_BASE_URL)
+
+    is_authenticated = await checker._check_if_authenticated(session_cookie)
+
+    return {
+        "authenticated": is_authenticated,
+        "session_cookie_present": True,
+        "cookie_length": len(session_cookie),
+        "superset_url": SUPERSET_BASE_URL
+    }
 
 if __name__ == "__main__":
     import uvicorn
