@@ -7,7 +7,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 import httpx
 
 # Импортируем упрощенный middleware
-from database.middleware import SimpleSupersetAuthMiddleware
+from database.middleware import  LocalSupersetAuthMiddleware
 from config import settings
 
 # Импортируем роутеры
@@ -28,7 +28,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 SUPERSET_BASE_URL = settings.superset_conf.base_url
 
 # Подключаем упрощенный middleware
-app.add_middleware(SimpleSupersetAuthMiddleware, superset_base_url=SUPERSET_BASE_URL)
+app.add_middleware(LocalSupersetAuthMiddleware, superset_base_url=SUPERSET_BASE_URL)
 logger.info(f"🔐 Используется SimpleSupersetAuthMiddleware с проверкой через {SUPERSET_BASE_URL}")
 
 # CORS
