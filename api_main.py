@@ -1,10 +1,14 @@
 # main.py
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse  # ← Добавить импорт
+from sqlalchemy.orm import Session
+from starlette.responses import HTMLResponse
+
 from database.middleware import SupersetAuthMiddleware
 from config import settings
+from config import templates
 
 # Импортируем роутеры
 from api.students import router as students_router
@@ -12,6 +16,7 @@ from api.schedule import router as schedule_router
 from api.trainers import router as trainers_router
 from api.visits import router as visits_router
 from api.competitions import router as competitions_router
+from database.schemas import Students, get_db, Sport
 
 app = FastAPI(title="Student Management System")
 
@@ -45,22 +50,17 @@ async def health_check():
     """Эндпоинт для проверки здоровья приложения"""
     return {"status": "healthy", "service": "Student Management System"}
 
-@app.get("/")
-async def root():
-    """Корневая страница API"""
-    return {
-        "service": "Student Management System",
-        "version": "1.0.0",
-        "endpoints": {
-            "schedule": "/schedule/",
-            "students": "/edit-students",
-            "trainers": "/edit-trainers",
-            "visits": "/visits/",
-            "competitions": "/competitions/",
-            "health": "/health",
-            "debug": "/debug-routes"
-        }
-    }
+@app.get("/", response_class=HTMLResponse)
+async def root(request: Request, db: Session = Depends(get_db)):
+    """Главная страница расписания"""
+    students = db.query(Students).filter(Students.active == True).all()
+    sports = db.query(Sport).all()
+
+    return templates.TemplateResponse("index.html", {
+        "request": request,
+        "students": students,
+        "sports": sports
+    })
 
 if __name__ == "__main__":
     import uvicorn
