@@ -158,3 +158,26 @@ class SupersetAuthMiddleware(BaseHTTPMiddleware):
             debug_info = f"Unexpected error: {str(e)}"
             logger.error(f"❌ Неожиданная ошибка при проверке сессии Superset: {e}", exc_info=True)
             return False, debug_info
+
+
+# middleware.py - добавьте этот класс
+class DevelopmentAuthMiddleware(BaseHTTPMiddleware):
+    """Middleware для разработки - имитирует успешную аутентификацию"""
+
+    def __init__(self, app, superset_base_url: str = None):
+        super().__init__(app)
+        self.superset_base_url = superset_base_url
+        logger.warning("🚨 РЕЖИМ РАЗРАБОТКИ: аутентификация через Superset ОТКЛЮЧЕНА")
+
+    async def dispatch(self, request: Request, call_next):
+        # Пропускаем статические файлы и health checks
+        if any(request.url.path.startswith(path) for path in ["/static/", "/health", "/debug"]):
+            return await call_next(request)
+
+        # Для всех остальных запросов имитируем успешную аутентификацию
+        logger.debug(f"🔹 DEV MODE: доступ разрешен для {request.url.path}")
+
+        # Добавляем mock пользователя для использования в роутерах если нужно
+        request.state.user = {"username": "dev_user", "id": 1, "email": "dev@example.com"}
+
+        return await call_next(request)
