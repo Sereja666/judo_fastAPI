@@ -129,6 +129,63 @@ class StrictSupersetAuthMiddleware(BaseHTTPMiddleware):
         return RedirectResponse(url=redirect_url, status_code=307)
 
 
+
+class CookieOnlyAuthMiddleware(BaseHTTPMiddleware):
+    """
+    Упрощенный middleware - проверяет только наличие куки, без проверки в Superset
+    ИСПОЛЬЗУЙТЕ ТОЛЬКО ДЛЯ ТЕСТИРОВАНИЯ!
+    """
+
+    def __init__(self, app: ASGIApp, superset_base_url: str):
+        super().__init__(app)
+        self.superset_base_url = superset_base_url.rstrip('/')
+        self.excluded_paths = [
+            "/static",
+            "/health",
+            "/auth/callback",
+            "/logout",
+            "/debug/"
+        ]
+
+    async def dispatch(self, request: Request, call_next):
+        if self._should_exclude_path(request.url.path):
+            return await call_next(request)
+
+        logger.info(f"🔐 COOKIE-ONLY проверка для: {request.url.path}")
+
+        # Просто проверяем наличие куки, без проверки в Superset
+        session_cookie = request.cookies.get("session")
+
+        if session_cookie:
+            logger.info("✅ Кука есть, доступ разрешен (без проверки в Superset)")
+            return await call_next(request)
+        else:
+            logger.warning("❌ Куки нет, редирект на логин")
+            return self._create_login_redirect(request)
+
+    def _should_exclude_path(self, path: str) -> bool:
+        for excluded in self.excluded_paths:
+            if path.startswith(excluded + "/") or path == excluded:
+                return True
+        return False
+
+    def _create_login_redirect(self, request: Request) -> RedirectResponse:
+        base_url = str(request.base_url)
+        return_url = str(request.url)
+
+        if "api.srm-1legion.ru" in base_url:
+            base_url = base_url.replace('http://', 'https://')
+            return_url = return_url.replace('http://', 'https://')
+
+        login_url = f"{self.superset_base_url}/login/"
+        callback_url = f"{base_url}auth/callback?return_url={return_url}"
+
+        params = {"next": callback_url}
+        redirect_url = f"{login_url}?{urlencode(params)}"
+
+        logger.info(f"🔀 Редирект на: {redirect_url}")
+        return RedirectResponse(url=redirect_url, status_code=307)
+
 # Резервный middleware для отладки (не использовать в продакшн)
 class TestAuthMiddleware(BaseHTTPMiddleware):
     """Простой тестовый middleware для проверки работы"""

@@ -8,7 +8,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 import httpx
 
 # Импортируем middleware
-from database.middleware import StrictSupersetAuthMiddleware
+from database.middleware import StrictSupersetAuthMiddleware, CookieOnlyAuthMiddleware
 from config import settings
 
 # Импортируем роутеры
@@ -32,7 +32,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 SUPERSET_BASE_URL = settings.superset_conf.base_url
 
 # Middleware аутентификации (ВАЖНО: после TrustedHostMiddleware)
-app.add_middleware(StrictSupersetAuthMiddleware, superset_base_url=SUPERSET_BASE_URL)
+app.add_middleware(CookieOnlyAuthMiddleware, superset_base_url=SUPERSET_BASE_URL)
 
 # CORS
 app.add_middleware(
