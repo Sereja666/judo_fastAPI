@@ -5,45 +5,124 @@
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-8">
+    <div class="col-md-10 col-lg-12">
         <div class="card">
             <div class="card-header text-center">
                 <h3 class="mb-0">🏆 Добро пожаловать!</h3>
             </div>
-            <div class="card-body text-center py-5">
+            <div class="card-body text-center py-4">
                 <div class="mb-4">
                     <i class="fas fa-dumbbell fa-4x text-primary mb-3"></i>
                     <h1 class="display-4 fw-bold text-dark">Привет, пользователь!</h1>
                 </div>
                 <!-- home.html -->
-                    {% if user_authenticated %}
-                        <div class="user-info">
+                {% if user_authenticated %}
+                    <div class="user-info mb-4">
+                        <div class="badge bg-primary fs-6 p-3">
                             Вы вошли как: <strong>{{ username }}</strong>
                         </div>
-                    {% endif %}
+                    </div>
+                {% endif %}
 
-                <p class="lead text-muted mb-4">
+                <p class="lead text-muted mb-5">
                     Добро пожаловать в систему управления спортивной школой "Первый Легион"
                 </p>
 
-                <div class="row mt-5">
-                    <div class="col-md-6 mb-3">
-                        <div class="card h-100 border-0 shadow-sm">
-                            <div class="card-body text-center">
-                                <i class="fas fa-calendar-alt fa-2x text-primary mb-3"></i>
-                                <h5>Расписание</h5>
-                                <p class="text-muted small">Управление расписанием тренировок</p>
-                                <a href="/schedule/" class="btn btn-primary btn-sm">Перейти</a>
+                <div class="row g-4 mt-3">
+                    <!-- Главная -->
+                    <div class="col-6 col-md-4 col-lg-2">
+                        <div class="card h-100 border-0 shadow-sm hover-effect">
+                            <div class="card-body text-center d-flex flex-column justify-content-between p-3">
+                                <div>
+                                    <i class="fas fa-home fa-2x text-primary mb-3"></i>
+                                    <h6 class="fw-bold">Главная</h6>
+                                    <p class="text-muted small mb-2">Основная страница</p>
+                                </div>
+                                <a href="/" class="btn btn-outline-primary btn-sm mt-2">Перейти</a>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <div class="card h-100 border-0 shadow-sm">
-                            <div class="card-body text-center">
-                                <i class="fas fa-users fa-2x text-success mb-3"></i>
-                                <h5>Ученики</h5>
-                                <p class="text-muted small">Редактирование данных учеников</p>
-                                <a href="/edit-students" class="btn btn-success btn-sm">Перейти</a>
+
+                    <!-- Расписание -->
+                    <div class="col-6 col-md-4 col-lg-2">
+                        <div class="card h-100 border-0 shadow-sm hover-effect">
+                            <div class="card-body text-center d-flex flex-column justify-content-between p-3">
+                                <div>
+                                    <i class="fas fa-calendar-alt fa-2x text-primary mb-3"></i>
+                                    <h6 class="fw-bold">Расписание</h6>
+                                    <p class="text-muted small mb-2">Тренировки и занятия</p>
+                                </div>
+                                <a href="/schedule/" class="btn btn-primary btn-sm mt-2">Перейти</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ученики -->
+                    <div class="col-6 col-md-4 col-lg-2">
+                        <div class="card h-100 border-0 shadow-sm hover-effect">
+                            <div class="card-body text-center d-flex flex-column justify-content-between p-3">
+                                <div>
+                                    <i class="fas fa-users fa-2x text-success mb-3"></i>
+                                    <h6 class="fw-bold">Ученики</h6>
+                                    <p class="text-muted small mb-2">Данные учеников</p>
+                                </div>
+                                <a href="/edit-students" class="btn btn-success btn-sm mt-2">Перейти</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Тренеры -->
+                    <div class="col-6 col-md-4 col-lg-2">
+                        <div class="card h-100 border-0 shadow-sm hover-effect">
+                            <div class="card-body text-center d-flex flex-column justify-content-between p-3">
+                                <div>
+                                    <i class="fas fa-user-tie fa-2x text-info mb-3"></i>
+                                    <h6 class="fw-bold">Тренеры</h6>
+                                    <p class="text-muted small mb-2">Данные тренеров</p>
+                                </div>
+                                <a href="/edit-trainers" class="btn btn-info btn-sm mt-2">Перейти</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Посещения -->
+                    <div class="col-6 col-md-4 col-lg-2">
+                        <div class="card h-100 border-0 shadow-sm hover-effect">
+                            <div class="card-body text-center d-flex flex-column justify-content-between p-3">
+                                <div>
+                                    <i class="fas fa-clipboard-check fa-2x text-warning mb-3"></i>
+                                    <h6 class="fw-bold">Посещения</h6>
+                                    <p class="text-muted small mb-2">Учет посещений</p>
+                                </div>
+                                <a href="/visits/" class="btn btn-warning btn-sm mt-2">Перейти</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Мероприятия -->
+                    <div class="col-6 col-md-4 col-lg-2">
+                        <div class="card h-100 border-0 shadow-sm hover-effect">
+                            <div class="card-body text-center d-flex flex-column justify-content-between p-3">
+                                <div>
+                                    <i class="fas fa-trophy fa-2x text-danger mb-3"></i>
+                                    <h6 class="fw-bold">Мероприятия</h6>
+                                    <p class="text-muted small mb-2">Соревнования и события</p>
+                                </div>
+                                <a href="/competitions/" class="btn btn-danger btn-sm mt-2">Перейти</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Superset -->
+                    <div class="col-6 col-md-4 col-lg-2">
+                        <div class="card h-100 border-0 shadow-sm hover-effect">
+                            <div class="card-body text-center d-flex flex-column justify-content-between p-3">
+                                <div>
+                                    <i class="fas fa-chart-bar fa-2x text-secondary mb-3"></i>
+                                    <h6 class="fw-bold">Аналитика</h6>
+                                    <p class="text-muted small mb-2">Дашборды и отчеты</p>
+                                </div>
+                                <a href="https://superset.srm-1legion.ru/" class="btn btn-secondary btn-sm mt-2" target="_blank">Перейти</a>
                             </div>
                         </div>
                     </div>
@@ -52,4 +131,130 @@
         </div>
     </div>
 </div>
+
+<style>
+    /* Дополнительные стили для плиток на главной */
+    .hover-effect {
+        transition: all 0.3s ease;
+    }
+
+    .hover-effect:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    .user-info {
+        display: inline-block;
+    }
+
+    .btn-info {
+        background: linear-gradient(135deg, var(--superset-info) 0%, #138496 100%);
+        border: none;
+        box-shadow: 0 2px 8px rgba(23, 162, 184, 0.3);
+    }
+
+    .btn-info:hover {
+        box-shadow: 0 6px 20px rgba(23, 162, 184, 0.4);
+    }
+
+    .btn-warning {
+        background: linear-gradient(135deg, var(--superset-warning) 0%, #F57C00 100%);
+        border: none;
+        box-shadow: 0 2px 8px rgba(255, 167, 38, 0.3);
+        color: #212529;
+    }
+
+    .btn-warning:hover {
+        box-shadow: 0 6px 20px rgba(255, 167, 38, 0.4);
+        color: #212529;
+    }
+
+    .btn-danger {
+        background: linear-gradient(135deg, var(--superset-danger) 0%, #DA4453 100%);
+        border: none;
+        box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+    }
+
+    .btn-danger:hover {
+        box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+    }
+
+    .btn-secondary {
+        background: linear-gradient(135deg, var(--superset-secondary) 0%, #495057 100%);
+        border: none;
+        box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
+    }
+
+    .btn-secondary:hover {
+        box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
+    }
+
+    .btn-outline-primary {
+        border: 2px solid var(--superset-primary);
+        color: var(--superset-primary);
+        font-weight: 600;
+    }
+
+    .btn-outline-primary:hover {
+        background-color: var(--superset-primary);
+        color: white;
+    }
+
+    /* Адаптивность для мобильных устройств */
+    @media (max-width: 768px) {
+        .card-body {
+            padding: 1.5rem 1rem !important;
+        }
+
+        .display-4 {
+            font-size: 2rem;
+        }
+
+        .lead {
+            font-size: 1rem;
+        }
+
+        .col-6 {
+            padding: 0.5rem;
+        }
+
+        .card h6 {
+            font-size: 0.9rem;
+        }
+
+        .card p.small {
+            font-size: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .fa-2x {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.8rem;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .row.g-4 {
+            margin-left: -0.25rem;
+            margin-right: -0.25rem;
+        }
+
+        .col-6 {
+            padding: 0.25rem;
+        }
+
+        .card-body {
+            padding: 0.75rem !important;
+        }
+
+        .display-4 {
+            font-size: 1.75rem;
+        }
+    }
+</style>
 {% endblock %}
