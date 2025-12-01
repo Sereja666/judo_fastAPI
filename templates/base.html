@@ -1,439 +1,260 @@
-<!-- templates/base.html -->
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Спортивная школа{% endblock %}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        :root {
-            --superset-primary: #20A7C9;
-            --superset-secondary: #6C757D;
-            --superset-success: #3CB371;
-            --superset-danger: #FF6B6B;
-            --superset-warning: #FFA726;
-            --superset-info: #17A2B8;
-            --superset-light: #F8F9FA;
-            --superset-dark: #343A40;
-            --superset-gray: #6C757D;
-            --superset-border: #E0E0E0;
-            --superset-bg: #F5F7FA;
+<!-- templates/home.html -->
+{% extends "base.html" %}
+
+{% block title %}Главная страница{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10 col-lg-12">
+        <div class="card">
+            <div class="card-header text-center">
+                <h3 class="mb-0">🏆 Добро пожаловать!</h3>
+            </div>
+            <div class="card-body text-center py-4">
+                <div class="mb-4">
+                    <i class="fas fa-dumbbell fa-4x text-primary mb-3"></i>
+                    <h1 class="display-4 fw-bold text-dark">Привет, пользователь!</h1>
+                </div>
+                <!-- home.html -->
+                {% if user_authenticated %}
+                    <div class="user-info mb-4">
+                        <div class="badge bg-primary fs-6 p-3">
+                            Вы вошли как: <strong>{{ username }}</strong>
+                        </div>
+                    </div>
+                {% endif %}
+
+                <p class="lead text-muted mb-5">
+                    Добро пожаловать в систему управления спортивной школой "Первый Легион"
+                </p>
+
+                <div class="row g-4 mt-3">
+                    <!-- Главная -->
+                    <div class="col-6 col-md-4 col-lg-2">
+                        <div class="card h-100 border-0 shadow-sm hover-effect">
+                            <div class="card-body text-center d-flex flex-column justify-content-between p-3">
+                                <div>
+                                    <i class="fas fa-home fa-2x text-primary mb-3"></i>
+                                    <h6 class="fw-bold">Главная</h6>
+                                    <p class="text-muted small mb-2">Основная страница</p>
+                                </div>
+                                <a href="/" class="btn btn-outline-primary btn-sm mt-2">Перейти</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Расписание -->
+                    <div class="col-6 col-md-4 col-lg-2">
+                        <div class="card h-100 border-0 shadow-sm hover-effect">
+                            <div class="card-body text-center d-flex flex-column justify-content-between p-3">
+                                <div>
+                                    <i class="fas fa-calendar-alt fa-2x text-primary mb-3"></i>
+                                    <h6 class="fw-bold">Расписание</h6>
+                                    <p class="text-muted small mb-2">Тренировки и занятия</p>
+                                </div>
+                                <a href="/schedule/" class="btn btn-primary btn-sm mt-2">Перейти</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ученики -->
+                    <div class="col-6 col-md-4 col-lg-2">
+                        <div class="card h-100 border-0 shadow-sm hover-effect">
+                            <div class="card-body text-center d-flex flex-column justify-content-between p-3">
+                                <div>
+                                    <i class="fas fa-users fa-2x text-success mb-3"></i>
+                                    <h6 class="fw-bold">Ученики</h6>
+                                    <p class="text-muted small mb-2">Данные учеников</p>
+                                </div>
+                                <a href="/edit-students" class="btn btn-success btn-sm mt-2">Перейти</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Тренеры -->
+                    <div class="col-6 col-md-4 col-lg-2">
+                        <div class="card h-100 border-0 shadow-sm hover-effect">
+                            <div class="card-body text-center d-flex flex-column justify-content-between p-3">
+                                <div>
+                                    <i class="fas fa-user-tie fa-2x text-info mb-3"></i>
+                                    <h6 class="fw-bold">Тренеры</h6>
+                                    <p class="text-muted small mb-2">Данные тренеров</p>
+                                </div>
+                                <a href="/edit-trainers" class="btn btn-info btn-sm mt-2">Перейти</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Посещения -->
+                    <div class="col-6 col-md-4 col-lg-2">
+                        <div class="card h-100 border-0 shadow-sm hover-effect">
+                            <div class="card-body text-center d-flex flex-column justify-content-between p-3">
+                                <div>
+                                    <i class="fas fa-clipboard-check fa-2x text-warning mb-3"></i>
+                                    <h6 class="fw-bold">Посещения</h6>
+                                    <p class="text-muted small mb-2">Учет посещений</p>
+                                </div>
+                                <a href="/visits/" class="btn btn-warning btn-sm mt-2">Перейти</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Мероприятия -->
+                    <div class="col-6 col-md-4 col-lg-2">
+                        <div class="card h-100 border-0 shadow-sm hover-effect">
+                            <div class="card-body text-center d-flex flex-column justify-content-between p-3">
+                                <div>
+                                    <i class="fas fa-trophy fa-2x text-danger mb-3"></i>
+                                    <h6 class="fw-bold">Мероприятия</h6>
+                                    <p class="text-muted small mb-2">Соревнования и события</p>
+                                </div>
+                                <a href="/competitions/" class="btn btn-danger btn-sm mt-2">Перейти</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Superset -->
+                    <div class="col-6 col-md-4 col-lg-2">
+                        <div class="card h-100 border-0 shadow-sm hover-effect">
+                            <div class="card-body text-center d-flex flex-column justify-content-between p-3">
+                                <div>
+                                    <i class="fas fa-chart-bar fa-2x text-secondary mb-3"></i>
+                                    <h6 class="fw-bold">Аналитика</h6>
+                                    <p class="text-muted small mb-2">Дашборды и отчеты</p>
+                                </div>
+                                <a href="https://superset.srm-1legion.ru/" class="btn btn-secondary btn-sm mt-2" target="_blank">Перейти</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Дополнительные стили для плиток на главной */
+    .hover-effect {
+        transition: all 0.3s ease;
+    }
+
+    .hover-effect:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    .user-info {
+        display: inline-block;
+    }
+
+    .btn-info {
+        background: linear-gradient(135deg, var(--superset-info) 0%, #138496 100%);
+        border: none;
+        box-shadow: 0 2px 8px rgba(23, 162, 184, 0.3);
+    }
+
+    .btn-info:hover {
+        box-shadow: 0 6px 20px rgba(23, 162, 184, 0.4);
+    }
+
+    .btn-warning {
+        background: linear-gradient(135deg, var(--superset-warning) 0%, #F57C00 100%);
+        border: none;
+        box-shadow: 0 2px 8px rgba(255, 167, 38, 0.3);
+        color: #212529;
+    }
+
+    .btn-warning:hover {
+        box-shadow: 0 6px 20px rgba(255, 167, 38, 0.4);
+        color: #212529;
+    }
+
+    .btn-danger {
+        background: linear-gradient(135deg, var(--superset-danger) 0%, #DA4453 100%);
+        border: none;
+        box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+    }
+
+    .btn-danger:hover {
+        box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+    }
+
+    .btn-secondary {
+        background: linear-gradient(135deg, var(--superset-secondary) 0%, #495057 100%);
+        border: none;
+        box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
+    }
+
+    .btn-secondary:hover {
+        box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
+    }
+
+    .btn-outline-primary {
+        border: 2px solid var(--superset-primary);
+        color: var(--superset-primary);
+        font-weight: 600;
+    }
+
+    .btn-outline-primary:hover {
+        background-color: var(--superset-primary);
+        color: white;
+    }
+
+    /* Адаптивность для мобильных устройств */
+    @media (max-width: 768px) {
+        .card-body {
+            padding: 1.5rem 1rem !important;
         }
 
-        body {
-            background-color: var(--superset-bg);
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            color: #2A3342;
-            line-height: 1.6;
+        .display-4 {
+            font-size: 2rem;
         }
 
-        .navbar {
-            background: linear-gradient(135deg, var(--superset-primary) 0%, #1A91AD 100%);
-            box-shadow: 0 2px 10px rgba(32, 167, 201, 0.2);
-            padding: 0.75rem 0;
+        .lead {
+            font-size: 1rem;
         }
 
-        .navbar-brand {
-            font-weight: 700;
-            font-size: 1.5rem;
-            color: white !important;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
+        .col-6 {
+            padding: 0.5rem;
         }
 
-        .navbar-brand i {
-            font-size: 1.75rem;
+        .card h6 {
+            font-size: 0.9rem;
         }
 
-        .nav-link {
-            color: rgba(255, 255, 255, 0.9) !important;
-            font-weight: 500;
-            padding: 0.5rem 1rem !important;
-            border-radius: 6px;
-            margin: 0 0.125rem;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .nav-link:hover {
-            color: white !important;
-            background-color: rgba(255, 255, 255, 0.15);
-            transform: translateY(-1px);
-        }
-
-        .nav-link.active {
-            color: white !important;
-            background-color: rgba(255, 255, 255, 0.2);
-            font-weight: 600;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-        }
-
-        .card {
-            border: none;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            transition: all 0.3s ease;
-            background: white;
-            margin-bottom: 1.5rem;
-        }
-
-        .card:hover {
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-            transform: translateY(-2px);
-        }
-
-        .card-header {
-            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-            border-bottom: 1px solid var(--superset-border);
-            padding: 1.25rem 1.5rem;
-            font-weight: 600;
-            color: var(--superset-dark);
-            border-radius: 12px 12px 0 0 !important;
-            font-size: 1.1rem;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--superset-primary) 0%, #1A91AD 100%);
-            border: none;
-            border-radius: 8px;
-            padding: 0.75rem 1.5rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 8px rgba(32, 167, 201, 0.3);
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(32, 167, 201, 0.4);
-        }
-
-        .btn-success {
-            background: linear-gradient(135deg, var(--superset-success) 0%, #34A853 100%);
-            border: none;
-            border-radius: 8px;
-            padding: 0.75rem 1.5rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 8px rgba(60, 179, 113, 0.3);
-        }
-
-        .btn-success:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(60, 179, 113, 0.4);
-        }
-
-        .btn-outline-secondary {
-            border: 2px solid var(--superset-border);
-            border-radius: 8px;
-            padding: 0.75rem 1.5rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            color: var(--superset-gray);
-        }
-
-        .btn-outline-secondary:hover {
-            border-color: var(--superset-primary);
-            color: var(--superset-primary);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(32, 167, 201, 0.2);
-        }
-
-        .form-control, .form-select {
-            border: 2px solid var(--superset-border);
-            border-radius: 8px;
-            padding: 0.75rem 1rem;
-            transition: all 0.3s ease;
-            font-size: 0.95rem;
-        }
-
-        .form-control:focus, .form-select:focus {
-            border-color: var(--superset-primary);
-            box-shadow: 0 0 0 0.2rem rgba(32, 167, 201, 0.25);
-        }
-
-        .schedule-item {
-            border: 2px solid var(--superset-border);
-            border-radius: 10px;
-            padding: 1rem;
-            margin: 0.5rem 0;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            background: white;
-        }
-
-        .schedule-item:hover {
-            border-color: var(--superset-primary);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(32, 167, 201, 0.15);
-        }
-
-        .schedule-item.selected {
-            border-color: var(--superset-primary);
-            background: linear-gradient(135deg, #f0f9ff 0%, #e1f5fe 100%);
-            box-shadow: 0 4px 15px rgba(32, 167, 201, 0.2);
-        }
-
-        .student-card {
-            border: 2px solid var(--superset-primary);
-            border-radius: 12px;
-            padding: 2rem;
-            margin-top: 2rem;
-            background: linear-gradient(135deg, #f8fdff 0%, #f0f9ff 100%);
-            box-shadow: 0 8px 30px rgba(32, 167, 201, 0.15);
-        }
-
-        .form-section {
-            margin-bottom: 2rem;
-            padding-bottom: 1.5rem;
-            border-bottom: 2px solid var(--superset-border);
-        }
-
-        .section-title {
-            color: var(--superset-dark);
-            font-weight: 700;
-            margin-bottom: 1.25rem;
-            font-size: 1.25rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .section-title i {
-            color: var(--superset-primary);
-        }
-
-        .hidden {
-            display: none;
-        }
-
-        .alert {
-            border: none;
-            border-radius: 10px;
-            padding: 1rem 1.5rem;
-            font-weight: 500;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-
-        .alert-success {
-            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
-            color: #155724;
-            border-left: 4px solid var(--superset-success);
-        }
-
-        .alert-danger {
-            background: linear-gradient(135deg, #f8d7da 0%, #f1b0b7 100%);
-            color: #721c24;
-            border-left: 4px solid var(--superset-danger);
-        }
-
-        .alert-info {
-            background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
-            color: #0c5460;
-            border-left: 4px solid var(--superset-info);
-        }
-
-        h1 {
-            color: var(--superset-dark);
-            font-weight: 700;
-            margin-bottom: 1.5rem;
-            font-size: 2.25rem;
-            background: linear-gradient(135deg, var(--superset-primary) 0%, #1A91AD 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        h5 {
-            color: var(--superset-dark);
-            font-weight: 600;
-        }
-
-        .form-label {
-            font-weight: 600;
-            color: var(--superset-dark);
+        .card p.small {
+            font-size: 0.75rem;
             margin-bottom: 0.5rem;
         }
 
-        .form-text {
-            color: var(--superset-gray);
-            font-size: 0.875rem;
-            font-style: italic;
+        .fa-2x {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
         }
 
-        /* Select2 customization */
-        .select2-container--default .select2-selection--single {
-            border: 2px solid var(--superset-border);
-            border-radius: 8px;
-            height: auto;
-            padding: 0.75rem 1rem;
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.8rem;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .row.g-4 {
+            margin-left: -0.25rem;
+            margin-right: -0.25rem;
         }
 
-        .select2-container--default .select2-selection--single .select2-selection__arrow {
-            height: 100%;
+        .col-6 {
+            padding: 0.25rem;
         }
 
-        .select2-container--default.select2-container--focus .select2-selection--single {
-            border-color: var(--superset-primary);
+        .card-body {
+            padding: 0.75rem !important;
         }
 
-        /* Loading spinner */
-        .spinner-border {
-            color: var(--superset-primary);
+        .display-4 {
+            font-size: 1.75rem;
         }
-
-        /* Badge styles */
-        .badge-superset {
-            background: linear-gradient(135deg, var(--superset-primary) 0%, #1A91AD 100%);
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 0.875rem;
-        }
-
-        /* Container improvements */
-        .container {
-            max-width: 1200px;
-        }
-
-        /* Superset links styling */
-        .nav-link[href*="superset"] {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .nav-link[href*="superset"]:hover {
-            background: rgba(255, 255, 255, 0.2);
-            border-color: rgba(255, 255, 255, 0.3);
-        }
-
-        /* Responsive improvements */
-        @media (max-width: 768px) {
-            .navbar-brand {
-                font-size: 1.25rem;
-            }
-            
-            .nav-link {
-                padding: 0.5rem 0.75rem !important;
-                font-size: 0.9rem;
-            }
-            
-            h1 {
-                font-size: 1.75rem;
-            }
-            
-            .card-header {
-                padding: 1rem;
-            }
-        }
-/* Исправление выравнивания для кнопки создания ученика */
-.d-flex.align-items-center {
-    align-items: center !important;
-}
-
-/* Убедимся, что кнопка имеет правильные отступы */
-.btn-create-student {
-    background: linear-gradient(135deg, var(--superset-success) 0%, #34A853 100%);
-    border: none;
-    border-radius: 8px;
-    padding: 0.75rem 1.5rem;
-    font-weight: 600;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(60, 179, 113, 0.3);
-    color: white;
-    white-space: nowrap; /* предотвращает перенос текста */
-}
-
-.btn-create-student:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(60, 179, 113, 0.4);
-    color: white;
-}
-
-/* Выравнивание иконки в кнопке */
-.btn-create-student i {
-    margin-right: 0.5rem;
-}
-    </style>
-</head>
-<body>
-    <nav class="navbar navbar-expand-lg navbar-dark">
-        <div class="container">
-            <a class="navbar-brand" href="/">
-                <i class="fas fa-dumbbell"></i>
-                Первый Легион
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="https://superset.srm-1legion.ru/">
-                            <i class="fas fa-chart-bar"></i>
-                            Superset
-                        </a>
-                    </li>
-
-                   <li class="nav-item">
-                        <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="/">
-                            <i class="fas fa-home"></i>
-                            Главная
-                        </a>
-                   </li>
-
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.path == '/schedule/' %}active{% endif %}" href="/schedule/">
-                            <i class="fas fa-calendar-alt"></i>
-                            Расписание
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.path == '/edit-students' %}active{% endif %}" href="/edit-students">
-                            <i class="fas fa-users"></i>
-                            Ученики
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.path == '/edit-trainers' %}active{% endif %}" href="/edit-trainers">
-                            <i class="fas fa-user-tie"></i>
-                            Тренеры
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.path == '/visits/' %}active{% endif %}" href="/visits/">
-                            <i class="fas fa-clipboard-check"></i>
-                            Посещения
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.path == '/competitions/' %}active{% endif %}" href="/competitions/">
-                            <i class="fas fa-trophy"></i>
-                            Мероприятия
-                        </a>
-                    </li>
-
-
-
-                </ul>
-            </div>
-        </div>
-    </nav>
-
-    <div class="container mt-4">
-        {% block content %}{% endblock %}
-    </div>
-
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/ru.js"></script>
-    {% block scripts %}{% endblock %}
-</body>
-</html>
+    }
+</style>
+{% endblock %}
