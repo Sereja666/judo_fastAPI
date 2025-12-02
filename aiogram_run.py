@@ -1,7 +1,7 @@
 import asyncio
 from create_bot import bot, dp
 from database.database_module import setup_db
-from database.middleware import DBSessionMiddleware
+# from database.middleware import DBSessionMiddleware
 from db_handler.db_funk import get_all_users
 from handlers.admin_panel import admin_router
 from handlers.create_user_router import create_user_router
@@ -43,7 +43,7 @@ async def stop_bot():
 
 async def main():
     async_session = await setup_db()
-    dp.update.middleware(DBSessionMiddleware(async_session))
+    # dp.update.middleware(DBSessionMiddleware(async_session))
     # регистрация роутеров
     dp.include_router(user_router)
     dp.include_router(create_user_router)
