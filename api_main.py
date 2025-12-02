@@ -1,4 +1,3 @@
-# main.py
 import os
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
@@ -29,16 +28,6 @@ SUPERSET_BASE_URL = settings.superset_conf.base_url
 
 # Подключаем упрощенный middleware
 app.add_middleware(SafeSupersetAuthMiddleware, superset_base_url=SUPERSET_BASE_URL)
-logger.info("🔐 Используется SafeSupersetAuthMiddleware")
-
-# # CORS
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=["*"],
-#     allow_credentials=True,
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
 
 # Подключаем роутеры
 app.include_router(schedule_router, prefix="/schedule", tags=["schedule"])

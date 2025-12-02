@@ -11,7 +11,7 @@ from logger_config import logger
 # Импортируем Redis и middleware
 from database.redis.redis_config import get_redis_client
 from database.redis.redis_storage import RedisStorage as CustomRedisStorage
-from database.middleware import LoggingMiddleware
+# from database.middleware import LoggingMiddleware
 
 
 
@@ -52,8 +52,8 @@ except Exception as e:
 dp = Dispatcher(storage=fsm_storage)
 
 # Middleware для логирования (всегда добавляем)
-logging_middleware = LoggingMiddleware()
-dp.update.outer_middleware(logging_middleware)
+# logging_middleware = LoggingMiddleware()
+# dp.update.outer_middleware(logging_middleware)
 
 logger.info("✅ Bot initialized successfully")
 
