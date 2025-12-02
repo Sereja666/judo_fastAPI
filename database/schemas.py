@@ -72,6 +72,14 @@ class Students_schedule(Base):
     student = Column(Integer())
     schedule = Column(Integer())
 
+# Связь ученики-расписание
+class Students_parents(Base):
+    __tablename__ = 'students_parents'
+    __table_args__ = {'schema': schema}
+
+    id = Column(Integer(), primary_key=True, autoincrement=True)
+    student = Column(Integer()) # student.id
+    parents = Column(Integer()) # tg_notif_user.id
 
 # Тренера
 class Trainers(Base):
@@ -189,6 +197,32 @@ class Telegram_user(Base):
     last_login = Column(DateTime())  # Дата последнего входа
 
     is_active = Column(Boolean(), default=True, server_default='true')
+
+class Tg_notif_user(Base):
+    __tablename__ = 'tg_notif_user'
+    __table_args__ = {'schema': schema}
+
+    id = Column(Integer(), primary_key=True, autoincrement=True)
+    telegram_id = Column(BigInteger())
+    permissions = Column(Integer(), default=0)
+    telegram_username = Column(String())
+    refer_id = Column(Integer())
+    date_reg = Column(DateTime())
+
+    # Добавляем поля для обычной авторизации
+    phone = Column(String(), unique=True)  # Уникальный номер телефона
+    password_hash = Column(String())  # Хеш пароля
+    email = Column(String())  # Email (опционально)
+    full_name = Column(String())  # Полное имя
+    last_login = Column(DateTime())  # Дата последнего входа
+
+    # Поля разрешения
+    get_news = Column(Boolean(), default=False, server_default='false')
+    get_pays_notif = Column(Boolean(), default=False, server_default='false')
+    get_info_student = Column(Boolean(), default=False, server_default='false')
+
+    is_active = Column(Boolean(), default=True, server_default='true')
+
 
 # Права телеграма
 class Telegram_permissions(Base):
