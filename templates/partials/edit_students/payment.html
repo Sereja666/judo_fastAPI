@@ -1,0 +1,45 @@
+<!-- templates/partials/edit_students/payment.html -->
+<div class="form-section">
+    <h5 class="section-title">Оплата и занятия</h5>
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <label for="price" class="form-label">Тариф</label>
+            <select class="form-select" id="price" name="price">
+                <option value="">-- Выберите тариф --</option>
+                {% for price in prices %}
+                <option value="{{ price.id }}"
+                        data-price-amount="{{ price.price }}"
+                        data-classes-count="{{ price.classes_in_price or 0 }}">
+                    {% if price.description %}
+                        {{ price.description }} - {{ price.price }} руб.
+                    {% else %}
+                        Тариф {{ price.id }} - {{ price.price }} руб.
+                    {% endif %}
+                    {% if price.classes_in_price %}
+                        ({{ price.classes_in_price }} занятий)
+                    {% endif %}
+                </option>
+                {% endfor %}
+            </select>
+            <div class="form-text" id="priceInfo"></div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <label for="payment_day" class="form-label">День оплаты</label>
+            <input type="number" class="form-control" id="payment_day" name="payment_day" min="1" max="31">
+        </div>
+        <div class="col-md-4 mb-3">
+            <label for="classes_remaining" class="form-label">Осталось занятий</label>
+            <input type="number" class="form-control" id="classes_remaining" name="classes_remaining" min="0">
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label for="expected_payment_date" class="form-label">Ожидаемая дата оплаты</label>
+            <input type="date" class="form-control" id="expected_payment_date" name="expected_payment_date">
+        </div>
+        <div class="col-md-6 mb-3">
+            <label for="date_start" class="form-label">Дата начала тренировок</label>
+            <input type="datetime-local" class="form-control" id="date_start" name="date_start">
+        </div>
+    </div>
+</div>

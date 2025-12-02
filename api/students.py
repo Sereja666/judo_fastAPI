@@ -7,7 +7,7 @@ from sqlalchemy import and_
 from typing import Optional, List
 from datetime import datetime
 from database.schemas import get_db, Students, Sport, Trainers, Prices, Sports_rank, Belt_сolor, MedCertificat_received, \
-    MedCertificat_type
+    MedCertificat_type, Сompetition_student, Сompetition
 from config import templates
 from logger_config import logger
 
@@ -499,3 +499,214 @@ async def delete_medical_certificate(certificate_id: int, db: Session = Depends(
         db.rollback()
         logger.error(f"❌ Ошибка при удалении справки: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Ошибка удаления справки: {str(e)}")
+
+
+# -------------------------------------------------------НАГРАДЫ-------------------------------------------------------
+
+@router.get("/edit-students/get-awards/{student_id}")
+async def get_awards(student_id: int, db: Session = Depends(get_db)):
+    """Получение наград и результатов соревнований ученика"""
+    try:
+        print(f"🔹 Запрос наград ученика ID: {student_id}")
+
+        # Получаем записи о соревнованиях ученика
+        awards = db.query(Сompetition_student).filter(
+            Сompetition_student.student_id == student_id
+        ).all()
+
+        result = []
+        for award in awards:
+            # Получаем информацию о соревновании
+            competition = db.query(Сompetition).filter(
+                Сompetition.id == award.competition_id
+            ).first()
+
+            result.append({
+                "id": award.id,
+                "competition_id": award.competition_id,
+                "competition_name": competition.name if competition else "Неизвестное соревнование",
+                "competition_date": competition.date.isoformat() if competition and competition.date else None,
+                "status_id": award.status_id
+            })
+
+        return JSONResponse(result)
+
+    except Exception as e:
+        logger.error(f"❌ Ошибка загрузки наград: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Ошибка загрузки наград: {str(e)}")
+
+
+@router.get("/edit-students/get-competitions")
+async def get_competitions(db: Session = Depends(get_db)):
+    """Получение списка всех соревнований"""
+    try:
+        competitions = db.query(Сompetition).all()
+
+        result = [{"id": comp.id, "name": comp.name, "date": comp.date.isoformat() if comp.date else None}
+                 for comp in competitions]
+        return JSONResponse(result)
+
+    except Exception as e:
+        logger.error(f"❌ Ошибка загрузки соревнований: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Ошибка загрузки соревнований: {str(e)}")
+
+
+@router.post("/edit-students/update-award")
+async def update_award(
+        request: Request,
+        db: Session = Depends(get_db)
+):
+    """Обновление результата соревнования"""
+    try:
+        # Получаем данные формы
+        form_data = await request.form()
+        print("🔹 Получены данные формы для обновления награды:")
+        for key, value in form_data.items():
+            print(f"  {key}: {value} (тип: {type(value)})")
+
+        # Извлекаем данные с преобразованием типов
+        award_id = int(form_data.get('award_id')) if form_data.get('award_id') else None
+        student_id = int(form_data.get('student_id')) if form_data.get('student_id') else None
+        competition_id = int(form_data.get('competition_id')) if form_data.get('competition_id') else None
+        status_id = int(form_data.get('status_id')) if form_data.get('status_id') else None
+
+        if not award_id:
+            raise HTTPException(status_code=400, detail="ID записи обязательно")
+
+        award = db.query(Сompetition_student).filter(
+            Сompetition_student.id == award_id
+        ).first()
+
+        if not award:
+            raise HTTPException(status_code=404, detail="Запись не найдена")
+
+        # Обновляем статус
+        if status_id is not None:
+            award.status_id = status_id
+
+        db.commit()
+
+        return JSONResponse({
+            "status": "success",
+            "message": "Результат успешно обновлен"
+        })
+
+    except ValueError as e:
+        db.rollback()
+        logger.error(f"❌ Ошибка преобразования типов: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Ошибка в данных: {str(e)}")
+    except Exception as e:
+        db.rollback()
+        logger.error(f"❌ Ошибка при обновлении результата: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Ошибка обновления результата: {str(e)}")
+
+
+@router.post("/edit-students/add-award")
+async def add_award(
+        request: Request,
+        db: Session = Depends(get_db)
+):
+    """Добавление новой записи о соревновании"""
+    try:
+        # Получаем данные формы
+        form_data = await request.form()
+        print("🔹 Получены данные формы для добавления награды:")
+        for key, value in form_data.items():
+            print(f"  {key}: {value} (тип: {type(value)})")
+
+        # Извлекаем данные с преобразованием типов
+        student_id = int(form_data.get('student_id')) if form_data.get('student_id') else None
+        competition_id = int(form_data.get('competition_id')) if form_data.get('competition_id') else None
+        status_id = int(form_data.get('status_id')) if form_data.get('status_id') else 0
+
+        if not student_id:
+            raise HTTPException(status_code=400, detail="ID ученика обязательно")
+        if not competition_id:
+            raise HTTPException(status_code=400, detail="Соревнование обязательно")
+        if status_id is None:
+            status_id = 0  # По умолчанию "Ожидание"
+
+        # Проверяем существование ученика
+        student = db.query(Students).filter(Students.id == student_id).first()
+        if not student:
+            raise HTTPException(status_code=404, detail="Ученик не найден")
+
+        # Проверяем существование соревнования
+        competition = db.query(Сompetition).filter(Сompetition.id == competition_id).first()
+        if not competition:
+            raise HTTPException(status_code=404, detail="Соревнование не найдено")
+
+        # Проверяем, не существует ли уже запись для этого ученика и соревнования
+        existing_award = db.query(Сompetition_student).filter(
+            and_(
+                Сompetition_student.student_id == student_id,
+                Сompetition_student.competition_id == competition_id
+            )
+        ).first()
+
+        if existing_award:
+            raise HTTPException(status_code=400, detail="Запись для этого соревнования уже существует")
+
+        # Создаем новую запись
+        new_award = Сompetition_student(
+            student_id=student_id,
+            competition_id=competition_id,
+            status_id=status_id
+        )
+
+        db.add(new_award)
+        db.commit()
+        db.refresh(new_award)
+
+        logger.info(f"✅ Добавлена запись о соревновании для ученика {student.name}, соревнование: {competition.name}")
+
+        return JSONResponse({
+            "status": "success",
+            "message": "Запись успешно добавлена",
+            "award_id": new_award.id
+        })
+
+    except ValueError as e:
+        db.rollback()
+        logger.error(f"❌ Ошибка преобразования типов: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Ошибка в данных: {str(e)}")
+    except Exception as e:
+        db.rollback()
+        logger.error(f"❌ Ошибка при добавлении записи: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Ошибка добавления записи: {str(e)}")
+
+
+@router.delete("/edit-students/delete-award/{award_id}")
+async def delete_award(award_id: int, db: Session = Depends(get_db)):
+    """Удаление записи о соревновании"""
+    try:
+        print(f"🔹 Удаление записи о соревновании ID: {award_id}")
+
+        award = db.query(Сompetition_student).filter(
+            Сompetition_student.id == award_id
+        ).first()
+
+        if not award:
+            raise HTTPException(status_code=404, detail="Запись не найдена")
+
+        db.delete(award)
+        db.commit()
+
+        return JSONResponse({
+            "status": "success",
+            "message": "Запись успешно удалена"
+        })
+
+    except Exception as e:
+        db.rollback()
+        logger.error(f"❌ Ошибка при удалении записи: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Ошибка удаления записи: {str(e)}")
+
+
+# ----------------------------------------------------------

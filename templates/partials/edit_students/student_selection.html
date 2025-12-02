@@ -1,0 +1,26 @@
+<!-- templates/partials/edit_students/student_selection.html -->
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="mb-0">Выбор ученика</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <label for="studentSelect" class="form-label">Выберите ученика:</label>
+                <select id="studentSelect" class="form-select" required>
+                    <option value="">-- Выберите ученика --</option>
+                    {% for student in students %}
+                    <option value="{{ student.id }}">{{ student.name }}</option>
+                    {% endfor %}
+                </select>
+                <div class="form-text">Начните вводить имя для поиска</div>
+            </div>
+            <div class="col-md-6 d-flex align-items-center">
+                <button type="button" class="btn btn-primary" onclick="createNewStudent()">
+                    <i class="fas fa-plus"></i>
+                    Создать нового ученика
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

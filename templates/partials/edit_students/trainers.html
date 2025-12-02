@@ -1,0 +1,24 @@
+<!-- templates/partials/edit_students/trainers.html -->
+<div class="form-section">
+    <h5 class="section-title">Тренеры</h5>
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label for="head_trainer_id" class="form-label">Главный тренер</label>
+            <select class="form-select" id="head_trainer_id" name="head_trainer_id">
+                <option value="">-- Выберите тренера --</option>
+                {% for trainer in trainers %}
+                <option value="{{ trainer.id }}">{{ trainer.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label for="second_trainer_id" class="form-label">Второй тренер</label>
+            <select class="form-select" id="second_trainer_id" name="second_trainer_id">
+                <option value="">-- Выберите тренера --</option>
+                {% for trainer in trainers %}
+                <option value="{{ trainer.id }}">{{ trainer.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+</div>

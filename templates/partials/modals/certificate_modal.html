@@ -1,0 +1,56 @@
+<!-- templates/partials/modals/certificate_modal.html -->
+<div class="modal fade" id="certificateModal" tabindex="-1" aria-labelledby="certificateModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="certificateModalLabel">Добавление справки</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="certificateForm">
+                    <input type="hidden" id="certificateId" name="certificate_id">
+                    <input type="hidden" id="certificateStudentId" name="student_id">
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="cert_id" class="form-label">Тип справки *</label>
+                            <select class="form-select" id="cert_id" name="cert_id" required>
+                                <option value="">-- Выберите тип справки --</option>
+                                <!-- Типы справок будут загружены динамически -->
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="cert_date_start" class="form-label">Дата начала *</label>
+                            <input type="date" class="form-control" id="cert_date_start" name="date_start" required>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="cert_date_end" class="form-label">Дата окончания *</label>
+                            <input type="date" class="form-control" id="cert_date_end" name="date_end" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="cert_active" name="active" checked>
+                                <label class="form-check-label" for="cert_active">
+                                    Справка активна
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" id="deleteCertificateBtn" class="btn btn-danger me-auto hidden"
+                        onclick="deleteCertificate()">
+                    <i class="fas fa-trash"></i> Удалить
+                </button>
+                <button type="button" class="btn btn-primary" onclick="saveCertificate()">
+                    <i class="fas fa-save"></i> Сохранить справку
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,51 @@
+<!-- templates/partials/modals/award_modal.html -->
+<div class="modal fade" id="awardModal" tabindex="-1" aria-labelledby="awardModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="awardModalLabel">Добавление результата соревнования</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="awardForm">
+                    <input type="hidden" id="awardId" name="award_id">
+                    <input type="hidden" id="awardStudentId" name="student_id">
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="competition_id" class="form-label">Соревнование *</label>
+                            <select class="form-select" id="competition_id" name="competition_id" required>
+                                <option value="">-- Выберите соревнование --</option>
+                                <!-- Соревнования будут загружены динамически -->
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="status_id" class="form-label">Результат *</label>
+                            <select class="form-select" id="status_id" name="status_id" required>
+                                <option value="">-- Выберите результат --</option>
+                                <option value="0">Ожидание/Участие</option>
+                                <option value="1">1 место</option>
+                                <option value="2">2 место</option>
+                                <option value="3">3 место</option>
+                                <option value="4">4 место</option>
+                                <option value="5">5 место</option>
+                                <option value="98">Пропуск</option>
+                                <option value="99">Проиграл</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" id="deleteAwardBtn" class="btn btn-danger me-auto hidden"
+                        onclick="deleteAward()">
+                    <i class="fas fa-trash"></i> Удалить
+                </button>
+                <button type="button" class="btn btn-primary" onclick="saveAward()">
+                    <i class="fas fa-save"></i> Сохранить результат
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

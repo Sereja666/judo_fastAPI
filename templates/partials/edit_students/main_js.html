@@ -1,0 +1,241 @@
+<!-- templates/partials/edit_students/main_js.html -->
+<script>
+    $(document).ready(function() {
+        // Инициализация Select2 для поиска учеников
+        $('#studentSelect').select2({
+            language: "ru",
+            placeholder: "Начните вводить имя ученика",
+            allowClear: true
+        });
+
+        // Загрузка данных ученика при выборе
+        $('#studentSelect').change(function() {
+            const studentId = $(this).val();
+            if (studentId) {
+                loadStudentData(studentId);
+                $('#studentCard').removeClass('hidden');
+                $('#studentCard h3').text('Карточка ученика');
+                $('#studentForm button[type="submit"]').html('<i class="fas fa-save"></i> Сохранить изменения');
+            } else {
+                $('#studentCard').addClass('hidden');
+            }
+        });
+
+        // Обработка отправки формы ученика
+        $('#studentForm').submit(function(e) {
+            e.preventDefault();
+            updateStudent();
+        });
+
+        // Обработчик события скрытия модального окна
+        $('#certificateModal').on('hidden.bs.modal', function () {
+            // Сбрасываем форму при закрытии модального окна
+            $('#certificateForm')[0].reset();
+            $('#cert_id').prop('disabled', false);
+            $('#deleteCertificateBtn').addClass('hidden');
+        });
+
+        // Обработчик события скрытия модального окна наград
+        $('#awardModal').on('hidden.bs.modal', function () {
+            // Сбрасываем форму при закрытии модального окна
+            $('#awardForm')[0].reset();
+            $('#competition_id').prop('disabled', false);
+            $('#deleteAwardBtn').addClass('hidden');
+        });
+    });
+
+    // ================== ОСНОВНЫЕ ФУНКЦИИ УЧЕНИКА ==================
+
+    function loadStudentData(studentId) {
+        console.log('🔄 Загрузка данных ученика ID:', studentId);
+
+        $.get(`/edit-students/get-student-data/${studentId}`, function(student) {
+            console.log('✅ Получены данные ученика:', student);
+
+            // Заполняем форму данными ученика
+            $('#studentId').val(student.id);
+            $('#name').val(student.name || '');
+            $('#birthday').val(student.birthday ? student.birthday.split('T')[0] : '');
+            $('#sport_discipline').val(student.sport_discipline || '');
+            $('#rang').val(student.rang || '');
+            $('#sports_rank').val(student.sports_rank || '');
+            $('#sex').val(student.sex || '');
+            $('#weight').val(student.weight || '');
+            $('#telephone').val(student.telephone || '');
+            $('#head_trainer_id').val(student.head_trainer_id || '');
+            $('#second_trainer_id').val(student.second_trainer_id || '');
+            $('#price').val(student.price || '');
+            $('#payment_day').val(student.payment_day || '');
+            $('#classes_remaining').val(student.classes_remaining || '');
+            $('#expected_payment_date').val(student.expected_payment_date ? student.expected_payment_date.split('T')[0] : '');
+            $('#parent1').val(student.parent1 || '');
+            $('#parent2').val(student.parent2 || '');
+            $('#date_start').val(student.date_start ? student.date_start.replace('Z', '').substring(0, 16) : '');
+            $('#telegram_id').val(student.telegram_id || '');
+            $('#active').prop('checked', student.active !== false);
+
+            console.log('rang (belt color ID):', student.rang);
+            console.log('sports_rank:', student.sports_rank);
+
+            // Обновляем информацию о выбранном тарифе
+            if (student.price) {
+                const selectedOption = $('#price').find(`option[value="${student.price}"]`);
+                if (selectedOption.length) {
+                    const priceAmount = selectedOption.data('price-amount');
+                    const classesCount = selectedOption.data('classes-count');
+
+                    let infoText = '';
+                    if (priceAmount) {
+                        infoText += `Стоимость: ${priceAmount} руб. `;
+                    }
+                    if (classesCount) {
+                        infoText += `Занятий в тарифе: ${classesCount}`;
+                    }
+
+                    $('#priceInfo').text(infoText);
+                }
+            }
+
+            // Загружаем медицинские справки ПОСЛЕ загрузки основных данных
+            loadMedicalCertificates(studentId);
+
+            // Загружаем награды ПОСЛЕ загрузки основных данных
+            loadAwards(studentId);
+
+        }).fail(function(xhr, status, error) {
+            console.error('❌ Ошибка загрузки данных ученика:', error);
+            showMessage('Ошибка загрузки данных ученика: ' + error, 'danger');
+        });
+    }
+
+    function updateStudent() {
+        const formData = new FormData(document.getElementById('studentForm'));
+        const studentId = $('#studentId').val();
+
+        console.log('Отправка данных ученика:', Object.fromEntries(formData));
+        console.log('Student ID:', studentId);
+
+        // Проверяем обязательные поля
+        const name = $('#name').val();
+        if (!name) {
+            showMessage('ФИО ученика обязательно для заполнения', 'danger');
+            return;
+        }
+
+        // Определяем URL и метод в зависимости от того, новый это ученик или существующий
+        const url = studentId === 'new' ? '/edit-students/create-student' : '/edit-students/update-student';
+        const method = 'POST';
+
+        fetch(url, {
+            method: method,
+            body: formData
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.text().then(text => {
+                    throw new Error(`HTTP error! status: ${response.status}, message: ${text}`);
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('✅ Ответ от сервера:', data);
+            showMessage(data.message, 'success');
+
+            if (studentId === 'new') {
+                // После создания нового ученика
+                $('#studentId').val(data.student_id);
+                $('#studentCard h3').text('Карточка ученика');
+                $('#studentForm button[type="submit"]').html('<i class="fas fa-save"></i> Сохранить изменения');
+
+                // Добавляем нового ученика в выпадающий список
+                const newStudentName = $('#name').val();
+                const newStudentId = data.student_id;
+                $('#studentSelect').append(new Option(newStudentName, newStudentId));
+                $('#studentSelect').val(newStudentId).trigger('change');
+            } else {
+                // Обновляем имя в выпадающем списке для существующего ученика
+                const studentSelect = $('#studentSelect');
+                const currentStudentId = $('#studentId').val();
+                const currentStudentName = $('#name').val();
+                studentSelect.find(`option[value="${currentStudentId}"]`).text(currentStudentName);
+            }
+        })
+        .catch(error => {
+            console.error('❌ Ошибка сохранения:', error);
+            showMessage('Ошибка сохранения: ' + error.message, 'danger');
+        });
+    }
+
+    function showMessage(text, type) {
+        $('#message').html(`
+            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${text}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `);
+
+        setTimeout(() => {
+            $('.alert').alert('close');
+        }, 5000);
+    }
+
+    // Обработчик изменения выбора тарифа
+    $('#price').change(function() {
+        const selectedOption = $(this).find('option:selected');
+        const priceAmount = selectedOption.data('price-amount');
+        const classesCount = selectedOption.data('classes-count');
+
+        let infoText = '';
+        if (priceAmount) {
+            infoText += `Стоимость: ${priceAmount} руб. `;
+        }
+        if (classesCount) {
+            infoText += `Занятий в тарифе: ${classesCount}`;
+        }
+
+        $('#priceInfo').text(infoText);
+
+        // Автоматически заполняем количество занятий если поле пустое
+        if (classesCount && !$('#classes_remaining').val()) {
+            $('#classes_remaining').val(classesCount);
+        }
+    });
+
+    function createNewStudent() {
+        // Скрываем карточку текущего ученика
+        $('#studentCard').addClass('hidden');
+
+        // Очищаем форму
+        $('#studentForm')[0].reset();
+
+        // Убираем выбранного ученика из select
+        $('#studentSelect').val('').trigger('change');
+
+        // Устанавливаем текущую дату в поле "Дата начала тренировок"
+        const now = new Date();
+        const localDateTime = now.toISOString().slice(0, 16);
+        $('#date_start').val(localDateTime);
+
+        // Устанавливаем активный статус (галочка включена)
+        $('#active').prop('checked', true);
+
+        // Устанавливаем специальное значение для нового ученика
+        $('#studentId').val('new');
+
+        // Показываем карточку с пустой формой
+        $('#studentCard').removeClass('hidden');
+
+        // Меняем заголовок
+        $('#studentCard h3').text('Новый ученик');
+
+        // Меняем текст кнопки сохранения
+        $('#studentForm button[type="submit"]').html('<i class="fas fa-user-plus"></i> Сохранить анкету');
+
+        // Скрываем справки и награды для нового ученика
+        $('#certificatesContainer').html('<div class="text-muted">Справки будут доступны после сохранения ученика</div>');
+        $('#awardsContainer').html('<div class="text-muted">Награды будут доступны после сохранения ученика</div>');
+
+        showMessage('Заполните данные для нового ученика', 'info');
+    }
+</script>

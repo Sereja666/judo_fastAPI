@@ -1,0 +1,238 @@
+<!-- templates/partials/edit_students/awards_js.html -->
+<script>
+    // ================== НАГРАДЫ И ДОСТИЖЕНИЯ ==================
+
+    // Загрузка наград
+    function loadAwards(studentId) {
+        console.log('🔄 Загрузка наград для ученика:', studentId);
+
+        if (!studentId || studentId === 'new') {
+            $('#awardsContainer').html('<div class="text-muted">Награды будут доступны после сохранения ученика</div>');
+            return;
+        }
+
+        $.get(`/edit-students/get-awards/${studentId}`, function(awards) {
+            console.log('✅ Получены награды:', awards);
+
+            if (awards.length === 0) {
+                $('#awardsContainer').html('<div class="text-muted">Нет записей о соревнованиях</div>');
+                return;
+            }
+
+            let html = '';
+            awards.forEach(award => {
+                const competitionDate = award.competition_date ? new Date(award.competition_date).toLocaleDateString('ru-RU') : '—';
+                const statusText = getStatusText(award.status_id);
+                const statusClass = getStatusClass(award.status_id);
+
+                html += `
+                    <div class="card mb-2">
+                        <div class="card-body py-2">
+                            <div class="row align-items-center">
+                                <div class="col-md-4">
+                                    <strong>${award.competition_name}</strong>
+                                </div>
+                                <div class="col-md-3">
+                                    <small class="text-muted">Дата:</small><br>
+                                    ${competitionDate}
+                                </div>
+                                <div class="col-md-3">
+                                    <small class="text-muted">Результат:</small><br>
+                                    <span class="badge ${statusClass}">${statusText}</span>
+                                </div>
+                                <div class="col-md-2 text-end">
+                                    <button type="button" class="btn btn-sm btn-outline-primary"
+                                            onclick="editAward(${award.id}, ${award.competition_id}, ${award.status_id})">
+                                        <i class="fas fa-edit"></i> Редактировать
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            $('#awardsContainer').html(html);
+        }).fail(function(xhr, status, error) {
+            console.error('❌ Ошибка загрузки наград:', error);
+            $('#awardsContainer').html('<div class="text-danger">Ошибка загрузки наград</div>');
+        });
+    }
+
+    // Получение текста статуса
+    function getStatusText(statusId) {
+        const statusMap = {
+            0: 'Ожидание/Участие',
+            1: '1 место',
+            2: '2 место',
+            3: '3 место',
+            4: '4 место',
+            5: '5 место',
+            98: 'Пропуск',
+            99: 'Проиграл'
+        };
+        return statusMap[statusId] || 'Неизвестно';
+    }
+
+    // Получение класса статуса для стилизации
+    function getStatusClass(statusId) {
+        if ([1, 2, 3].includes(parseInt(statusId))) {
+            return 'bg-success text-white';
+        } else if (statusId == 0) {
+            return 'bg-warning text-dark';
+        } else if (statusId == 98) {
+            return 'bg-info text-white';
+        } else if (statusId == 99) {
+            return 'bg-danger text-white';
+        } else {
+            return 'bg-secondary text-white';
+        }
+    }
+
+    // Показать модальное окно для добавления награды
+    function showAddAwardForm() {
+        console.log('🔄 Показать форму добавления награды');
+
+        const studentId = $('#studentId').val();
+        console.log('Student ID:', studentId);
+
+        if (!studentId || studentId === 'new') {
+            showMessage('Сначала сохраните данные ученика', 'warning');
+            return;
+        }
+
+        $('#awardModalLabel').text('Добавление результата соревнования');
+        $('#awardId').val('');
+        $('#awardStudentId').val(studentId);
+        $('#awardForm')[0].reset();
+        $('#competition_id').prop('disabled', false);
+        $('#deleteAwardBtn').addClass('hidden');
+
+        // Загружаем список соревнований если еще не загружены
+        loadCompetitions().then(() => {
+            // Показываем модальное окно
+            const modal = new bootstrap.Modal(document.getElementById('awardModal'));
+            modal.show();
+        });
+    }
+
+    // Редактирование награды
+    function editAward(awardId, competitionId, statusId) {
+        console.log('🔄 Редактирование награды:', awardId);
+
+        $('#awardModalLabel').text('Редактирование результата соревнования');
+        $('#awardId').val(awardId);
+        $('#awardStudentId').val($('#studentId').val());
+
+        // Загружаем список соревнований и устанавливаем выбранное соревнование
+        loadCompetitions().then(() => {
+            $('#competition_id').val(competitionId);
+            $('#competition_id').prop('disabled', true); // Запрещаем изменять соревнование при редактировании
+            $('#status_id').val(statusId);
+            $('#deleteAwardBtn').removeClass('hidden');
+
+            // Показываем модальное окно
+            const modal = new bootstrap.Modal(document.getElementById('awardModal'));
+            modal.show();
+        });
+    }
+
+    // Сохранение награды
+    function saveAward() {
+        console.log('🔄 Сохранение награды');
+
+        const formData = new FormData(document.getElementById('awardForm'));
+        const awardId = $('#awardId').val();
+
+        // Для отладки - выводим все данные формы
+        for (let [key, value] of formData.entries()) {
+            console.log(`${key}: ${value}`);
+        }
+
+        const url = awardId ? '/edit-students/update-award' : '/edit-students/add-award';
+
+        fetch(url, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.text().then(text => {
+                    throw new Error(`HTTP error! status: ${response.status}, message: ${text}`);
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            showMessage(data.message, 'success');
+
+            // Закрываем модальное окно
+            const modal = bootstrap.Modal.getInstance(document.getElementById('awardModal'));
+            modal.hide();
+
+            // Обновляем список наград
+            loadAwards($('#studentId').val());
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            showMessage('Ошибка сохранения результата: ' + error.message, 'danger');
+        });
+    }
+
+    // Загрузка списка соревнований
+    function loadCompetitions() {
+        console.log('🔄 Загрузка списка соревнований');
+
+        return new Promise((resolve, reject) => {
+            if ($('#competition_id option').length > 1) {
+                console.log('Соревнования уже загружены');
+                resolve();
+                return;
+            }
+
+            $.get('/edit-students/get-competitions', function(competitions) {
+                console.log('✅ Получены соревнования:', competitions);
+
+                let options = '<option value="">-- Выберите соревнование --</option>';
+                competitions.forEach(comp => {
+                    const dateStr = comp.date ? new Date(comp.date).toLocaleDateString('ru-RU') : '';
+                    options += `<option value="${comp.id}">${comp.name} (${dateStr})</option>`;
+                });
+                $('#competition_id').html(options);
+                resolve();
+            }).fail(function(xhr, status, error) {
+                console.error('❌ Ошибка загрузки соревнований:', error);
+                showMessage('Ошибка загрузки списка соревнований', 'danger');
+                reject(error);
+            });
+        });
+    }
+
+    // Удаление награды
+    function deleteAward() {
+        const awardId = $('#awardId').val();
+        if (!awardId) return;
+
+        if (!confirm('Вы уверены, что хотите удалить эту запись о соревновании?')) {
+            return;
+        }
+
+        $.ajax({
+            url: `/edit-students/delete-award/${awardId}`,
+            type: 'DELETE',
+            success: function(response) {
+                showMessage(response.message, 'success');
+
+                // Закрываем модальное окно
+                const modal = bootstrap.Modal.getInstance(document.getElementById('awardModal'));
+                modal.hide();
+
+                // Обновляем список наград
+                loadAwards($('#studentId').val());
+            },
+            error: function(xhr, status, error) {
+                showMessage('Ошибка удаления записи: ' + error, 'danger');
+            }
+        });
+    }
+</script>
