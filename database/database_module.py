@@ -3,7 +3,7 @@ from datetime import datetime
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import sessionmaker
 from config import settings
-from database.schemas import Visits
+from database.models import Visits
 from db_handler.db_funk import execute_raw_sql
 
 

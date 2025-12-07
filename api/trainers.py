@@ -4,7 +4,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.orm import Session
 from typing import Optional
 from datetime import datetime
-from database.schemas import get_db, Trainers, Sport
+from database.models import get_db, Trainers, Sport
 from config import templates
 
 router = APIRouter()

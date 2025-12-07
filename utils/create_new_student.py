@@ -3,7 +3,7 @@ from datetime import datetime
 import pandas as pd
 from sqlalchemy import and_
 
-from database.schemas import engine, Students
+from database.models import engine, Students
 
 
 def student_exists(session, name: str, birthday: datetime) -> bool:

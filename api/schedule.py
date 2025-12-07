@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import and_
 from typing import List
 from config import templates  # ← ТОЛЬКО ОДИН ИМПОРТ
-from database.schemas import get_db, Students, Sport, Schedule, Students_schedule
+from database.models import get_db, Students, Sport, Schedule, Students_schedule
 
 router = APIRouter()
 

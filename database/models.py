@@ -1,12 +1,19 @@
 from datetime import datetime, timedelta
-
+from contextlib import asynccontextmanager
 from sqlalchemy import create_engine, Column, Integer, String, MetaData, Date, Boolean, ForeignKey, DateTime, Time, \
     BigInteger
+from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession, create_async_engine
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
 from config import settings
 
 engine = create_engine(settings.db.db_url, connect_args={"options": "-c timezone=Europe/Moscow"})
+engine_async = create_async_engine(
+    settings.db.db_url_asinc,
+    echo=True,  # Включите для отладки SQL запросов
+    pool_pre_ping=True,  # Проверять соединение перед использованием
+    pool_recycle=3600,  # Пересоздавать соединение каждые 3600 секунд
+)
 Base = declarative_base()
 metadata = MetaData()
 
@@ -21,6 +28,29 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+# Асинхронная фабрика сессий
+AsyncSessionLocal = async_sessionmaker(
+    engine_async,
+    class_=AsyncSession,
+    expire_on_commit=False,
+    autocommit=False,
+    autoflush=False,
+)
+
+@asynccontextmanager
+async def get_db_async():
+    """Асинхронный генератор сессий БД"""
+    async with AsyncSessionLocal() as session:
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
+        finally:
+            await session.close()
 
 
 # Посещения

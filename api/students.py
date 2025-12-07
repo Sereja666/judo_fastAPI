@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import and_
 from typing import Optional, List
 from datetime import datetime
-from database.schemas import get_db, Students, Sport, Trainers, Prices, Sports_rank, Belt_сolor, MedCertificat_received, \
+from database.models import get_db, Students, Sport, Trainers, Prices, Sports_rank, Belt_сolor, MedCertificat_received, \
     MedCertificat_type, Сompetition_student, Сompetition
 from config import templates
 from logger_config import logger

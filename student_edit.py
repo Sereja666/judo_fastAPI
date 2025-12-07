@@ -9,7 +9,7 @@ import os
 from datetime import datetime
 from pydantic import BaseModel
 from typing import Optional
-from database.schemas import Students, Sport, Trainers, engine
+from database.models import Students, Sport, Trainers, engine
 
 # Создаем сессию базы данных
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

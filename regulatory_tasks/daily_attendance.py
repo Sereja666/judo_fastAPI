@@ -18,7 +18,7 @@ sys.path.insert(0, project_root)
 
 try:
     from logger_config import logger
-    from database.schemas import schema
+    from database.models import schema
     import asyncpg
     from config import settings
 except ImportError as e:

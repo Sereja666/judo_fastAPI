@@ -13,7 +13,7 @@ from sqlalchemy.dialects.postgresql import asyncpg
 from config import settings
 from create_bot import bot, get_redis_storage
 from database.database_module import create_visit_record_model
-from database.schemas import schema
+from database.models import schema
 from db_handler.db_funk import get_user_data, insert_user, execute_raw_sql
 from keyboards.kbs import main_kb, home_page_kb, places_kb
 from utils.utils import get_refer_id, get_now_time, get_current_week_day, get_belt_emoji

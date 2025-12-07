@@ -8,7 +8,7 @@ sys.path.insert(0, project_root)
 from sqlalchemy.orm import Session, sessionmaker
 
 
-from database.schemas import engine
+from database.models import engine
 
 from sqlalchemy import text
 from sqlalchemy.orm import Session

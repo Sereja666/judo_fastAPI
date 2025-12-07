@@ -3,7 +3,7 @@ from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
-from database.schemas import schema
+from database.models import schema
 
 from db_handler.db_funk import execute_raw_sql
 from keyboards.kbs import main_kb

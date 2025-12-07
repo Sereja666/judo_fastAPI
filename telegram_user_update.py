@@ -3,7 +3,7 @@ from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 
 from config import  settings
-from database.schemas import Telegram_user
+from database.models import Telegram_user
 
 
 def update_telegram_user_orm(user_data, connection_string):

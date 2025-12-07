@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import and_
 from typing import List
 from datetime import datetime
-from database.schemas import get_db, Trainers, Sport, Training_place, Schedule, Students_schedule, Students, Visits
+from database.models import get_db, Trainers, Sport, Training_place, Schedule, Students_schedule, Students, Visits
 from config import templates
 
 router = APIRouter()
