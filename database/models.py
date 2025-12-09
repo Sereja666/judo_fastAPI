@@ -66,6 +66,15 @@ class Visits(Base):
     shedule = Column(Integer())
 
 
+# Посещения
+class Lesson_write_offs (Base):
+    __tablename__ = 'lesson_write_offs'
+    __table_args__ = {'schema': schema}
+    id = Column(Integer(), primary_key=True, autoincrement=True)
+    data = Column(DateTime())
+    student_id = Column(Integer())
+    quantity = Column(Integer())
+
 # Ученики
 class Students(Base):
     __tablename__ = 'student'
