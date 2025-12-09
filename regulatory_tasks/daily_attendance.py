@@ -18,7 +18,7 @@ sys.path.insert(0, project_root)
 
 try:
     from logger_config import logger
-    from database.models import schema
+    from database.models import schema, Lesson_write_offs
     import asyncpg
     from config import settings
 except ImportError as e:
@@ -71,6 +71,31 @@ class AttendanceProcessor:
             logger.error(f"Database error: {str(e)}")
             raise
 
+    async def execute_write(self, query: str, *params):
+        """Функция выполнения SQL запросов на запись"""
+        try:
+            conn = await asyncpg.connect(**settings.db.pg_link)
+            try:
+                await conn.execute(query, *params)
+            finally:
+                await conn.close()
+        except Exception as e:
+            logger.error(f"Database write error: {str(e)}")
+            raise
+
+    async def record_write_off(self, student_id: int, quantity: int, write_off_date: datetime):
+        """Запись факта списания в таблицу lesson_write_offs"""
+        try:
+            await self.execute_write(
+                f"""INSERT INTO {self.schema}.lesson_write_offs 
+                (data, student_id, quantity) 
+                VALUES ($1, $2, $3)""",
+                write_off_date, student_id, quantity
+            )
+            logger.debug(f"📝 Записано списание: студент {student_id}, кол-во {quantity}, дата {write_off_date}")
+        except Exception as e:
+            logger.error(f"❌ Ошибка записи списания для студента {student_id}: {str(e)}")
+
     async def get_student_schedule_days(self, student_id: int) -> List[str]:
         """Получить дни расписания студента"""
         schedule_data = await self.execute_raw_sql(
@@ -89,6 +114,13 @@ class AttendanceProcessor:
         """
         try:
             today = target_date.date()
+
+            # Если баланс отрицательный (долг) - даем 3 дня на оплату
+            if current_balance < 0:
+                payment_date = today + timedelta(days=3)
+                logger.info(f"💰 Студент ID {student_id} имеет долг {current_balance}, оплата до {payment_date}")
+                return payment_date
+
             student_days = await self.get_student_schedule_days(student_id)
 
             if not student_days:
@@ -155,6 +187,24 @@ class AttendanceProcessor:
         )
         return visits[0]['visit_count'] if visits else 0
 
+    async def has_schedule_or_visit(self, student_id: int, weekday_ru: str, target_date: datetime) -> bool:
+        """Проверить, есть ли у студента расписание или посещение на указанный день"""
+        result = await self.execute_raw_sql(
+            f"""SELECT 1
+            FROM {self.schema}.student_schedule ss
+            JOIN {self.schema}.schedule sched ON ss.schedule = sched.id
+            WHERE ss.student = $1 AND sched.day_week = $2
+
+            UNION
+
+            SELECT 1
+            FROM {self.schema}.visit v
+            WHERE v.student = $1 AND DATE(v.data) = $3
+            LIMIT 1""",
+            student_id, weekday_ru, target_date.date()
+        )
+        return len(result) > 0
+
     async def process_tariff_8_student(self, student: Dict, today_date: datetime,
                                        today_weekday_ru: str, is_saturday: bool) -> Optional[Dict]:
         """Обработка одного студента с тарифом 8 занятий"""
@@ -174,16 +224,25 @@ class AttendanceProcessor:
 
     async def _process_tariff_8_saturday(self, student: Dict, today_date: datetime) -> Optional[Dict]:
         """Обработка студента с тарифом 8 в субботу"""
+        # Проверяем, есть ли расписание или посещение в субботу
+        has_schedule_or_visit = await self.has_schedule_or_visit(student['id'], 'суббота', today_date)
+
+        if not has_schedule_or_visit:
+            logger.info(f"📅 Суббота: студент {student['name']} - нет расписания и посещений")
+            return None
+
         # 1. Списываем посещения за субботу
         saturday_visit_count = await self.get_visits_count(student['id'], today_date)
 
         if saturday_visit_count > 0:
-            await self.execute_raw_sql(
+            await self.execute_write(
                 f"""UPDATE {self.schema}.student 
                 SET classes_remaining = classes_remaining - $1
                 WHERE id = $2""",
                 saturday_visit_count, student['id']
             )
+            # Записываем списание
+            await self.record_write_off(student['id'], saturday_visit_count, today_date)
             logger.info(f"📅 Суббота: студент {student['name']} - списано {saturday_visit_count} занятий")
 
         # 2. Проверяем посещения за неделю и корректируем до 2 занятий
@@ -209,6 +268,9 @@ class AttendanceProcessor:
             )
 
             if result:
+                # Записываем дополнительное списание
+                await self.record_write_off(student['id'], additional_classes_to_subtract, today_date)
+
                 total_subtracted = saturday_visit_count + additional_classes_to_subtract
                 logger.info(f"✅ Студент {student['name']}: всего списано {total_subtracted} занятий")
                 return result[0]
@@ -228,21 +290,29 @@ class AttendanceProcessor:
     async def _process_tariff_8_weekday(self, student: Dict, today_date: datetime, today_weekday_ru: str) -> Optional[
         Dict]:
         """Обработка студента с тарифом 8 в будний день"""
-        today_visit_count = await self.get_visits_count(student['id'], today_date)
+        # Проверяем: есть ли расписание на сегодня ИЛИ было ли посещение
+        has_schedule_or_visit = await self.has_schedule_or_visit(student['id'], today_weekday_ru, today_date)
 
-        if today_visit_count > 0:
-            result = await self.execute_raw_sql(
-                f"""UPDATE {self.schema}.student 
-                SET classes_remaining = classes_remaining - 1
-                WHERE id = $1
-                RETURNING id, name, classes_remaining, price;""",
-                student['id']
-            )
-            if result:
-                logger.info(f"📅 {today_weekday_ru}: студент {student['name']} - списано 1 занятие")
-                return result[0]
-        else:
-            logger.info(f"📅 {today_weekday_ru}: студент {student['name']} - не было посещений")
+        # Если нет ни расписания, ни посещения - не списываем
+        if not has_schedule_or_visit:
+            logger.info(f"📅 {today_weekday_ru}: студент {student['name']} - нет расписания и посещений")
+            return None
+
+        # Если есть расписание или посещение - списываем 1 занятие
+        result = await self.execute_raw_sql(
+            f"""UPDATE {self.schema}.student 
+            SET classes_remaining = classes_remaining - 1
+            WHERE id = $1
+            RETURNING id, name, classes_remaining, price;""",
+            student['id']
+        )
+
+        if result:
+            # Записываем списание
+            await self.record_write_off(student['id'], 1, today_date)
+            logger.info(
+                f"📅 {today_weekday_ru}: студент {student['name']} - списано 1 занятие (по расписанию или посещению)")
+            return result[0]
 
         return None
 
@@ -259,48 +329,58 @@ class AttendanceProcessor:
                             FROM {self.schema}.visit v
                             WHERE v.student = {self.schema}.student.id 
                             AND DATE(v.data) = $1
-                            AND v.shedule IN (
-                                SELECT ss.schedule 
-                                FROM {self.schema}.student_schedule ss 
-                                WHERE ss.student = {self.schema}.student.id
-                            )
                         ))
                     END
                 WHERE id IN (
-                    SELECT DISTINCT ss.student
-                    FROM {self.schema}.student_schedule ss
-                    JOIN {self.schema}.schedule sched ON ss.schedule = sched.id
-                    JOIN {self.schema}.student s ON ss.student = s.id
-                    JOIN {self.schema}.price p ON s.price = p.id
-                    WHERE sched.day_week = $2
-                    AND s.active = true
-                    AND p.classes_in_price != 8
+                    -- Студенты, у которых есть либо расписание на субботу, либо посещение в субботу
+                    SELECT DISTINCT s.id
+                    FROM {self.schema}.student s
+                    LEFT JOIN {self.schema}.student_schedule ss ON s.id = ss.student
+                    LEFT JOIN {self.schema}.schedule sch ON ss.schedule = sch.id
+                    LEFT JOIN {self.schema}.visit v ON s.id = v.student AND DATE(v.data) = $1
+                    WHERE s.active = true
                     AND s.classes_remaining IS NOT NULL
+                    AND (
+                        sch.day_week = 'суббота'  -- Есть расписание на субботу
+                        OR 
+                        v.id IS NOT NULL  -- Или было посещение в субботу
+                    )
                 )
                 AND active = true
                 AND classes_remaining IS NOT NULL
                 RETURNING id, name, classes_remaining, price;"""
-            params = (today_date, today_weekday_ru)
+            params = (today_date,)
         else:
+            # Для будних дней
             query = f"""UPDATE {self.schema}.student 
                 SET classes_remaining = classes_remaining - 1 
                 WHERE id IN (
-                    SELECT DISTINCT ss.student
-                    FROM {self.schema}.student_schedule ss
-                    JOIN {self.schema}.schedule sched ON ss.schedule = sched.id
-                    JOIN {self.schema}.student s ON ss.student = s.id
+                    -- Студенты, у которых есть либо расписание на сегодня, либо посещение сегодня
+                    SELECT DISTINCT s.id
+                    FROM {self.schema}.student s
+                    LEFT JOIN {self.schema}.student_schedule ss ON s.id = ss.student
+                    LEFT JOIN {self.schema}.schedule sch ON ss.schedule = sch.id
+                    LEFT JOIN {self.schema}.visit v ON s.id = v.student AND DATE(v.data) = $1
                     JOIN {self.schema}.price p ON s.price = p.id
-                    WHERE sched.day_week = $1
-                    AND s.active = true
-                    AND p.classes_in_price != 8
+                    WHERE s.active = true
+                    AND p.classes_in_price != 8  -- Не тариф 8
                     AND s.classes_remaining IS NOT NULL
+                    AND (
+                        sch.day_week = $2  -- Есть расписание на сегодня
+                        OR 
+                        v.id IS NOT NULL   -- Или было посещение сегодня
+                    )
                 )
-                AND active = true
-                AND classes_remaining IS NOT NULL
                 RETURNING id, name, classes_remaining, price;"""
-            params = (today_weekday_ru,)
+            params = (today_date, today_weekday_ru)
 
         result = await self.execute_raw_sql(query, *params)
+
+        # Записываем списания в таблицу lesson_write_offs
+        for student in result:
+            quantity = 2 if (is_saturday and student['price'] in self.SPECIAL_TARIFFS) else 1
+            await self.record_write_off(student['id'], quantity, today_date)
+
         return list(result)
 
     async def update_payment_dates(self, target_date: datetime) -> int:
@@ -339,7 +419,7 @@ class AttendanceProcessor:
                     student['id'], student['classes_remaining'], actual_days_per_week, target_date
                 )
 
-                await self.execute_raw_sql(
+                await self.execute_write(
                     f"UPDATE {self.schema}.student SET expected_payment_date = $1 WHERE id = $2",
                     next_payment_date, student['id']
                 )
@@ -380,12 +460,12 @@ class AttendanceProcessor:
 
             students_8_updated = []
             for student in tariff_8_students:
-                result = await self.process_tariff_8_student(student, today_date, today_weekday_ru, is_saturday)
+                result = await self.process_tariff_8_student(student, target_date, today_weekday_ru, is_saturday)
                 if result:
                     students_8_updated.append(result)
 
             # 2. Обработка обычных студентов
-            regular_students_updated = await self.process_regular_students(today_date, today_weekday_ru, is_saturday)
+            regular_students_updated = await self.process_regular_students(target_date, today_weekday_ru, is_saturday)
 
             # 3. Объединение результатов
             all_updated_students = regular_students_updated + students_8_updated
@@ -396,14 +476,14 @@ class AttendanceProcessor:
                 return self._create_response(True, "Нет студентов для списания", 0, 0, today_date, today_weekday_ru)
 
             # 4. Анализ результатов
-            stats = await self._analyze_results(all_updated_students, students_8_updated, today_date, is_saturday)
+            stats = await self._analyze_results(all_updated_students, students_8_updated, target_date, is_saturday)
 
             # 5. Обновление дат оплаты
             payment_updates = await self.update_payment_dates(target_date)
             logger.info(f"✅ Обновлено дат оплаты: {payment_updates} студентов")
 
             # 6. Формирование отчета
-            await self._generate_report(all_updated_students, students_8_updated, today_date, is_saturday,
+            await self._generate_report(all_updated_students, students_8_updated, target_date, is_saturday,
                                         updated_count)
 
             return self._create_success_response(updated_count, payment_updates, stats, today_date, today_weekday_ru)
@@ -421,13 +501,17 @@ class AttendanceProcessor:
             'regular_count': 0,
             'multiple_visits_count': 0,
             'negative_balance_count': 0,
-            'tariff_8_count': len(tariff_8_students)
+            'tariff_8_count': len(tariff_8_students),
+            'zero_balance_count': 0
         }
 
         for student in all_students:
             if student['classes_remaining'] < 0:
                 stats['negative_balance_count'] += 1
                 logger.warning(f"⚠️ Студент {student['name']} ушел в минус: {student['classes_remaining']}")
+            elif student['classes_remaining'] == 0:
+                stats['zero_balance_count'] += 1
+                logger.info(f"ℹ️ Студент {student['name']} имеет нулевой баланс")
 
             if student not in tariff_8_students and is_saturday:
                 if student['price'] in self.SPECIAL_TARIFFS:
@@ -449,7 +533,9 @@ class AttendanceProcessor:
                 f"{stats['tariff_8_count']} с тарифом 8")
 
         if stats['negative_balance_count'] > 0:
-            logger.warning(f"🔴 {stats['negative_balance_count']} студентов ушли в отрицательный баланс!")
+            logger.warning(f"🔴 {stats['negative_balance_count']} студентов имеют отрицательный баланс!")
+        if stats['zero_balance_count'] > 0:
+            logger.info(f"🟡 {stats['zero_balance_count']} студентов имеют нулевой баланс")
 
         return stats
 
@@ -458,7 +544,7 @@ class AttendanceProcessor:
         """Генерация отчета по списаниям"""
         logger.info("📊 Отчет по списаниям:")
         for student in all_students[:5]:
-            balance_status = "🔴 МИНУС" if student['classes_remaining'] < 0 else "🟢"
+            balance_status = "🔴 МИНУС" if student['classes_remaining'] < 0 else "🟢 НОРМА"
 
             if student in tariff_8_students:
                 logger.info(
