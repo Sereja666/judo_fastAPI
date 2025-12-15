@@ -113,6 +113,7 @@
         $('#competitionDateDisplay').val(formatDisplayDate(currentSelectedDate));
         $('#competitionFormTitle').text('Создание мероприятия');
         $('#deleteCompetitionBtn').hide();
+        $('#sendInvitationsBtn').hide(); // Скрываем кнопку отправки приглашений
         $('#competitionFormModal').modal('show');
     }
 
@@ -152,6 +153,7 @@
         renderStudentsList();
         renderTrainersList();
         renderCertificatesList();
+        $('#sendInvitationsBtn').hide(); // Скрываем кнопку отправки приглашений
     }
 
     function saveCompetition() {
@@ -215,4 +217,40 @@
             });
         }
     }
+
+    function sendInvitations() {
+    // Заглушка - функция пока не реализована
+    alert('Функция отправки приглашений будет реализована позже');
+    console.log('Отправка приглашений выбранным ученикам:', selectedStudents);
+}
+
+// Обновите функцию editCompetition чтобы показывать кнопку при редактировании
+    function editCompetition(competitionId) {
+        $('#dayModal').modal('hide');
+
+        $.get(`/competitions/get-competition-data/${competitionId}`, function(data) {
+            $('#competitionId').val(data.competition.id);
+            $('#competitionName').val(data.competition.name);
+            $('#competitionAddress').val(data.competition.address || '');
+            $('#competitionDate').val(data.competition.date ? data.competition.date.split('T')[0] : '');
+            $('#competitionDateDisplay').val(formatDisplayDate(data.competition.date ? data.competition.date.split('T')[0] : ''));
+
+            selectedStudents = data.students || [];
+            selectedTrainers = data.trainers || [];
+            selectedCertificates = data.certificates || [];
+
+            renderStudentsList();
+            renderTrainersList();
+            renderCertificatesList();
+
+            $('#competitionFormTitle').text('Редактирование мероприятия');
+            $('#deleteCompetitionBtn').show();
+            $('#sendInvitationsBtn').show(); // Показываем кнопку отправки приглашений
+            $('#competitionFormModal').modal('show');
+
+        }).fail(function() {
+            showMessage('Ошибка загрузки данных мероприятия', 'danger');
+        });
+    }
+
 </script>
