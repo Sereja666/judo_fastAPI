@@ -3,8 +3,12 @@
 
 {% block title %}Календарь мероприятий{% endblock %}
 
-{% block content %}
+{% block styles %}
+{{ super() }}
 <link href="{{ url_for('static', path='css/competitions.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1>Календарь мероприятий</h1>
     <div>
@@ -26,5 +30,4 @@
 
 {% block scripts %}
 {% include "partials/competitions/scripts.html" %}
-{% include "partials/competitions/styles.html" %}
 {% endblock %}
