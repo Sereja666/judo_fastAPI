@@ -1,6 +1,8 @@
 <!-- templates/partials/competitions/scripts/calendar.html -->
 <script>
     function generateCalendar(year, month) {
+        console.log('🔹 Генерация календаря', year, month);
+
         const calendar = $('#calendar');
         calendar.empty();
 
@@ -13,114 +15,31 @@
         const daysInMonth = lastDay.getDate();
         let date = 1;
 
-        for (let i = 0; i < 6; i++) {
-            if (date > daysInMonth) break;
-
-            const weekRow = $('<div class="row week-row g-1"></div>');
-
-            for (let j = 0; j < 7; j++) {
-                const dayCell = $('<div class="col day-cell"></div>');
-
-                if (i === 0 && j < firstDayOfWeek) {
-                    dayCell.addClass('empty text-center p-2');
-                    dayCell.html('<div class="empty-day"></div>');
-                    weekRow.append(dayCell);
-                    continue;
-                } else if (date > daysInMonth) {
-                    dayCell.addClass('empty text-center p-2');
-                    dayCell.html('<div class="empty-day"></div>');
-                    weekRow.append(dayCell);
-                    continue;
-                }
-
-                const currentDay = new Date(year, month, date);
-                const dateString = formatDateForAPI(currentDay);
-                const isToday = isSameDay(currentDay, new Date());
-                const dayEvents = eventsByDate[dateString] || [];
-                const hasEvents = dayEvents.length > 0;
-                const eventsCount = dayEvents.length;
-
-                let dayClass = 'btn-day';
-                if (isToday) {
-                    dayClass += ' today';
-                }
-                if (hasEvents) {
-                    dayClass += ' has-events';
-                }
-
-                // Создаем содержимое плитки
-                let dayContent = `
-                    <div class="btn-day-content">
-                        <div class="day-header-row">
-                            <div class="day-number">${date}</div>
-                `;
-
-                if (eventsCount > 0) {
-                    dayContent += `
-                        <div class="events-counter">
-                            <span class="badge bg-primary rounded-pill">${eventsCount}</span>
-                        </div>
-                    `;
-                }
-
-                dayContent += `
-                        </div>
-                        <div class="day-events">
-                `;
-
-                if (eventsCount > 0) {
-                    for (let k = 0; k < Math.min(eventsCount, 2); k++) {
-                        const event = dayEvents[k];
-                        const eventIcon = eventsCount > 1 && k === 1 ? 'ellipsis-h' : 'trophy';
-                        dayContent += `
-                            <div class="event-preview" title="${event.name}">
-                                <i class="fas fa-${eventIcon}"></i>
-                                <span>${truncateText(event.name, 12)}</span>
+        // Простая тестовая плитка для проверки стилей
+        const testDay = `
+            <div class="row week-row mb-2">
+                <div class="col day-cell">
+                    <button class="btn-day today" data-date="2024-12-01">
+                        <div class="btn-day-content">
+                            <div class="day-header-row">
+                                <div class="day-number">1</div>
+                                <div class="events-counter">
+                                    <span class="badge">2</span>
+                                </div>
                             </div>
-                        `;
-                    }
-
-                    if (eventsCount > 2) {
-                        dayContent += `
-                            <div class="event-preview text-muted">
-                                <i class="fas fa-plus"></i>
-                                <span>еще ${eventsCount - 2}</span>
+                            <div class="day-events">
+                                <div class="event-preview">
+                                    <i class="fas fa-trophy"></i> Тестовое событие
+                                </div>
                             </div>
-                        `;
-                    }
-                } else {
-                    dayContent += `
-                        <div class="no-events">
-                            <i class="far fa-calendar-times"></i>
-                            <span>Нет мероприятий</span>
                         </div>
-                    `;
-                }
-
-                dayContent += `
-                        </div>
-                    </div>
-                `;
-
-                const dayButton = $(`
-                    <button class="${dayClass}" data-date="${dateString}"
-                            data-bs-toggle="tooltip" data-bs-html="true"
-                            data-bs-title="Загрузка мероприятий..."
-                            onmouseenter="loadDayEventsTooltip('${dateString}')">
-                        ${dayContent}
                     </button>
-                `);
+                </div>
+            </div>
+        `;
 
-                dayCell.append(dayButton);
-                weekRow.append(dayCell);
-                date++;
-            }
-
-            calendar.append(weekRow);
-        }
-
-        // Инициализируем тултипы
-        initializeTooltips();
+        calendar.append(testDay);
+        console.log('✅ Тестовая плитка добавлена');
     }
 
     function initializeTooltips() {
