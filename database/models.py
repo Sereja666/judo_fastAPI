@@ -21,6 +21,8 @@ schema = 'public'
 
 # Создаем сессию базы данных
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+
 # Зависимость для получения сессии БД
 def get_db():
     db = SessionLocal()
@@ -38,6 +40,7 @@ AsyncSessionLocal = async_sessionmaker(
     autocommit=False,
     autoflush=False,
 )
+
 
 @asynccontextmanager
 async def get_db_async():
@@ -67,13 +70,14 @@ class Visits(Base):
 
 
 # Посещения
-class Lesson_write_offs (Base):
+class Lesson_write_offs(Base):
     __tablename__ = 'lesson_write_offs'
     __table_args__ = {'schema': schema}
     id = Column(Integer(), primary_key=True, autoincrement=True)
     data = Column(DateTime())
     student_id = Column(Integer())
     quantity = Column(Integer())
+
 
 # Ученики
 class Students(Base):
@@ -88,8 +92,8 @@ class Students(Base):
     sports_rank = Column(Integer())  # id sports_rank
     sex = Column(String())
     weight = Column(Integer())
-    head_trainer_id = Column(Integer()) # айди главного тренера
-    second_trainer_id = Column(Integer()) # айди второго тренера
+    head_trainer_id = Column(Integer())  # айди главного тренера
+    second_trainer_id = Column(Integer())  # айди второго тренера
     price = Column(Integer(), default=0, server_default='0')
     payment_day = Column(Integer())  # день месяца для оплаты (1-31)
     classes_remaining = Column(Integer())  # сколько занятий на остатке в этом месяце
@@ -111,14 +115,16 @@ class Students_schedule(Base):
     student = Column(Integer())
     schedule = Column(Integer())
 
+
 # Связь ученики-расписание
 class Students_parents(Base):
     __tablename__ = 'students_parents'
     __table_args__ = {'schema': schema}
 
     id = Column(Integer(), primary_key=True, autoincrement=True)
-    student = Column(Integer()) # student.id
-    parents = Column(Integer()) # tg_notif_user.id
+    student = Column(Integer())  # student.id
+    parents = Column(Integer())  # tg_notif_user.id
+
 
 # Тренера
 class Trainers(Base):
@@ -204,6 +210,7 @@ class Sport(Base):
     id = Column(Integer(), primary_key=True, autoincrement=True)
     name = Column(String())
 
+
 class Sports_rank(Base):
     """спортивные разряды и звания"""
     __tablename__ = 'sport_rank'
@@ -211,12 +218,14 @@ class Sports_rank(Base):
     id = Column(Integer(), primary_key=True, autoincrement=True)
     rank = Column(String())
 
+
 class Belt_сolor(Base):
     __tablename__ = 'belt_color'
     __table_args__ = {'schema': schema}
     id = Column(Integer(), primary_key=True, autoincrement=True)
     name = Column(String())
     color = Column(String())
+
 
 class Telegram_user(Base):
     __tablename__ = 'telegram_user'
@@ -236,6 +245,7 @@ class Telegram_user(Base):
     last_login = Column(DateTime())  # Дата последнего входа
 
     is_active = Column(Boolean(), default=True, server_default='true')
+
 
 class Tg_notif_user(Base):
     __tablename__ = 'tg_notif_user'
@@ -304,8 +314,8 @@ class Competition_student(Base):
     id = Column(Integer(), primary_key=True, autoincrement=True)
     competition_id = Column(Integer())
     student_id = Column(Integer())
-    participation = Column(Integer(), default=0)  # 0-неизвестно, 1-участвует, 2-не участвует
-    status_id = Column(Integer(), default=0) # ожидание 0 / место 1,2,3,4,5,  / пропуск 98, проиграл - 99
+    participation = Column(Integer(), default=0)  # 0-необработанно, 1-отправлено,  2-принято, 3-отклонено
+    status_id = Column(Integer(), default=0)  # ожидание 0 / место 1,2,3,4,5,  / пропуск 98, проиграл - 99
 
 
 class Сompetition_trainer(Base):
@@ -318,6 +328,7 @@ class Сompetition_trainer(Base):
     competition_id = Column(Integer())
     trainer_id = Column(Integer())
 
+
 class Сompetition_MedCertificat(Base):
     """
     Справки для соревнования
@@ -328,6 +339,7 @@ class Сompetition_MedCertificat(Base):
     competition_id = Column(Integer())
     med_certificat_id = Column(Integer())
 
+
 class MedCertificat_type(Base):
     """
     Типы медицинских справок (допусков)
@@ -336,6 +348,7 @@ class MedCertificat_type(Base):
     __table_args__ = {'schema': schema}
     id = Column(Integer(), primary_key=True, autoincrement=True)
     name_cert = Column(String())
+
 
 # Факт оплаты
 
@@ -347,10 +360,11 @@ class MedCertificat_received(Base):
     __table_args__ = {'schema': schema}
     id = Column(Integer(), primary_key=True, autoincrement=True)
     student_id = Column(Integer())
-    cert_id = Column(Integer()) # id справки из medcertificat_type
-    date_start = Column(Date()) # начало справки
-    date_end = Column(Date())   # окончание справки
-    active = Column(Boolean(), default=True, server_default='true') # актуальность справки
+    cert_id = Column(Integer())  # id справки из medcertificat_type
+    date_start = Column(Date())  # начало справки
+    date_end = Column(Date())  # окончание справки
+    active = Column(Boolean(), default=True, server_default='true')  # актуальность справки
+
 
 class MedicalCertificates(Base):
     """
@@ -365,6 +379,7 @@ class MedicalCertificates(Base):
     missed_classes = Column(Integer())
     added_classes = Column(Integer())
     processed_date = Column(Date())
+
 
 if __name__ == "__main__":
     Base.metadata.create_all(engine)

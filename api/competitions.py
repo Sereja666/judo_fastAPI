@@ -295,3 +295,43 @@ async def update_competition(
         db.rollback()
         print(f"Error in update_competition: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Ошибка обновления мероприятия: {str(e)}")
+
+
+# Добавьте в competitions.py новый эндпоинт
+@router.delete("/competitions/delete-competition/{competition_id}")
+async def delete_competition(
+        competition_id: int,
+        db: Session = Depends(get_db)
+):
+    """Удаление мероприятия"""
+    try:
+        competition = db.query(Сompetition).filter(Сompetition.id == competition_id).first()
+        if not competition:
+            raise HTTPException(status_code=404, detail="Мероприятие не найдено")
+
+        # Удаляем связанные записи
+        db.query(Сompetition_student).filter(
+            Сompetition_student.competition_id == competition_id
+        ).delete()
+
+        db.query(Сompetition_trainer).filter(
+            Сompetition_trainer.competition_id == competition_id
+        ).delete()
+
+        db.query(Сompetition_MedCertificat).filter(
+            Сompetition_MedCertificat.competition_id == competition_id
+        ).delete()
+
+        # Удаляем само мероприятие
+        db.delete(competition)
+        db.commit()
+
+        return JSONResponse({
+            "status": "success",
+            "message": "Мероприятие успешно удалено"
+        })
+
+    except Exception as e:
+        db.rollback()
+        print(f"Error in delete_competition: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Ошибка удаления мероприятия: {str(e)}")

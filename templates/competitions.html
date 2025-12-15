@@ -93,7 +93,8 @@
                         <div class="col-md-4">
                             <div class="mb-3">
                                 <label for="competitionDateDisplay" class="form-label">Дата</label>
-                                <input type="text" class="form-control" id="competitionDateDisplay" readonly style="background-color: #f8f9fa;">
+                                <input type="text" class="form-control" id="competitionDateDisplay" readonly
+                                       style="background-color: #f8f9fa;">
                             </div>
                         </div>
                     </div>
@@ -106,7 +107,8 @@
                     <!-- Медицинские справки -->
                     <div class="mb-4">
                         <label class="form-label">Требуемые медицинские справки</label>
-                        <div id="certificatesList" class="border rounded p-3" style="max-height: 150px; overflow-y: auto;">
+                        <div id="certificatesList" class="border rounded p-3"
+                             style="max-height: 150px; overflow-y: auto;">
                             <!-- Список справок будет здесь -->
                         </div>
                     </div>
@@ -117,12 +119,14 @@
                             <div class="mb-3">
                                 <label class="form-label">Участники</label>
                                 <div class="input-group mb-2">
-                                    <input type="text" class="form-control" id="studentSearch" placeholder="Поиск ученика...">
+                                    <input type="text" class="form-control" id="studentSearch"
+                                           placeholder="Поиск ученика...">
                                     <button class="btn btn-outline-secondary" type="button" onclick="searchStudent()">
                                         <i class="fas fa-search"></i>
                                     </button>
                                 </div>
-                                <div id="studentsList" class="border rounded p-2" style="max-height: 200px; overflow-y: auto;">
+                                <div id="studentsList" class="border rounded p-2"
+                                     style="max-height: 200px; overflow-y: auto;">
                                     <!-- Список выбранных учеников будет здесь -->
                                 </div>
                             </div>
@@ -139,7 +143,8 @@
                                         <i class="fas fa-plus"></i>
                                     </button>
                                 </div>
-                                <div id="trainersList" class="border rounded p-2" style="max-height: 200px; overflow-y: auto;">
+                                <div id="trainersList" class="border rounded p-2"
+                                     style="max-height: 200px; overflow-y: auto;">
                                     <!-- Список выбранных тренеров будет здесь -->
                                 </div>
                             </div>
@@ -149,7 +154,8 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                <button type="button" class="btn btn-danger" id="deleteCompetitionBtn" style="display: none;" onclick="deleteCompetition()">
+                <button type="button" class="btn btn-danger" id="deleteCompetitionBtn" style="display: none;"
+                        onclick="deleteCompetition()">
                     <i class="fas fa-trash"></i> Удалить
                 </button>
                 <button type="button" class="btn btn-primary" onclick="saveCompetition()">
@@ -441,48 +447,39 @@
     }
 
     // Функции календаря
+    <script>
     function generateCalendar(year, month) {
         const calendar = $('#calendar');
         calendar.empty();
 
-        // Первый день месяца
         const firstDay = new Date(year, month, 1);
-        // Последний день месяца
         const lastDay = new Date(year, month + 1, 0);
 
-        // День недели первого дня (0 - воскресенье, 1 - понедельник и т.д.)
         let firstDayOfWeek = firstDay.getDay();
-        // Преобразуем к нашему формату (понедельник - 0)
         firstDayOfWeek = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
 
-        // Количество дней в месяце
         const daysInMonth = lastDay.getDate();
-
         let date = 1;
 
-        // Создаем недели
         for (let i = 0; i < 6; i++) {
             if (date > daysInMonth) break;
 
             const weekRow = $('<div class="row week-row mb-2"></div>');
 
-            // Дни недели
             for (let j = 0; j < 7; j++) {
                 const dayCell = $('<div class="col day-cell text-center p-2"></div>');
 
                 if (i === 0 && j < firstDayOfWeek) {
-                    // Пустые ячейки перед первым днем месяца
                     dayCell.html('&nbsp;');
                 } else if (date > daysInMonth) {
-                    // Пустые ячейки после последнего дня месяца
                     dayCell.html('&nbsp;');
                 } else {
                     const currentDay = new Date(year, month, date);
-                    // Исправляем проблему с часовым поясом - используем UTC дату
                     const dateString = formatDateForAPI(currentDay);
                     const isToday = isSameDay(currentDay, new Date());
                     const dayEvents = eventsByDate[dateString] || [];
                     const hasEvents = dayEvents.length > 0;
+                    const eventsCount = dayEvents.length;
 
                     let dayClass = 'btn-day';
                     if (isToday) {
@@ -497,28 +494,33 @@
                         <div class="day-number">${date}</div>
                     `;
 
-                    // Добавляем мероприятия если они есть
-                    if (hasEvents) {
-                        // Берем только первое мероприятие для отображения в календаре
-                        const firstEvent = dayEvents[0];
+                    // Показываем счетчик мероприятий
+                    if (eventsCount > 0) {
                         dayContent += `
-                            <div class="events-indicator">
-                                <i class="fas fa-trophy me-1"></i>
-                            </div>
-                            <div class="event-preview" title="${firstEvent.name}">
-                                ${truncateText(firstEvent.name, 15)}
+                            <div class="events-counter">
+                                <span class="badge bg-primary rounded-pill">${eventsCount}</span>
                             </div>
                         `;
+
+                        // Показываем до 2 мероприятий
+                        for (let k = 0; k < Math.min(eventsCount, 2); k++) {
+                            const event = dayEvents[k];
+                            dayContent += `
+                                <div class="event-preview" title="${event.name}">
+                                    <i class="fas fa-${eventsCount > 1 && k === 1 ? 'ellipsis-h' : 'trophy'} me-1"></i>
+                                    ${truncateText(event.name, 12)}
+                                </div>
+                            `;
+                        }
                     } else {
                         dayContent += '<div class="events-indicator"></div>';
                     }
 
-                    // ВСЕГДА добавляем tooltip для дней с мероприятиями
                     const dayButton = $(`
                         <button class="btn ${dayClass}" data-date="${dateString}"
                                 data-bs-toggle="tooltip" data-bs-html="true"
-                                data-bs-title="Загрузка участников..."
-                                onmouseenter="loadDayParticipants('${dateString}')">
+                                data-bs-title="Загрузка мероприятий..."
+                                onmouseenter="loadDayEventsTooltip('${dateString}')">
                             ${dayContent}
                         </button>
                     `);
@@ -533,7 +535,6 @@
             calendar.append(weekRow);
         }
 
-        // Инициализируем tooltips после создания календаря
         initializeTooltips();
     }
 
@@ -552,52 +553,66 @@
     }
 
     // Функция для загрузки участников при наведении на день
-    function loadDayParticipants(dateString) {
+    function loadDayEventsTooltip(dateString) {
         const dayEvents = eventsByDate[dateString] || [];
         if (dayEvents.length === 0) return;
 
-        // Для каждого мероприятия в этот день загружаем участников
-        let loadedCount = 0;
-        const allParticipants = [];
+        const dayButton = $(`button[data-date="${dateString}"]`);
 
-        dayEvents.forEach(event => {
-            if (competitionParticipants[event.id]) {
-                // Если данные уже загружены, используем их
-                const participants = competitionParticipants[event.id] || [];
-                const participantNames = participants.map(studentId => {
-                    const student = allStudents.find(s => s.id === studentId);
-                    return student ? student.name : 'Неизвестный ученик';
-                });
-                allParticipants.push(...participantNames);
-                loadedCount++;
+        let tooltipContent = '<div style="max-width: 300px;">';
 
-                if (loadedCount === dayEvents.length) {
-                    updateDayTooltip(dateString, allParticipants);
-                }
-            } else {
-                // Загружаем данные мероприятия
-                $.get(`/competitions/get-competition-data/${event.id}`, function(data) {
-                    competitionParticipants[event.id] = data.students || [];
-
-                    const participants = competitionParticipants[event.id] || [];
-                    const participantNames = participants.map(studentId => {
-                        const student = allStudents.find(s => s.id === studentId);
-                        return student ? student.name : 'Неизвестный ученик';
-                    });
-                    allParticipants.push(...participantNames);
-                    loadedCount++;
-
-                    if (loadedCount === dayEvents.length) {
-                        updateDayTooltip(dateString, allParticipants);
-                    }
-                }).fail(function() {
-                    // Если не удалось загрузить, просто увеличиваем счетчик
-                    loadedCount++;
-                    if (loadedCount === dayEvents.length) {
-                        updateDayTooltip(dateString, allParticipants);
-                    }
-                });
+        if (dayEvents.length === 1) {
+            tooltipContent += `<strong>Мероприятие:</strong><br>`;
+            tooltipContent += `<b>${dayEvents[0].name}</b><br>`;
+            if (dayEvents[0].address) {
+                tooltipContent += `<i class="fas fa-map-marker-alt me-1"></i> ${dayEvents[0].address}<br>`;
             }
+        } else {
+            tooltipContent += `<strong>Мероприятия (${dayEvents.length}):</strong><br>`;
+            dayEvents.forEach((event, index) => {
+                tooltipContent += `
+                    <div style="margin-bottom: 5px; border-left: 3px solid var(--superset-primary); padding-left: 5px;">
+                        <b>${index + 1}. ${event.name}</b><br>
+                        ${event.address ? `<i class="fas fa-map-marker-alt me-1"></i> ${event.address}` : ''}
+                    </div>
+                `;
+            });
+        }
+
+        tooltipContent += '</div>';
+
+        updateDayTooltip(dateString, tooltipContent);
+    }
+
+    function updateDayTooltip(dateString, tooltipContent) {
+        const dayButton = $(`button[data-date="${dateString}"]`);
+
+        if (!tooltipContent || tooltipContent === '<div style="max-width: 300px;"></div>') {
+            dayButton.removeAttr('data-bs-toggle');
+            dayButton.removeAttr('data-bs-title');
+            dayButton.removeAttr('data-bs-html');
+
+            const tooltipInstance = bootstrap.Tooltip.getInstance(dayButton[0]);
+            if (tooltipInstance) {
+                tooltipInstance.dispose();
+            }
+            return;
+        }
+
+        dayButton.attr('data-bs-title', tooltipContent);
+        dayButton.attr('data-bs-toggle', 'tooltip');
+        dayButton.attr('data-bs-html', 'true');
+
+        const tooltipInstance = bootstrap.Tooltip.getInstance(dayButton[0]);
+        if (tooltipInstance) {
+            tooltipInstance.dispose();
+        }
+
+        new bootstrap.Tooltip(dayButton[0], {
+            trigger: 'hover',
+            placement: 'top',
+            delay: {show: 500, hide: 100},
+            html: true
         });
     }
 
@@ -808,21 +823,57 @@
         openDayModal(date);
     });
 
+    //  удаления мероприятия
+    function deleteCompetitionPrompt(competitionId) {
+        if (confirm('Вы уверены, что хотите удалить это мероприятие? Это действие нельзя отменить.')) {
+            fetch(`/competitions/delete-competition/${competitionId}`, {
+                method: 'DELETE',
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showMessage(data.message, 'success');
+
+                    // Очищаем кэш
+                    delete competitionParticipants[competitionId];
+
+                    // Перезагружаем календарь
+                    loadEventsForMonth(currentYear, currentMonth + 1);
+
+                    // Закрываем модальное окно дня
+                    $('#dayModal').modal('hide');
+                } else {
+                    showMessage(data.message || 'Ошибка удаления', 'danger');
+                }
+            })
+            .catch(error => {
+                showMessage('Ошибка удаления: ' + error, 'danger');
+            });
+        }
+    }
     function openDayModal(date) {
-        const modalDate = new Date(date + 'T00:00:00'); // Добавляем время чтобы избежать смещения часового пояса
+        const modalDate = new Date(date + 'T00:00:00');
         const options = { day: 'numeric', month: 'long', year: 'numeric' };
         const formattedDate = modalDate.toLocaleDateString('ru-RU', options);
 
         $('#dayModalTitle').text(`Мероприятия на ${formattedDate}`);
 
-        // Показываем загрузку
         $('#dayEventsList').html('<div class="text-center"><div class="spinner-border"></div></div>');
         $('#noEvents').hide();
         $('#dayEventsList').show();
 
-        // Загружаем мероприятия дня
+        // Добавляем кнопку создания нового мероприятия всегда
+        const createButton = `
+            <div class="text-center mb-3">
+                <button class="btn btn-success" onclick="showCompetitionForm()">
+                    <i class="fas fa-plus me-2"></i>Добавить новое мероприятие
+                </button>
+            </div>
+        `;
+
         $.get(`/competitions/get-day-events?date=${date}`, function(events) {
             $('#dayEventsList').empty();
+            $('#dayEventsList').append(createButton);
 
             if (events && events.length > 0) {
                 events.forEach(event => {
@@ -830,29 +881,47 @@
                     if (event.time && event.time !== '00:00') {
                         eventTime = ` в ${event.time}`;
                     }
+
                     const eventElement = $(`
                         <div class="event-item mb-3 p-3 border rounded">
-                            <h6 class="mb-2 text-primary">${event.name}</h6>
-                            <p class="mb-1 text-muted small">${formattedDate}${eventTime}</p>
-                            ${event.address ? `<p class="mb-2 small"><i class="fas fa-map-marker-alt me-1"></i> ${event.address}</p>` : ''}
-                            <button class="btn btn-sm btn-outline-primary" onclick="editCompetition(${event.id})">
-                                <i class="fas fa-edit me-1"></i> Редактировать
-                            </button>
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-2 text-primary">${event.name}</h6>
+                                    <p class="mb-1 text-muted small">
+                                        <i class="far fa-calendar me-1"></i>${formattedDate}${eventTime}
+                                    </p>
+                                    ${event.address ? `
+                                        <p class="mb-2 small">
+                                            <i class="fas fa-map-marker-alt me-1"></i> ${event.address}
+                                        </p>` : ''}
+                                </div>
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-outline-primary" onclick="editCompetition(${event.id})">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteCompetitionPrompt(${event.id})">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     `);
                     $('#dayEventsList').append(eventElement);
                 });
-                $('#noEvents').hide();
-                $('#dayEventsList').show();
             } else {
-                $('#dayEventsList').hide();
-                $('#noEvents').show();
+                $('#dayEventsList').append(`
+                    <div class="text-center py-4">
+                        <p class="text-muted">На этот день нет мероприятий</p>
+                    </div>
+                `);
             }
 
             $('#dayModal').modal('show');
+
         }).fail(function(xhr, status, error) {
-            $('#dayEventsList').html('<div class="alert alert-danger">Ошибка загрузки мероприятий</div>');
-            $('#noEvents').show();
+            $('#dayEventsList').empty();
+            $('#dayEventsList').append(createButton);
+            $('#dayEventsList').append('<div class="alert alert-danger">Ошибка загрузки мероприятий</div>');
             $('#dayModal').modal('show');
         });
     }
@@ -969,168 +1038,168 @@
 </script>
 
 <style>
- /* static/css/competitions.css */
-.calendar-grid {
-    min-height: 400px;
-}
+    /* static/css/competitions.css */
+   .calendar-grid {
+       min-height: 400px;
+   }
 
-.weekdays-row, .week-row {
-    min-height: 80px;
-}
+   .weekdays-row, .week-row {
+       min-height: 80px;
+   }
 
-.day-header {
-    font-weight: 600;
-    color: var(--superset-dark);
-    padding: 0.5rem;
-    background-color: var(--superset-light);
-    border-radius: 8px;
-    margin: 0 2px;
-}
+   .day-header {
+       font-weight: 600;
+       color: var(--superset-dark);
+       padding: 0.5rem;
+       background-color: var(--superset-light);
+       border-radius: 8px;
+       margin: 0 2px;
+   }
 
-.day-cell {
-    min-height: 100px;
-}
+   .day-cell {
+       min-height: 100px;
+   }
 
-.btn-day {
-    width: 100%;
-    height: 100%;
-    border: 2px solid var(--superset-border);
-    border-radius: 8px;
-    background: white;
-    transition: all 0.3s ease;
-    padding: 0.5rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    font-size: 0.85rem;
-}
+   .btn-day {
+       width: 100%;
+       height: 100%;
+       border: 2px solid var(--superset-border);
+       border-radius: 8px;
+       background: white;
+       transition: all 0.3s ease;
+       padding: 0.5rem;
+       display: flex;
+       flex-direction: column;
+       align-items: center;
+       justify-content: flex-start;
+       font-size: 0.85rem;
+   }
 
-.btn-day:hover {
-    border-color: var(--superset-primary);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(32, 167, 201, 0.15);
-}
+   .btn-day:hover {
+       border-color: var(--superset-primary);
+       transform: translateY(-2px);
+       box-shadow: 0 4px 12px rgba(32, 167, 201, 0.15);
+   }
 
-.btn-day.today {
-    border-color: var(--superset-warning);
-    background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
-}
+   .btn-day.today {
+       border-color: var(--superset-warning);
+       background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+   }
 
-.btn-day.has-events {
-    border-color: var(--superset-success);
-    background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%);
-}
+   .btn-day.has-events {
+       border-color: var(--superset-success);
+       background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%);
+   }
 
-.day-number {
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin-bottom: 0.25rem;
-}
+   .day-number {
+       font-size: 1.1rem;
+       font-weight: 600;
+       margin-bottom: 0.25rem;
+   }
 
-.events-indicator {
-    font-size: 0.8rem;
-    color: var(--superset-success);
-    min-height: 1rem;
-    margin-bottom: 0.25rem;
-}
+   .events-indicator {
+       font-size: 0.8rem;
+       color: var(--superset-success);
+       min-height: 1rem;
+       margin-bottom: 0.25rem;
+   }
 
-.event-preview {
-    font-size: 0.75rem;
-    color: var(--superset-dark);
-    font-weight: 500;
-    line-height: 1.2;
-    max-height: 2.4rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-}
+   .event-preview {
+       font-size: 0.75rem;
+       color: var(--superset-dark);
+       font-weight: 500;
+       line-height: 1.2;
+       max-height: 2.4rem;
+       overflow: hidden;
+       text-overflow: ellipsis;
+       display: -webkit-box;
+       -webkit-line-clamp: 2;
+       -webkit-box-orient: vertical;
+   }
 
-.event-item {
-    background: var(--superset-light);
-    border-left: 4px solid var(--superset-primary) !important;
-    transition: all 0.3s ease;
-}
+   .event-item {
+       background: var(--superset-light);
+       border-left: 4px solid var(--superset-primary) !important;
+       transition: all 0.3s ease;
+   }
 
-.event-item:hover {
-    background: white;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
+   .event-item:hover {
+       background: white;
+       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+   }
 
-.event-item h6 {
-    color: var(--superset-primary);
-    margin: 0;
-    font-weight: 600;
-}
+   .event-item h6 {
+       color: var(--superset-primary);
+       margin: 0;
+       font-weight: 600;
+   }
 
-/* Стили для tooltip */
-.tooltip {
-    --bs-tooltip-bg: var(--superset-dark);
-    --bs-tooltip-color: white;
-}
+   /* Стили для tooltip */
+   .tooltip {
+       --bs-tooltip-bg: var(--superset-dark);
+       --bs-tooltip-color: white;
+   }
 
-.tooltip .tooltip-inner {
-    background-color: var(--superset-dark);
-    color: white;
-    padding: 0.75rem 1rem;
-    border-radius: 8px;
-    max-width: 300px;
-    text-align: left;
-}
+   .tooltip .tooltip-inner {
+       background-color: var(--superset-dark);
+       color: white;
+       padding: 0.75rem 1rem;
+       border-radius: 8px;
+       max-width: 300px;
+       text-align: left;
+   }
 
-.tooltip.show {
-    opacity: 1;
-}
+   .tooltip.show {
+       opacity: 1;
+   }
 
-/* Адаптивность */
-@media (max-width: 768px) {
-    .day-cell {
-        min-height: 80px;
-    }
+   /* Адаптивность */
+   @media (max-width: 768px) {
+       .day-cell {
+           min-height: 80px;
+       }
 
-    .day-number {
-        font-size: 0.9rem;
-    }
+       .day-number {
+           font-size: 0.9rem;
+       }
 
-    .events-indicator {
-        font-size: 0.7rem;
-    }
+       .events-indicator {
+           font-size: 0.7rem;
+       }
 
-    .event-preview {
-        font-size: 0.7rem;
-        -webkit-line-clamp: 1;
-        max-height: 1.2rem;
-    }
+       .event-preview {
+           font-size: 0.7rem;
+           -webkit-line-clamp: 1;
+           max-height: 1.2rem;
+       }
 
-    .btn-day {
-        padding: 0.25rem;
-        font-size: 0.8rem;
-    }
+       .btn-day {
+           padding: 0.25rem;
+           font-size: 0.8rem;
+       }
 
-    .tooltip .tooltip-inner {
-        max-width: 200px;
-    }
-}
+       .tooltip .tooltip-inner {
+           max-width: 200px;
+       }
+   }
 
-@media (max-width: 576px) {
-    .weekdays-row, .week-row {
-        min-height: 60px;
-    }
+   @media (max-width: 576px) {
+       .weekdays-row, .week-row {
+           min-height: 60px;
+       }
 
-    .day-cell {
-        min-height: 70px;
-    }
+       .day-cell {
+           min-height: 70px;
+       }
 
-    .event-preview {
-        display: none;
-    }
+       .event-preview {
+           display: none;
+       }
 
-    .tooltip .tooltip-inner {
-        max-width: 150px;
-        font-size: 0.8rem;
-    }
-}
+       .tooltip .tooltip-inner {
+           max-width: 150px;
+           font-size: 0.8rem;
+       }
+   }
 </style>
 {% endblock %}
