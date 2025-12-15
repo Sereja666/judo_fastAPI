@@ -1,25 +1,59 @@
-/* static/css/competitions.css - ЧИСТЫЙ И ПРОСТОЙ ДИЗАЙН */
+/* static/css/competitions.css - ДОБАВЛЯЕМ ЭТО */
 
-/* =========== СБРОС И БАЗОВЫЕ СТИЛИ =========== */
-#calendar * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
-
-/* =========== ОСНОВНОЙ КОНТЕЙНЕР =========== */
-#calendar {
-    background: #ffffff;
-    border-radius: 12px;
+/* =========== ИСПРАВЛЕНИЕ СЕТКИ =========== */
+.calendar-grid {
+    background: white;
+    border-radius: 16px;
     padding: 20px;
-    margin: 10px 0;
+    margin-top: 10px;
     border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
-/* =========== ЗАГОЛОВКИ ДНЕЙ НЕДЕЛИ =========== */
+/* Исправляем сетку строк */
+.week-row {
+    display: flex;
+    margin-bottom: 4px;
+    gap: 4px; /* Отступ между ячейками в строке */
+}
+
+/* Ячейки дней с отступами */
+.day-cell {
+    flex: 1;
+    padding: 0 !important; /* Убираем padding у ячейки, он будет у кнопки */
+    min-height: 110px;
+}
+
+/* Плитки дней - добавляем внутренние отступы */
+.btn-day {
+    width: 100%;
+    height: 100%;
+    min-height: 105px;
+    padding: 12px 10px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    position: relative;
+    margin: 0; /* Убираем внешние отступы */
+}
+
+/* Эффект при наведении */
+.btn-day:hover {
+    border-color: #d1d5db;
+    background: #f9fafb;
+}
+
+/* Заголовки дней недели - выравниваем */
 .weekdays-row {
     display: flex;
     margin-bottom: 8px;
+    gap: 4px; /* Тот же отступ, что и между плитками */
 }
 
 .weekdays-row .day-header {
@@ -31,59 +65,20 @@
     color: #4b5563;
     background: #f9fafb;
     border-radius: 8px;
-    margin: 0 2px;
+    margin: 0; /* Убираем внешние отступы */
     border: 1px solid #e5e7eb;
 }
 
-/* =========== СЕТКА КАЛЕНДАРЯ =========== */
-.calendar-grid {
-    display: flex;
-    flex-direction: column;
-}
-
-.week-row {
-    display: flex;
-    margin-bottom: 4px;
-}
-
-.day-cell {
-    flex: 1;
-    padding: 4px;
-    min-height: 100px;
-}
-
-/* =========== ПЛИТКИ ДНЕЙ =========== */
-.btn-day {
-    width: 100%;
-    height: 100%;
-    min-height: 92px;
-    padding: 12px 10px;
-    background: #ffffff;
-    border: 1px solid #e5e7eb;
-    border-radius: 10px;
-    text-align: left;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    position: relative;
-}
-
-.btn-day:hover {
-    border-color: #d1d5db;
-    background: #f9fafb;
-}
-
-/* Сегодня - голубой акцент */
+/* =========== СПЕЦИАЛЬНЫЕ ДНИ =========== */
+/* Сегодняшний день */
 .btn-day.today {
-    border-color: #93c5fd;
-    background: #f0f9ff;
+    border-color: #3b82f6;
+    background: #eff6ff;
 }
 
-/* Дни с событиями - зеленый акцент */
+/* Дни с событиями */
 .btn-day.has-events {
-    border-color: #86efac;
+    border-color: #10b981;
     background: #f0fdf4;
 }
 
@@ -92,7 +87,7 @@
     font-size: 16px;
     font-weight: 600;
     color: #374151;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
     padding: 4px 8px;
     background: #f3f4f6;
     border-radius: 6px;
@@ -109,105 +104,25 @@
     color: white;
 }
 
-/* =========== СЧЕТЧИК СОБЫТИЙ =========== */
-.events-counter {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-}
-
-.events-counter .badge {
-    background: #6b7280;
-    color: white;
-    padding: 3px 7px;
-    border-radius: 10px;
-    font-size: 11px;
-    font-weight: 600;
-}
-
-.btn-day.today .events-counter .badge {
-    background: #3b82f6;
-}
-
-.btn-day.has-events .events-counter .badge {
-    background: #10b981;
-}
-
-/* =========== СОБЫТИЯ В ПЛИТКЕ =========== */
-.day-events {
-    width: 100%;
-    margin-top: 4px;
-}
-
-.event-preview {
-    font-size: 11px;
-    color: #4b5563;
-    padding: 4px 6px;
-    margin: 2px 0;
-    background: rgba(255, 255, 255, 0.8);
-    border-radius: 4px;
-    border-left: 2px solid #9ca3af;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.btn-day.today .event-preview {
-    border-left-color: #3b82f6;
-    background: rgba(59, 130, 246, 0.05);
-}
-
-.btn-day.has-events .event-preview {
-    border-left-color: #10b981;
-    background: rgba(16, 185, 129, 0.05);
-}
-
-.event-preview i {
-    margin-right: 4px;
-    font-size: 10px;
-}
-
-/* Сообщение "нет мероприятий" */
-.no-events {
-    font-size: 11px;
-    color: #9ca3af;
-    font-style: italic;
-    margin-top: 8px;
-    text-align: center;
-}
-
-/* Пустые ячейки */
-.day-cell.empty .empty-day {
-    background: #f9fafb;
-    border: 1px dashed #d1d5db;
-    border-radius: 10px;
-    height: 92px;
-}
-
 /* =========== АДАПТИВНОСТЬ =========== */
 @media (max-width: 768px) {
-    #calendar {
+    .calendar-grid {
         padding: 12px;
     }
 
     .day-cell {
-        min-height: 85px;
-        padding: 2px;
+        min-height: 95px;
     }
 
     .btn-day {
-        min-height: 80px;
+        min-height: 90px;
         padding: 8px 6px;
+        border-radius: 10px;
     }
 
     .day-number {
         font-size: 14px;
         padding: 3px 6px;
-    }
-
-    .event-preview {
-        font-size: 10px;
-        padding: 3px 4px;
     }
 
     .weekdays-row .day-header {
@@ -218,11 +133,11 @@
 
 @media (max-width: 576px) {
     .day-cell {
-        min-height: 75px;
+        min-height: 85px;
     }
 
     .btn-day {
-        min-height: 70px;
+        min-height: 80px;
         padding: 6px 4px;
     }
 
@@ -231,38 +146,9 @@
         padding: 2px 4px;
     }
 
-    .event-preview {
-        display: none;
+    /* Уменьшаем отступы на маленьких экранах */
+    .week-row, .weekdays-row {
+        gap: 2px;
+        margin-bottom: 2px;
     }
-
-    .no-events {
-        display: none;
-    }
-}
-
-/* =========== УТИЛИТЫ =========== */
-.hidden {
-    display: none !important;
-}
-
-.text-center {
-    text-align: center;
-}
-
-.text-muted {
-    color: #9ca3af;
-}
-
-/* Убираем стандартные стили кнопок */
-.btn-day,
-.btn-day:focus,
-.btn-day:active {
-    outline: none;
-    border: none;
-    text-decoration: none;
-}
-
-.btn-day:focus-visible {
-    outline: 2px solid #3b82f6;
-    outline-offset: 2px;
 }
