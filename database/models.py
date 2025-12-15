@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from contextlib import asynccontextmanager
 from sqlalchemy import create_engine, Column, Integer, String, MetaData, Date, Boolean, ForeignKey, DateTime, Time, \
-    BigInteger
+    BigInteger, UniqueConstraint
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession, create_async_engine
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
@@ -292,15 +292,19 @@ class Сompetition(Base):
     date = Column(DateTime())
 
 
-class Сompetition_student(Base):
+class Competition_student(Base):
     """
     ПРиглашение на соревнования участников
     """
     __tablename__ = 'competition_student'
-    __table_args__ = {'schema': schema}
+    __table_args__ = (
+        UniqueConstraint('competition_id', 'student_id', name='uq_competition_student'),
+        {'schema': schema}
+    )
     id = Column(Integer(), primary_key=True, autoincrement=True)
     competition_id = Column(Integer())
     student_id = Column(Integer())
+    participation = Column(Integer(), default=0)  # 0-неизвестно, 1-участвует, 2-не участвует
     status_id = Column(Integer(), default=0) # ожидание 0 / место 1,2,3,4,5,  / пропуск 98, проиграл - 99
 
 
