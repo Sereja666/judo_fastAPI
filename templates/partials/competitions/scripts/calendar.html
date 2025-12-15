@@ -1,61 +1,68 @@
-<!-- templates/partials/competitions/scripts/calendar.html -->
-<script>
-    function generateCalendar(year, month) {
-        console.log('🔹 Генерация календаря', year, month, 'события:', eventsByDate);
+function generateCalendar(year, month) {
+    const calendar = $('#calendar');
+    calendar.empty();
 
-        const calendar = $('#calendar');
-        calendar.empty();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
 
-        const firstDay = new Date(year, month, 1);
-        const lastDay = new Date(year, month + 1, 0);
+    let firstDayOfWeek = firstDay.getDay();
+    firstDayOfWeek = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1; // Пн=0, Вс=6
 
-        let firstDayOfWeek = firstDay.getDay();
-        firstDayOfWeek = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
+    const daysInMonth = lastDay.getDate();
+    let date = 1;
 
-        const daysInMonth = lastDay.getDate();
-        let date = 1;
-        let weekCount = 0;
+    // Создаем заголовки дней недели
+    const weekdaysRow = $(`
+        <div class="row weekdays-row mb-2">
+            <div class="col day-header text-center p-2">Пн</div>
+            <div class="col day-header text-center p-2">Вт</div>
+            <div class="col day-header text-center p-2">Ср</div>
+            <div class="col day-header text-center p-2">Чт</div>
+            <div class="col day-header text-center p-2">Пт</div>
+            <div class="col day-header text-center p-2">Сб</div>
+            <div class="col day-header text-center p-2">Вс</div>
+        </div>
+    `);
+    calendar.append(weekdaysRow);
 
-        // Создаем 6 недель (максимум для месяца)
-        for (let week = 0; week < 6; week++) {
-            if (date > daysInMonth && weekCount > 0) break;
+    // Создаем 6 недель
+    for (let week = 0; week < 6; week++) {
+        const weekRow = $('<div class="row week-row"></div>');
 
-            const weekRow = $('<div class="row week-row mb-2 g-1"></div>');
+        for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
+            const dayCell = $('<div class="col day-cell p-1"></div>');
 
-            for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
-                const dayCell = $('<div class="col day-cell"></div>');
+            // Пустые ячейки в начале месяца
+            if (week === 0 && dayOfWeek < firstDayOfWeek) {
+                dayCell.addClass('empty');
+                dayCell.html('<div class="empty-day"></div>');
+                weekRow.append(dayCell);
+                continue;
+            }
 
-                // Пустые ячейки в начале месяца
-                if (week === 0 && dayOfWeek < firstDayOfWeek) {
-                    dayCell.addClass('empty text-center p-2');
-                    dayCell.html('<div class="empty-day"></div>');
-                    weekRow.append(dayCell);
-                    continue;
-                }
+            // Пустые ячейки после последнего дня месяца
+            if (date > daysInMonth) {
+                dayCell.addClass('empty');
+                dayCell.html('<div class="empty-day"></div>');
+                weekRow.append(dayCell);
+                continue;
+            }
 
-                // Пустые ячейки после последнего дня месяца
-                if (date > daysInMonth) {
-                    dayCell.addClass('empty text-center p-2');
-                    dayCell.html('<div class="empty-day"></div>');
-                    weekRow.append(dayCell);
-                    continue;
-                }
+            // Создаем ячейку с датой
+            const currentDay = new Date(year, month, date);
+            const dateString = formatDateForAPI(currentDay);
+            const isToday = isSameDay(currentDay, new Date());
+            const dayEvents = eventsByDate[dateString] || [];
+            const hasEvents = dayEvents.length > 0;
+            const eventsCount = dayEvents.length;
 
-                // Создаем ячейку с датой
-                const currentDay = new Date(year, month, date);
-                const dateString = formatDateForAPI(currentDay);
-                const isToday = isSameDay(currentDay, new Date());
-                const dayEvents = eventsByDate[dateString] || [];
-                const hasEvents = dayEvents.length > 0;
-                const eventsCount = dayEvents.length;
-
-                let dayClass = 'btn-day';
-                if (isToday) {
-                    dayClass += ' today';
-                }
-                if (hasEvents) {
-                    dayClass += ' has-events';
-                }
+            let dayClass = 'btn-day';
+            if (isToday) {
+                dayClass += ' today';
+            }
+            if (hasEvents) {
+                dayClass += ' has-events';
+            }
 
                 // Создаем содержимое плитки
                 let dayContent = `
@@ -111,22 +118,18 @@
                     </div>
                 `;
 
-                const dayButton = $(`
-                    <button class="${dayClass}" data-date="${dateString}"
-                            data-bs-toggle="tooltip" data-bs-html="true"
-                            data-bs-title="Нажмите для просмотра мероприятий"
-                            onclick="currentSelectedDate = '${dateString}'; openDayModal('${dateString}')">
-                        ${dayContent}
-                    </button>
-                `);
+                      const dayButton = $(`
+                        <button class="${dayClass}" data-date="${dateString}">
+                            ${dayContent}
+                        </button>
+                    `);
 
-                dayCell.append(dayButton);
-                weekRow.append(dayCell);
-                date++;
-                weekCount++;
-            }
+                    dayCell.append(dayButton);
+                    weekRow.append(dayCell);
+                    date++;
+                }
 
-            calendar.append(weekRow);
+                calendar.append(weekRow);
         }
 
         console.log('✅ Календарь сгенерирован, дней:', weekCount);

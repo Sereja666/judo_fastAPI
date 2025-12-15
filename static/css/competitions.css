@@ -1,33 +1,57 @@
-/* static/css/competitions.css - ДОБАВЛЯЕМ ЭТО */
-
-/* =========== ИСПРАВЛЕНИЕ СЕТКИ =========== */
-.calendar-grid {
+/* =========== ИСПРАВЛЕНИЕ РАЗМЕРОВ СЕТКИ =========== */
+/* Основной контейнер */
+#calendar {
     background: white;
     border-radius: 16px;
     padding: 20px;
     margin-top: 10px;
     border: 1px solid #e5e7eb;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
-/* Исправляем сетку строк */
+/* Заголовки дней недели - ФИКСИРОВАННАЯ ШИРИНА */
+.weekdays-row {
+    display: flex !important;
+    margin: 0 -4px 8px -4px !important; /* Компенсируем padding ячеек */
+}
+
+.weekdays-row .col {
+    flex: 1 0 14.2857% !important; /* 100% / 7 = 14.2857% */
+    max-width: 14.2857% !important;
+    padding: 10px 4px !important; /* Такой же padding как у day-cell */
+    margin: 0 !important;
+}
+
+.day-header {
+    width: 100% !important;
+    text-align: center;
+    padding: 10px 0 !important;
+    font-weight: 600;
+    font-size: 14px;
+    color: #4b5563;
+    background: #f9fafb;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+/* Строки с днями */
 .week-row {
-    display: flex;
-    margin-bottom: 4px;
-    gap: 4px; /* Отступ между ячейками в строке */
+    display: flex !important;
+    margin: 0 -4px 4px -4px !important; /* Компенсируем padding ячеек */
 }
 
-/* Ячейки дней с отступами */
+/* Ячейки дней - ТОЧНАЯ ШИРИНА */
 .day-cell {
-    flex: 1;
-    padding: 0 !important; /* Убираем padding у ячейки, он будет у кнопки */
+    flex: 1 0 14.2857% !important; /* 100% / 7 = 14.2857% */
+    max-width: 14.2857% !important;
+    padding: 0 4px !important; /* Отступы между ячейками */
+    margin: 0 !important;
     min-height: 110px;
+    display: flex;
 }
 
-/* Плитки дней - добавляем внутренние отступы */
+/* Плитки дней */
 .btn-day {
-    width: 100%;
-    height: 100%;
+    flex: 1;
     min-height: 105px;
     padding: 12px 10px;
     background: #ffffff;
@@ -40,115 +64,124 @@
     flex-direction: column;
     align-items: flex-start;
     position: relative;
-    margin: 0; /* Убираем внешние отступы */
+    width: 100%;
 }
 
-/* Эффект при наведении */
-.btn-day:hover {
-    border-color: #d1d5db;
+/* Пустые ячейки */
+.day-cell.empty {
+    flex: 1 0 14.2857% !important;
+    max-width: 14.2857% !important;
+}
+
+.empty-day {
     background: #f9fafb;
-}
-
-/* Заголовки дней недели - выравниваем */
-.weekdays-row {
-    display: flex;
-    margin-bottom: 8px;
-    gap: 4px; /* Тот же отступ, что и между плитками */
-}
-
-.weekdays-row .day-header {
-    flex: 1;
-    text-align: center;
-    padding: 10px 0;
-    font-weight: 600;
-    font-size: 14px;
-    color: #4b5563;
-    background: #f9fafb;
-    border-radius: 8px;
-    margin: 0; /* Убираем внешние отступы */
-    border: 1px solid #e5e7eb;
-}
-
-/* =========== СПЕЦИАЛЬНЫЕ ДНИ =========== */
-/* Сегодняшний день */
-.btn-day.today {
-    border-color: #3b82f6;
-    background: #eff6ff;
-}
-
-/* Дни с событиями */
-.btn-day.has-events {
-    border-color: #10b981;
-    background: #f0fdf4;
-}
-
-/* =========== НОМЕР ДНЯ =========== */
-.day-number {
-    font-size: 16px;
-    font-weight: 600;
-    color: #374151;
-    margin-bottom: 8px;
-    padding: 4px 8px;
-    background: #f3f4f6;
-    border-radius: 6px;
-    display: inline-block;
-}
-
-.btn-day.today .day-number {
-    background: #3b82f6;
-    color: white;
-}
-
-.btn-day.has-events .day-number {
-    background: #10b981;
-    color: white;
+    border: 1px dashed #d1d5db;
+    border-radius: 12px;
+    height: 105px;
+    width: 100%;
 }
 
 /* =========== АДАПТИВНОСТЬ =========== */
-@media (max-width: 768px) {
-    .calendar-grid {
-        padding: 12px;
+@media (max-width: 1200px) {
+    .day-cell {
+        min-height: 100px;
     }
 
+    .btn-day {
+        min-height: 95px;
+    }
+
+    .empty-day {
+        height: 95px;
+    }
+}
+
+@media (max-width: 992px) {
     .day-cell {
         min-height: 95px;
     }
 
     .btn-day {
         min-height: 90px;
+        padding: 10px 8px;
+    }
+
+    .empty-day {
+        height: 90px;
+    }
+
+    .day-header {
+        padding: 8px 0 !important;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 768px) {
+    #calendar {
+        padding: 16px;
+    }
+
+    .day-cell {
+        min-height: 85px;
+        padding: 0 3px !important;
+    }
+
+    .weekdays-row .col,
+    .week-row {
+        margin: 0 -3px !important;
+    }
+
+    .btn-day {
+        min-height: 80px;
         padding: 8px 6px;
         border-radius: 10px;
     }
 
-    .day-number {
-        font-size: 14px;
-        padding: 3px 6px;
+    .empty-day {
+        height: 80px;
+        border-radius: 10px;
     }
 
-    .weekdays-row .day-header {
+    .day-header {
         font-size: 12px;
-        padding: 8px 0;
+        padding: 6px 0 !important;
     }
 }
 
 @media (max-width: 576px) {
     .day-cell {
-        min-height: 85px;
+        min-height: 75px;
+        padding: 0 2px !important;
+    }
+
+    .weekdays-row .col,
+    .week-row {
+        margin: 0 -2px !important;
     }
 
     .btn-day {
-        min-height: 80px;
+        min-height: 70px;
         padding: 6px 4px;
+        border-radius: 8px;
     }
 
-    .day-number {
-        font-size: 13px;
-        padding: 2px 4px;
+    .empty-day {
+        height: 70px;
+        border-radius: 8px;
     }
 
-    /* Уменьшаем отступы на маленьких экранах */
-    .week-row, .weekdays-row {
-        gap: 2px;
-        margin-bottom: 2px;
+    .day-header {
+        font-size: 11px;
+        padding: 5px 0 !important;
     }
+}
+
+/* Убираем стандартные стили Bootstrap для колонок */
+#calendar .row {
+    --bs-gutter-x: 0 !important;
+}
+
+#calendar .col {
+    padding-right: 0 !important;
+    padding-left: 0 !important;
 }
