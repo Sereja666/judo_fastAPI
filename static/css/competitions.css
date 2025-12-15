@@ -1,19 +1,36 @@
-/* static/css/competitions.css - ГАРАНТИРОВАННО РАБОТАЮЩИЕ СТИЛИ */
+/* static/css/competitions.css - ФИНАЛЬНАЯ ВЕРСИЯ */
 
-/* =========== ОБНУЛЕНИЕ СТИЛЕЙ =========== */
-#calendar .btn-day {
-    all: initial !important; /* Сбрасываем все стили */
+/* ОСНОВНЫЕ СТИЛИ */
+#calendar {
+    background: white;
+    border-radius: 16px;
+    padding: 15px;
+    margin-top: 10px;
 }
 
-/* =========== ОСНОВНЫЕ СТИЛИ ПЛИТОК =========== */
-#calendar .day-cell {
-    padding: 4px !important;
-    height: 120px !important;
+/* ЗАГОЛОВКИ ДНЕЙ НЕДЕЛИ */
+.weekdays-row .day-header {
+    background: linear-gradient(135deg, #4c51bf, #667eea) !important;
+    color: white !important;
+    border-radius: 12px !important;
+    padding: 15px 0 !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    font-size: 14px !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+    border: none !important;
+    margin: 0 3px !important;
+}
+
+/* ПЛИТКИ ДНЕЙ */
+.day-cell {
+    padding: 5px !important;
+    height: 130px !important;
     display: flex !important;
 }
 
-#calendar .btn-day {
-    /* ОБЯЗАТЕЛЬНЫЕ СТИЛИ */
+.btn-day {
+    all: unset !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: flex-start !important;
@@ -22,77 +39,53 @@
     cursor: pointer !important;
     width: 100% !important;
     height: 100% !important;
-    min-height: 110px !important;
-    padding: 12px 8px !important;
+    min-height: 120px !important;
+    padding: 15px 10px !important;
 
-    /* ВНЕШНИЙ ВИД - СДЕЛАЕМ ОЧЕНЬ ЯРКИМ */
-    background: linear-gradient(145deg, #ffffff, #f5f7fa) !important;
+    /* ВНЕШНИЙ ВИД */
+    background: linear-gradient(145deg, #ffffff, #f8fafc) !important;
     border: 2px solid #e2e8f0 !important;
     border-radius: 16px !important;
     box-shadow:
-        0 4px 6px -1px rgba(0, 0, 0, 0.1),
-        0 2px 4px -1px rgba(0, 0, 0, 0.06),
-        inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+        0 4px 6px rgba(0, 0, 0, 0.05),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
 
     /* ТЕКСТ */
     color: #2d3748 !important;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    font-family: inherit !important;
     font-size: 14px !important;
-    line-height: 1.4 !important;
 
     /* АНИМАЦИЯ */
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    transition: all 0.3s ease !important;
     position: relative !important;
     overflow: hidden !important;
 }
 
-/* Эффект при наведении - ОЧЕНЬ ЗАМЕТНЫЙ */
-#calendar .btn-day:hover {
-    transform: translateY(-3px) scale(1.02) !important;
+.btn-day:hover {
+    transform: translateY(-3px) !important;
     border-color: #4299e1 !important;
     box-shadow:
-        0 20px 25px -5px rgba(0, 0, 0, 0.1),
-        0 10px 10px -5px rgba(0, 0, 0, 0.04),
-        0 0 0 3px rgba(66, 153, 225, 0.3) !important;
+        0 10px 20px rgba(66, 153, 225, 0.15),
+        0 0 0 2px rgba(66, 153, 225, 0.1) !important;
     background: linear-gradient(145deg, #ffffff, #ebf8ff) !important;
 }
 
-/* =========== СЕГОДНЯШНИЙ ДЕНЬ =========== */
-#calendar .btn-day.today {
+/* СЕГОДНЯ */
+.btn-day.today {
     background: linear-gradient(135deg, #f6ad55, #ed8936) !important;
     border-color: #ed8936 !important;
     color: white !important;
-    box-shadow:
-        0 10px 15px -3px rgba(237, 137, 54, 0.3),
-        0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
 }
 
-#calendar .btn-day.today:hover {
-    background: linear-gradient(135deg, #ed8936, #dd6b20) !important;
-    box-shadow:
-        0 25px 50px -12px rgba(237, 137, 54, 0.4),
-        0 0 0 3px rgba(237, 137, 54, 0.3) !important;
-}
-
-/* =========== ДНИ С СОБЫТИЯМИ =========== */
-#calendar .btn-day.has-events {
+/* ДНИ С СОБЫТИЯМИ */
+.btn-day.has-events {
     background: linear-gradient(135deg, #48bb78, #38a169) !important;
     border-color: #38a169 !important;
     color: white !important;
-    box-shadow:
-        0 10px 15px -3px rgba(56, 161, 105, 0.3),
-        0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
 }
 
-#calendar .btn-day.has-events:hover {
-    background: linear-gradient(135deg, #38a169, #2f855a) !important;
-    box-shadow:
-        0 25px 50px -12px rgba(56, 161, 105, 0.4),
-        0 0 0 3px rgba(56, 161, 105, 0.3) !important;
-}
-
-/* =========== НОМЕР ДНЯ =========== */
-#calendar .day-number {
+/* НОМЕР ДНЯ */
+.day-number {
     width: 40px !important;
     height: 40px !important;
     display: flex !important;
@@ -103,53 +96,49 @@
     border-radius: 50% !important;
     font-size: 18px !important;
     font-weight: 800 !important;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
-    margin-bottom: 8px !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+    margin-bottom: 10px !important;
 }
 
-/* Номер для сегодняшнего дня */
-#calendar .btn-day.today .day-number {
+.today .day-number {
     background: white !important;
     color: #ed8936 !important;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2) !important;
 }
 
-/* Номер для дней с событиями */
-#calendar .btn-day.has-events .day-number {
+.has-events .day-number {
     background: white !important;
     color: #38a169 !important;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2) !important;
 }
 
-/* =========== СЧЕТЧИК СОБЫТИЙ =========== */
-#calendar .events-counter {
+/* СЧЕТЧИК */
+.events-counter {
     position: absolute !important;
-    top: 10px !important;
-    right: 10px !important;
+    top: 12px !important;
+    right: 12px !important;
 }
 
-#calendar .events-counter .badge {
+.events-counter .badge {
     background: linear-gradient(135deg, #ed8936, #dd6b20) !important;
     color: white !important;
-    padding: 5px 10px !important;
+    padding: 6px 12px !important;
     border-radius: 20px !important;
     font-size: 12px !important;
     font-weight: 700 !important;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15) !important;
     border: 2px solid white !important;
 }
 
-#calendar .btn-day.has-events .events-counter .badge {
+.has-events .events-counter .badge {
     background: white !important;
     color: #38a169 !important;
 }
 
-/* =========== СОБЫТИЯ В ПЛИТКЕ =========== */
-#calendar .event-preview {
+/* СОБЫТИЯ В ПЛИТКЕ */
+.event-preview {
     background: rgba(255, 255, 255, 0.95) !important;
     border-radius: 8px !important;
-    padding: 6px 8px !important;
-    margin: 4px 0 !important;
+    padding: 8px 10px !important;
+    margin: 5px 0 !important;
     font-size: 12px !important;
     color: #2d3748 !important;
     font-weight: 600 !important;
@@ -160,131 +149,65 @@
     overflow: hidden !important;
     white-space: nowrap !important;
     text-overflow: ellipsis !important;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
 }
 
-#calendar .btn-day.today .event-preview {
+.today .event-preview {
     background: rgba(255, 255, 255, 0.9) !important;
     border-left-color: #ed8936 !important;
 }
 
-#calendar .btn-day.has-events .event-preview {
+.has-events .event-preview {
     background: rgba(255, 255, 255, 0.9) !important;
     border-left-color: #38a169 !important;
 }
 
-#calendar .event-preview i {
-    margin-right: 6px !important;
+.event-preview i {
+    margin-right: 8px !important;
     font-size: 12px !important;
+    min-width: 16px !important;
 }
 
-/* =========== ЗАГОЛОВКИ ДНЕЙ НЕДЕЛИ =========== */
-#calendar .day-header {
-    background: linear-gradient(135deg, #4c51bf, #667eea) !important;
-    color: white !important;
-    border-radius: 10px !important;
-    padding: 12px 0 !important;
-    font-weight: 700 !important;
-    text-transform: uppercase !important;
-    font-size: 14px !important;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
-}
-
-/* =========== АДАПТИВНОСТЬ =========== */
+/* АДАПТИВНОСТЬ */
 @media (max-width: 768px) {
-    #calendar .day-cell {
-        height: 90px !important;
-        padding: 2px !important;
+    .day-cell {
+        height: 100px !important;
+        padding: 3px !important;
     }
 
-    #calendar .btn-day {
-        min-height: 85px !important;
-        padding: 8px 6px !important;
+    .btn-day {
+        min-height: 95px !important;
+        padding: 10px 8px !important;
         border-radius: 12px !important;
     }
 
-    #calendar .day-number {
-        width: 32px !important;
-        height: 32px !important;
-        font-size: 14px !important;
+    .day-number {
+        width: 34px !important;
+        height: 34px !important;
+        font-size: 16px !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .day-cell {
+        height: 85px !important;
     }
 
-    #calendar .event-preview {
+    .btn-day {
+        min-height: 80px !important;
+        padding: 8px 6px !important;
+    }
+
+    .day-number {
+        width: 30px !important;
+        height: 30px !important;
+        font-size: 14px !important;
+        margin-bottom: 5px !important;
+    }
+
+    .event-preview {
         font-size: 10px !important;
         padding: 4px 6px !important;
     }
 }
 
-@media (max-width: 576px) {
-    #calendar .day-cell {
-        height: 80px !important;
-    }
-
-    #calendar .btn-day {
-        min-height: 75px !important;
-        padding: 6px 4px !important;
-    }
-
-    #calendar .day-number {
-        width: 28px !important;
-        height: 28px !important;
-        font-size: 13px !important;
-    }
-
-    #calendar .event-preview {
-        display: none !important; /* Скрываем на очень маленьких экранах */
-    }
-}
-
-/* =========== АНИМАЦИИ =========== */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-#calendar .day-cell:not(.empty) {
-    animation: fadeIn 0.3s ease forwards !important;
-}
-
-/* =========== ВСПОМОГАТЕЛЬНЫЕ КЛАССЫ =========== */
-#calendar .btn-day-content {
-    width: 100% !important;
-    height: 100% !important;
-    display: flex !important;
-    flex-direction: column !important;
-}
-
-#calendar .day-header-row {
-    width: 100% !important;
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: flex-start !important;
-}
-
-#calendar .day-events {
-    width: 100% !important;
-    flex-grow: 1 !important;
-    overflow: hidden !important;
-}
-
-#calendar .no-events {
-    color: #a0aec0 !important;
-    font-size: 12px !important;
-    font-style: italic !important;
-    margin-top: auto !important;
-    padding-top: 10px !important;
-}
-
-/* Пустые ячейки */
-#calendar .day-cell.empty .empty-day {
-    background: #f7fafc !important;
-    border: 2px dashed #cbd5e1 !important;
-    border-radius: 16px !important;
-    height: 110px !important;
-}

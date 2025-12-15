@@ -1,7 +1,7 @@
 <!-- templates/partials/competitions/scripts/calendar.html -->
 <script>
     function generateCalendar(year, month) {
-        console.log('🔹 Генерация календаря', year, month);
+        console.log('🔹 Генерация календаря', year, month, 'события:', eventsByDate);
 
         const calendar = $('#calendar');
         calendar.empty();
@@ -14,45 +14,141 @@
 
         const daysInMonth = lastDay.getDate();
         let date = 1;
+        let weekCount = 0;
 
-        // Простая тестовая плитка для проверки стилей
-        const testDay = `
-            <div class="row week-row mb-2">
-                <div class="col day-cell">
-                    <button class="btn-day today" data-date="2024-12-01">
-                        <div class="btn-day-content">
-                            <div class="day-header-row">
-                                <div class="day-number">1</div>
-                                <div class="events-counter">
-                                    <span class="badge">2</span>
-                                </div>
-                            </div>
-                            <div class="day-events">
-                                <div class="event-preview">
-                                    <i class="fas fa-trophy"></i> Тестовое событие
-                                </div>
-                            </div>
+        // Создаем 6 недель (максимум для месяца)
+        for (let week = 0; week < 6; week++) {
+            if (date > daysInMonth && weekCount > 0) break;
+
+            const weekRow = $('<div class="row week-row mb-2 g-1"></div>');
+
+            for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
+                const dayCell = $('<div class="col day-cell"></div>');
+
+                // Пустые ячейки в начале месяца
+                if (week === 0 && dayOfWeek < firstDayOfWeek) {
+                    dayCell.addClass('empty text-center p-2');
+                    dayCell.html('<div class="empty-day"></div>');
+                    weekRow.append(dayCell);
+                    continue;
+                }
+
+                // Пустые ячейки после последнего дня месяца
+                if (date > daysInMonth) {
+                    dayCell.addClass('empty text-center p-2');
+                    dayCell.html('<div class="empty-day"></div>');
+                    weekRow.append(dayCell);
+                    continue;
+                }
+
+                // Создаем ячейку с датой
+                const currentDay = new Date(year, month, date);
+                const dateString = formatDateForAPI(currentDay);
+                const isToday = isSameDay(currentDay, new Date());
+                const dayEvents = eventsByDate[dateString] || [];
+                const hasEvents = dayEvents.length > 0;
+                const eventsCount = dayEvents.length;
+
+                let dayClass = 'btn-day';
+                if (isToday) {
+                    dayClass += ' today';
+                }
+                if (hasEvents) {
+                    dayClass += ' has-events';
+                }
+
+                // Создаем содержимое плитки
+                let dayContent = `
+                    <div class="btn-day-content">
+                        <div class="day-header-row">
+                            <div class="day-number">${date}</div>
+                `;
+
+                if (eventsCount > 0) {
+                    dayContent += `
+                        <div class="events-counter">
+                            <span class="badge">${eventsCount}</span>
                         </div>
-                    </button>
-                </div>
-            </div>
-        `;
+                    `;
+                }
 
-        calendar.append(testDay);
-        console.log('✅ Тестовая плитка добавлена');
+                dayContent += `
+                        </div>
+                        <div class="day-events">
+                `;
+
+                if (eventsCount > 0) {
+                    for (let i = 0; i < Math.min(eventsCount, 2); i++) {
+                        const event = dayEvents[i];
+                        const eventIcon = eventsCount > 1 && i === 1 ? 'ellipsis-h' : 'trophy';
+                        dayContent += `
+                            <div class="event-preview" title="${event.name}">
+                                <i class="fas fa-${eventIcon}"></i>
+                                <span>${truncateText(event.name, 15)}</span>
+                            </div>
+                        `;
+                    }
+
+                    if (eventsCount > 2) {
+                        dayContent += `
+                            <div class="event-preview text-muted">
+                                <i class="fas fa-plus"></i>
+                                <span>еще ${eventsCount - 2}</span>
+                            </div>
+                        `;
+                    }
+                } else {
+                    dayContent += `
+                        <div class="no-events">
+                            <i class="far fa-calendar-times"></i>
+                            <span>Нет мероприятий</span>
+                        </div>
+                    `;
+                }
+
+                dayContent += `
+                        </div>
+                    </div>
+                `;
+
+                const dayButton = $(`
+                    <button class="${dayClass}" data-date="${dateString}"
+                            data-bs-toggle="tooltip" data-bs-html="true"
+                            data-bs-title="Нажмите для просмотра мероприятий"
+                            onclick="currentSelectedDate = '${dateString}'; openDayModal('${dateString}')">
+                        ${dayContent}
+                    </button>
+                `);
+
+                dayCell.append(dayButton);
+                weekRow.append(dayCell);
+                date++;
+                weekCount++;
+            }
+
+            calendar.append(weekRow);
+        }
+
+        console.log('✅ Календарь сгенерирован, дней:', weekCount);
+        initializeTooltips();
     }
 
     function initializeTooltips() {
         // Удаляем старые тултипы
-        $('[data-bs-toggle="tooltip"]').tooltip('dispose');
+        const tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+        tooltips.forEach(tooltip => {
+            const instance = bootstrap.Tooltip.getInstance(tooltip);
+            if (instance) {
+                instance.dispose();
+            }
+        });
 
         // Инициализируем новые
         $('[data-bs-toggle="tooltip"]').tooltip({
             trigger: 'hover',
             placement: 'top',
             delay: {show: 500, hide: 100},
-            html: true,
-            container: 'body'
+            html: true
         });
     }
 
@@ -63,7 +159,7 @@
             return;
         }
 
-        let tooltipContent = '<div class="calendar-tooltip" style="max-width: 250px; text-align: left;">';
+        let tooltipContent = '<div style="max-width: 250px; text-align: left;">';
 
         if (dayEvents.length === 1) {
             const event = dayEvents[0];
@@ -83,7 +179,7 @@
             tooltipContent += `<strong class="d-block mb-2">Мероприятия (${dayEvents.length}):</strong>`;
             dayEvents.forEach((event, index) => {
                 tooltipContent += `
-                    <div class="tooltip-event-item mb-2" style="border-left: 3px solid var(--superset-primary); padding-left: 8px;">
+                    <div class="mb-2 pb-2 ${index < dayEvents.length - 1 ? 'border-bottom' : ''}">
                         <div class="fw-medium">${index + 1}. ${truncateText(event.name, 25)}</div>
                 `;
                 if (event.address) {
@@ -104,15 +200,8 @@
     function updateDayTooltip(dateString, tooltipContent) {
         const dayButton = $(`button[data-date="${dateString}"]`);
 
-        if (!tooltipContent || tooltipContent === '<div class="calendar-tooltip" style="max-width: 250px; text-align: left;"></div>') {
-            dayButton.removeAttr('data-bs-toggle');
+        if (!tooltipContent) {
             dayButton.removeAttr('data-bs-title');
-            dayButton.removeAttr('data-bs-html');
-
-            const tooltipInstance = bootstrap.Tooltip.getInstance(dayButton[0]);
-            if (tooltipInstance) {
-                tooltipInstance.dispose();
-            }
             return;
         }
 
@@ -126,8 +215,7 @@
                 trigger: 'hover',
                 placement: 'top',
                 delay: {show: 500, hide: 100},
-                html: true,
-                container: 'body'
+                html: true
             });
         }
     }
@@ -141,37 +229,32 @@
     }
 
     function previousMonth() {
+        console.log('⬅️ Предыдущий месяц');
         currentMonth--;
         if (currentMonth < 0) {
             currentMonth = 11;
             currentYear--;
         }
-        generateCalendar(currentYear, currentMonth);
         updateMonthDisplay();
         loadEventsForMonth(currentYear, currentMonth + 1);
     }
 
     function nextMonth() {
+        console.log('➡️ Следующий месяц');
         currentMonth++;
         if (currentMonth > 11) {
             currentMonth = 0;
             currentYear++;
         }
-        generateCalendar(currentYear, currentMonth);
         updateMonthDisplay();
         loadEventsForMonth(currentYear, currentMonth + 1);
     }
 
-    // Обработчик клика по дню
-    $(document).on('click', '.btn-day', function() {
-        const date = $(this).data('date');
-        currentSelectedDate = date;
-        openDayModal(date);
-    });
-
-    // Обработчик для отображения тултипов при загрузке
+    // Убираем глобальный обработчик, добавляем onclick в кнопку
     $(document).ready(function() {
-        // Даем время на загрузку событий
+        console.log('📅 Календарь готов');
+
+        // Даем время на загрузку событий для тултипов
         setTimeout(() => {
             $('.btn-day').each(function() {
                 const date = $(this).data('date');
@@ -179,6 +262,6 @@
                     loadDayEventsTooltip(date);
                 }
             });
-        }, 1000);
+        }, 1500);
     });
 </script>
