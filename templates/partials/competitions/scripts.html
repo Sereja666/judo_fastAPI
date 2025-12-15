@@ -1,0 +1,36 @@
+<!-- templates/partials/competitions/scripts.html -->
+<script>
+    // Глобальные переменные
+    let currentDate = new Date();
+    let currentYear = currentDate.getFullYear();
+    let currentMonth = currentDate.getMonth();
+    let eventsByDate = {};
+    let currentSelectedDate = null;
+
+    // Данные для формы
+    let allMedCertificates = [];
+    let allStudents = [];
+    let allTrainers = [];
+
+    // Выбранные элементы в форме
+    let selectedStudents = [];
+    let selectedTrainers = [];
+    let selectedCertificates = [];
+
+    // Хранилище для данных о участниках мероприятий
+    let competitionParticipants = {};
+
+    // Основная инициализация
+    $(document).ready(function() {
+        generateCalendar(currentYear, currentMonth);
+        updateMonthDisplay();
+        loadEventsForMonth(currentYear, currentMonth + 1);
+        loadFormData();
+    });
+</script>
+
+<!-- Включаем остальные скрипты -->
+{% include "partials/competitions/scripts/init.html" %}
+{% include "partials/competitions/scripts/form.html" %}
+{% include "partials/competitions/scripts/calendar.html" %}
+{% include "partials/competitions/scripts/events.html" %}

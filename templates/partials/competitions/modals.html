@@ -1,0 +1,122 @@
+<!-- templates/partials/competitions/modals.html -->
+<!-- Модальное окно для мероприятий дня -->
+<div class="modal fade" id="dayModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="dayModalTitle">Мероприятия</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="dayEventsList">
+                    <!-- Список мероприятий будет здесь -->
+                </div>
+                <div id="noEvents" class="text-center py-4" style="display: none;">
+                    <p class="text-muted">На этот день нет мероприятий</p>
+                    <button class="btn btn-primary" onclick="showCompetitionForm()">
+                        <i class="fas fa-plus"></i> Создать мероприятие
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для формы мероприятия -->
+<div class="modal fade" id="competitionFormModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="competitionFormTitle">Создание мероприятия</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="competitionForm">
+                    <input type="hidden" id="competitionId" name="competition_id">
+                    <input type="hidden" id="competitionDate" name="date">
+
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="competitionName" class="form-label">Название мероприятия *</label>
+                                <input type="text" class="form-control" id="competitionName" name="name" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="competitionDateDisplay" class="form-label">Дата</label>
+                                <input type="text" class="form-control" id="competitionDateDisplay" readonly
+                                       style="background-color: #f8f9fa;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="competitionAddress" class="form-label">Адрес проведения</label>
+                        <textarea class="form-control" id="competitionAddress" name="address" rows="2"></textarea>
+                    </div>
+
+                    <!-- Медицинские справки -->
+                    <div class="mb-4">
+                        <label class="form-label">Требуемые медицинские справки</label>
+                        <div id="certificatesList" class="border rounded p-3"
+                             style="max-height: 150px; overflow-y: auto;">
+                            <!-- Список справок будет здесь -->
+                        </div>
+                    </div>
+
+                    <!-- Участники -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Участники</label>
+                                <div class="input-group mb-2">
+                                    <input type="text" class="form-control" id="studentSearch"
+                                           placeholder="Поиск ученика...">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="searchStudent()">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                                <div id="studentsList" class="border rounded p-2"
+                                     style="max-height: 200px; overflow-y: auto;">
+                                    <!-- Список выбранных учеников будет здесь -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Ответственные тренеры</label>
+                                <div class="input-group mb-2">
+                                    <select class="form-select" id="trainerSelect">
+                                        <option value="">Выберите тренера...</option>
+                                    </select>
+                                    <button class="btn btn-outline-primary" type="button" onclick="addTrainer()">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                                <div id="trainersList" class="border rounded p-2"
+                                     style="max-height: 200px; overflow-y: auto;">
+                                    <!-- Список выбранных тренеров будет здесь -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-danger" id="deleteCompetitionBtn" style="display: none;"
+                        onclick="deleteCompetition()">
+                    <i class="fas fa-trash"></i> Удалить
+                </button>
+                <button type="button" class="btn btn-primary" onclick="saveCompetition()">
+                    <i class="fas fa-save"></i> Сохранить
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

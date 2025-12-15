@@ -1,0 +1,195 @@
+<!-- templates/partials/competitions/scripts/calendar.html -->
+<script>
+    function generateCalendar(year, month) {
+        const calendar = $('#calendar');
+        calendar.empty();
+
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+
+        let firstDayOfWeek = firstDay.getDay();
+        firstDayOfWeek = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
+
+        const daysInMonth = lastDay.getDate();
+        let date = 1;
+
+        for (let i = 0; i < 6; i++) {
+            if (date > daysInMonth) break;
+
+            const weekRow = $('<div class="row week-row mb-2"></div>');
+
+            for (let j = 0; j < 7; j++) {
+                const dayCell = $('<div class="col day-cell text-center p-2"></div>');
+
+                if (i === 0 && j < firstDayOfWeek) {
+                    dayCell.html('&nbsp;');
+                } else if (date > daysInMonth) {
+                    dayCell.html('&nbsp;');
+                } else {
+                    const currentDay = new Date(year, month, date);
+                    const dateString = formatDateForAPI(currentDay);
+                    const isToday = isSameDay(currentDay, new Date());
+                    const dayEvents = eventsByDate[dateString] || [];
+                    const hasEvents = dayEvents.length > 0;
+                    const eventsCount = dayEvents.length;
+
+                    let dayClass = 'btn-day';
+                    if (isToday) {
+                        dayClass += ' today';
+                    }
+                    if (hasEvents) {
+                        dayClass += ' has-events';
+                    }
+
+                    let dayContent = `<div class="day-number">${date}</div>`;
+
+                    if (eventsCount > 0) {
+                        dayContent += `
+                            <div class="events-counter">
+                                <span class="badge bg-primary rounded-pill">${eventsCount}</span>
+                            </div>
+                        `;
+
+                        for (let k = 0; k < Math.min(eventsCount, 2); k++) {
+                            const event = dayEvents[k];
+                            dayContent += `
+                                <div class="event-preview" title="${event.name}">
+                                    <i class="fas fa-${eventsCount > 1 && k === 1 ? 'ellipsis-h' : 'trophy'} me-1"></i>
+                                    ${truncateText(event.name, 12)}
+                                </div>
+                            `;
+                        }
+                    } else {
+                        dayContent += '<div class="events-indicator"></div>';
+                    }
+
+                    const dayButton = $(`
+                        <button class="btn ${dayClass}" data-date="${dateString}"
+                                data-bs-toggle="tooltip" data-bs-html="true"
+                                data-bs-title="Загрузка мероприятий..."
+                                onmouseenter="loadDayEventsTooltip('${dateString}')">
+                            ${dayContent}
+                        </button>
+                    `);
+
+                    dayCell.append(dayButton);
+                    date++;
+                }
+
+                weekRow.append(dayCell);
+            }
+
+            calendar.append(weekRow);
+        }
+
+        initializeTooltips();
+    }
+
+    function initializeTooltips() {
+        $('[data-bs-toggle="tooltip"]').tooltip('dispose');
+        $('[data-bs-toggle="tooltip"]').tooltip({
+            trigger: 'hover',
+            placement: 'top',
+            delay: {show: 500, hide: 100},
+            html: true
+        });
+    }
+
+    function loadDayEventsTooltip(dateString) {
+        const dayEvents = eventsByDate[dateString] || [];
+        if (dayEvents.length === 0) return;
+
+        const dayButton = $(`button[data-date="${dateString}"]`);
+
+        let tooltipContent = '<div style="max-width: 300px;">';
+
+        if (dayEvents.length === 1) {
+            tooltipContent += `<strong>Мероприятие:</strong><br>`;
+            tooltipContent += `<b>${dayEvents[0].name}</b><br>`;
+            if (dayEvents[0].address) {
+                tooltipContent += `<i class="fas fa-map-marker-alt me-1"></i> ${dayEvents[0].address}<br>`;
+            }
+        } else {
+            tooltipContent += `<strong>Мероприятия (${dayEvents.length}):</strong><br>`;
+            dayEvents.forEach((event, index) => {
+                tooltipContent += `
+                    <div style="margin-bottom: 5px; border-left: 3px solid var(--superset-primary); padding-left: 5px;">
+                        <b>${index + 1}. ${event.name}</b><br>
+                        ${event.address ? `<i class="fas fa-map-marker-alt me-1"></i> ${event.address}` : ''}
+                    </div>
+                `;
+            });
+        }
+
+        tooltipContent += '</div>';
+        updateDayTooltip(dateString, tooltipContent);
+    }
+
+    function updateDayTooltip(dateString, tooltipContent) {
+        const dayButton = $(`button[data-date="${dateString}"]`);
+
+        if (!tooltipContent || tooltipContent === '<div style="max-width: 300px;"></div>') {
+            dayButton.removeAttr('data-bs-toggle');
+            dayButton.removeAttr('data-bs-title');
+            dayButton.removeAttr('data-bs-html');
+
+            const tooltipInstance = bootstrap.Tooltip.getInstance(dayButton[0]);
+            if (tooltipInstance) {
+                tooltipInstance.dispose();
+            }
+            return;
+        }
+
+        dayButton.attr('data-bs-title', tooltipContent);
+        dayButton.attr('data-bs-toggle', 'tooltip');
+        dayButton.attr('data-bs-html', 'true');
+
+        const tooltipInstance = bootstrap.Tooltip.getInstance(dayButton[0]);
+        if (tooltipInstance) {
+            tooltipInstance.dispose();
+        }
+
+        new bootstrap.Tooltip(dayButton[0], {
+            trigger: 'hover',
+            placement: 'top',
+            delay: {show: 500, hide: 100},
+            html: true
+        });
+    }
+
+    function updateMonthDisplay() {
+        const monthNames = [
+            'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+            'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
+        ];
+        $('#currentMonth').text(`${monthNames[currentMonth]} ${currentYear}`);
+    }
+
+    function previousMonth() {
+        currentMonth--;
+        if (currentMonth < 0) {
+            currentMonth = 11;
+            currentYear--;
+        }
+        generateCalendar(currentYear, currentMonth);
+        updateMonthDisplay();
+        loadEventsForMonth(currentYear, currentMonth + 1);
+    }
+
+    function nextMonth() {
+        currentMonth++;
+        if (currentMonth > 11) {
+            currentMonth = 0;
+            currentYear++;
+        }
+        generateCalendar(currentYear, currentMonth);
+        updateMonthDisplay();
+        loadEventsForMonth(currentYear, currentMonth + 1);
+    }
+
+    $(document).on('click', '.btn-day', function() {
+        const date = $(this).data('date');
+        currentSelectedDate = date;
+        openDayModal(date);
+    });
+</script>

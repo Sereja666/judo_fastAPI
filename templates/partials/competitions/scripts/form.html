@@ -1,0 +1,218 @@
+<!-- templates/partials/competitions/scripts/form.html -->
+<script>
+    function renderCertificatesList() {
+        const certificatesList = $('#certificatesList');
+        certificatesList.empty();
+
+        allMedCertificates.forEach(cert => {
+            const isSelected = selectedCertificates.includes(cert.id);
+            const certElement = `
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" value="${cert.id}"
+                           id="cert_${cert.id}" ${isSelected ? 'checked' : ''}
+                           onchange="toggleCertificate(${cert.id})">
+                    <label class="form-check-label" for="cert_${cert.id}">
+                        ${cert.name}
+                    </label>
+                </div>
+            `;
+            certificatesList.append(certElement);
+        });
+    }
+
+    function toggleCertificate(certId) {
+        const index = selectedCertificates.indexOf(certId);
+        if (index > -1) {
+            selectedCertificates.splice(index, 1);
+        } else {
+            selectedCertificates.push(certId);
+        }
+    }
+
+    function searchStudent() {
+        const searchTerm = $('#studentSearch').val().toLowerCase();
+        if (!searchTerm) return;
+
+        const filteredStudents = allStudents.filter(student =>
+            student.name.toLowerCase().includes(searchTerm)
+        );
+
+        if (filteredStudents.length > 0) {
+            const student = filteredStudents[0];
+            if (!selectedStudents.includes(student.id)) {
+                selectedStudents.push(student.id);
+                renderStudentsList();
+            }
+            $('#studentSearch').val('');
+        }
+    }
+
+    function addTrainer() {
+        const trainerId = $('#trainerSelect').val();
+        if (trainerId && !selectedTrainers.includes(parseInt(trainerId))) {
+            selectedTrainers.push(parseInt(trainerId));
+            renderTrainersList();
+            $('#trainerSelect').val('');
+        }
+    }
+
+    function renderStudentsList() {
+        const studentsList = $('#studentsList');
+        studentsList.empty();
+
+        selectedStudents.forEach(studentId => {
+            const student = allStudents.find(s => s.id === studentId);
+            if (student) {
+                const studentElement = `
+                    <div class="d-flex justify-content-between align-items-center p-2 border-bottom">
+                        <span>${student.name}</span>
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeStudent(${studentId})">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `;
+                studentsList.append(studentElement);
+            }
+        });
+    }
+
+    function renderTrainersList() {
+        const trainersList = $('#trainersList');
+        trainersList.empty();
+
+        selectedTrainers.forEach(trainerId => {
+            const trainer = allTrainers.find(t => t.id === trainerId);
+            if (trainer) {
+                const trainerElement = `
+                    <div class="d-flex justify-content-between align-items-center p-2 border-bottom">
+                        <span>${trainer.name}</span>
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeTrainer(${trainerId})">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `;
+                trainersList.append(trainerElement);
+            }
+        });
+    }
+
+    function removeStudent(studentId) {
+        selectedStudents = selectedStudents.filter(id => id !== studentId);
+        renderStudentsList();
+    }
+
+    function removeTrainer(trainerId) {
+        selectedTrainers = selectedTrainers.filter(id => id !== trainerId);
+        renderTrainersList();
+    }
+
+    function showCompetitionForm() {
+        $('#dayModal').modal('hide');
+        resetCompetitionForm();
+        $('#competitionDate').val(currentSelectedDate);
+        $('#competitionDateDisplay').val(formatDisplayDate(currentSelectedDate));
+        $('#competitionFormTitle').text('Создание мероприятия');
+        $('#deleteCompetitionBtn').hide();
+        $('#competitionFormModal').modal('show');
+    }
+
+    function editCompetition(competitionId) {
+        $('#dayModal').modal('hide');
+
+        $.get(`/competitions/get-competition-data/${competitionId}`, function(data) {
+            $('#competitionId').val(data.competition.id);
+            $('#competitionName').val(data.competition.name);
+            $('#competitionAddress').val(data.competition.address || '');
+            $('#competitionDate').val(data.competition.date ? data.competition.date.split('T')[0] : '');
+            $('#competitionDateDisplay').val(formatDisplayDate(data.competition.date ? data.competition.date.split('T')[0] : ''));
+
+            selectedStudents = data.students || [];
+            selectedTrainers = data.trainers || [];
+            selectedCertificates = data.certificates || [];
+
+            renderStudentsList();
+            renderTrainersList();
+            renderCertificatesList();
+
+            $('#competitionFormTitle').text('Редактирование мероприятия');
+            $('#deleteCompetitionBtn').show();
+            $('#competitionFormModal').modal('show');
+
+        }).fail(function() {
+            showMessage('Ошибка загрузки данных мероприятия', 'danger');
+        });
+    }
+
+    function resetCompetitionForm() {
+        $('#competitionForm')[0].reset();
+        $('#competitionId').val('');
+        selectedStudents = [];
+        selectedTrainers = [];
+        selectedCertificates = [];
+        renderStudentsList();
+        renderTrainersList();
+        renderCertificatesList();
+    }
+
+    function saveCompetition() {
+        const competitionId = $('#competitionId').val();
+        const formData = new FormData();
+
+        formData.append('name', $('#competitionName').val());
+        formData.append('address', $('#competitionAddress').val());
+        formData.append('date', $('#competitionDate').val());
+
+        selectedStudents.forEach(id => formData.append('student_ids', id));
+        selectedTrainers.forEach(id => formData.append('trainer_ids', id));
+        selectedCertificates.forEach(id => formData.append('certificate_ids', id));
+
+        const url = competitionId ? `/competitions/update-competition/${competitionId}` : '/competitions/create-competition';
+
+        fetch(url, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showMessage(data.message, 'success');
+                $('#competitionFormModal').modal('hide');
+
+                if (competitionId) {
+                    delete competitionParticipants[competitionId];
+                }
+
+                loadEventsForMonth(currentYear, currentMonth + 1);
+            } else {
+                showMessage(data.message || 'Ошибка сохранения', 'danger');
+            }
+        })
+        .catch(error => {
+            showMessage('Ошибка сохранения: ' + error, 'danger');
+        });
+    }
+
+    function deleteCompetition() {
+        const competitionId = $('#competitionId').val();
+        if (!competitionId) return;
+
+        if (confirm('Вы уверены, что хотите удалить это мероприятие?')) {
+            fetch(`/competitions/delete-competition/${competitionId}`, {
+                method: 'DELETE',
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showMessage(data.message, 'success');
+                    $('#competitionFormModal').modal('hide');
+                    loadEventsForMonth(currentYear, currentMonth + 1);
+                } else {
+                    showMessage(data.message || 'Ошибка удаления', 'danger');
+                }
+            })
+            .catch(error => {
+                showMessage('Ошибка удаления: ' + error, 'danger');
+            });
+        }
+    }
+</script>

@@ -1,0 +1,120 @@
+<!-- templates/partials/competitions/scripts/events.html -->
+<script>
+    function loadEventsForMonth(year, month) {
+        $.get(`/competitions/get-events?year=${year}&month=${month}`, function(events) {
+            eventsByDate = {};
+
+            events.forEach(event => {
+                if (event.date) {
+                    const eventDate = new Date(event.date);
+                    const dateString = formatDateForAPI(eventDate);
+
+                    if (!eventsByDate[dateString]) {
+                        eventsByDate[dateString] = [];
+                    }
+                    eventsByDate[dateString].push(event);
+                }
+            });
+
+            generateCalendar(currentYear, currentMonth);
+
+        }).fail(function(xhr, status, error) {
+            showMessage('Ошибка загрузки мероприятий: ' + error, 'danger');
+        });
+    }
+
+    function openDayModal(date) {
+        const modalDate = new Date(date + 'T00:00:00');
+        const options = { day: 'numeric', month: 'long', year: 'numeric' };
+        const formattedDate = modalDate.toLocaleDateString('ru-RU', options);
+
+        $('#dayModalTitle').text(`Мероприятия на ${formattedDate}`);
+        $('#dayEventsList').html('<div class="text-center"><div class="spinner-border"></div></div>');
+        $('#noEvents').hide();
+        $('#dayEventsList').show();
+
+        const createButton = `
+            <div class="text-center mb-3">
+                <button class="btn btn-success" onclick="showCompetitionForm()">
+                    <i class="fas fa-plus me-2"></i>Добавить новое мероприятие
+                </button>
+            </div>
+        `;
+
+        $.get(`/competitions/get-day-events?date=${date}`, function(events) {
+            $('#dayEventsList').empty();
+            $('#dayEventsList').append(createButton);
+
+            if (events && events.length > 0) {
+                events.forEach(event => {
+                    let eventTime = '';
+                    if (event.time && event.time !== '00:00') {
+                        eventTime = ` в ${event.time}`;
+                    }
+
+                    const eventElement = $(`
+                        <div class="event-item mb-3 p-3 border rounded">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-2 text-primary">${event.name}</h6>
+                                    <p class="mb-1 text-muted small">
+                                        <i class="far fa-calendar me-1"></i>${formattedDate}${eventTime}
+                                    </p>
+                                    ${event.address ? `
+                                        <p class="mb-2 small">
+                                            <i class="fas fa-map-marker-alt me-1"></i> ${event.address}
+                                        </p>` : ''}
+                                </div>
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-outline-primary" onclick="editCompetition(${event.id})">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteCompetitionPrompt(${event.id})">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `);
+                    $('#dayEventsList').append(eventElement);
+                });
+            } else {
+                $('#dayEventsList').append(`
+                    <div class="text-center py-4">
+                        <p class="text-muted">На этот день нет мероприятий</p>
+                    </div>
+                `);
+            }
+
+            $('#dayModal').modal('show');
+
+        }).fail(function(xhr, status, error) {
+            $('#dayEventsList').empty();
+            $('#dayEventsList').append(createButton);
+            $('#dayEventsList').append('<div class="alert alert-danger">Ошибка загрузки мероприятий</div>');
+            $('#dayModal').modal('show');
+        });
+    }
+
+    function deleteCompetitionPrompt(competitionId) {
+        if (confirm('Вы уверены, что хотите удалить это мероприятие? Это действие нельзя отменить.')) {
+            fetch(`/competitions/delete-competition/${competitionId}`, {
+                method: 'DELETE',
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showMessage(data.message, 'success');
+                    delete competitionParticipants[competitionId];
+                    loadEventsForMonth(currentYear, currentMonth + 1);
+                    $('#dayModal').modal('hide');
+                } else {
+                    showMessage(data.message || 'Ошибка удаления', 'danger');
+                }
+            })
+            .catch(error => {
+                showMessage('Ошибка удаления: ' + error, 'danger');
+            });
+        }
+    }
+</script>

@@ -1,0 +1,45 @@
+<!-- templates/partials/competitions/styles.html -->
+<style>
+    .events-counter {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+    }
+
+    .events-counter .badge {
+        font-size: 0.65rem;
+        padding: 2px 6px;
+    }
+
+    .btn-day {
+        position: relative;
+        min-height: 100px;
+    }
+
+    .event-preview {
+        background: rgba(32, 167, 201, 0.1);
+        border-radius: 4px;
+        padding: 2px 4px;
+        margin: 2px 0;
+        font-size: 0.7rem;
+        text-align: left;
+        width: 100%;
+    }
+
+    .event-preview:hover {
+        background: rgba(32, 167, 201, 0.2);
+    }
+
+    /* Адаптивность для счетчика */
+    @media (max-width: 768px) {
+        .events-counter {
+            top: 2px;
+            right: 2px;
+        }
+
+        .events-counter .badge {
+            font-size: 0.6rem;
+            padding: 1px 4px;
+        }
+    }
+</style>
