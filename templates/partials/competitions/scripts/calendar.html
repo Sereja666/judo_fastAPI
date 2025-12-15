@@ -22,9 +22,11 @@
                 const dayCell = $('<div class="col day-cell text-center p-2"></div>');
 
                 if (i === 0 && j < firstDayOfWeek) {
-                    dayCell.html('&nbsp;');
+                    dayCell.addClass('empty');
+                    dayCell.html('<div class="empty-day"></div>');
                 } else if (date > daysInMonth) {
-                    dayCell.html('&nbsp;');
+                    dayCell.addClass('empty');
+                    dayCell.html('<div class="empty-day"></div>');
                 } else {
                     const currentDay = new Date(year, month, date);
                     const dateString = formatDateForAPI(currentDay);
@@ -41,7 +43,12 @@
                         dayClass += ' has-events';
                     }
 
-                    let dayContent = `<div class="day-number">${date}</div>`;
+                    // Создаем содержимое плитки
+                    let dayContent = `
+                        <div class="btn-day-content">
+                            <div class="day-header-row d-flex justify-content-between align-items-start w-100">
+                                <div class="day-number">${date}</div>
+                    `;
 
                     if (eventsCount > 0) {
                         dayContent += `
@@ -49,19 +56,41 @@
                                 <span class="badge bg-primary rounded-pill">${eventsCount}</span>
                             </div>
                         `;
+                    }
 
+                    dayContent += `
+                            </div>
+                            <div class="day-events mt-2 w-100">
+                    `;
+
+                    if (eventsCount > 0) {
                         for (let k = 0; k < Math.min(eventsCount, 2); k++) {
                             const event = dayEvents[k];
+                            const eventIcon = eventsCount > 1 && k === 1 ? 'ellipsis-h' : 'trophy';
                             dayContent += `
                                 <div class="event-preview" title="${event.name}">
-                                    <i class="fas fa-${eventsCount > 1 && k === 1 ? 'ellipsis-h' : 'trophy'} me-1"></i>
-                                    ${truncateText(event.name, 12)}
+                                    <i class="fas fa-${eventIcon} me-1"></i>
+                                    ${truncateText(event.name, 15)}
+                                </div>
+                            `;
+                        }
+
+                        if (eventsCount > 2) {
+                            dayContent += `
+                                <div class="event-preview text-muted">
+                                    <i class="fas fa-plus me-1"></i>
+                                    еще ${eventsCount - 2}
                                 </div>
                             `;
                         }
                     } else {
-                        dayContent += '<div class="events-indicator"></div>';
+                        dayContent += '<div class="no-events text-muted small">Нет мероприятий</div>';
                     }
+
+                    dayContent += `
+                            </div>
+                        </div>
+                    `;
 
                     const dayButton = $(`
                         <button class="btn ${dayClass}" data-date="${dateString}"
@@ -101,21 +130,30 @@
 
         const dayButton = $(`button[data-date="${dateString}"]`);
 
-        let tooltipContent = '<div style="max-width: 300px;">';
+        let tooltipContent = '<div class="calendar-tooltip" style="max-width: 300px;">';
 
         if (dayEvents.length === 1) {
-            tooltipContent += `<strong>Мероприятие:</strong><br>`;
-            tooltipContent += `<b>${dayEvents[0].name}</b><br>`;
-            if (dayEvents[0].address) {
-                tooltipContent += `<i class="fas fa-map-marker-alt me-1"></i> ${dayEvents[0].address}<br>`;
+            const event = dayEvents[0];
+            tooltipContent += `
+                <div class="mb-2">
+                    <strong>Мероприятие:</strong><br>
+                    <b class="text-primary">${event.name}</b>
+                </div>
+            `;
+            if (event.address) {
+                tooltipContent += `
+                    <div class="text-muted small">
+                        <i class="fas fa-map-marker-alt me-1"></i> ${event.address}
+                    </div>
+                `;
             }
         } else {
-            tooltipContent += `<strong>Мероприятия (${dayEvents.length}):</strong><br>`;
+            tooltipContent += `<strong class="mb-2">Мероприятия (${dayEvents.length}):</strong><br>`;
             dayEvents.forEach((event, index) => {
                 tooltipContent += `
-                    <div style="margin-bottom: 5px; border-left: 3px solid var(--superset-primary); padding-left: 5px;">
-                        <b>${index + 1}. ${event.name}</b><br>
-                        ${event.address ? `<i class="fas fa-map-marker-alt me-1"></i> ${event.address}` : ''}
+                    <div class="tooltip-event-item mb-1" style="border-left: 3px solid var(--superset-primary); padding-left: 8px;">
+                        <div><b>${index + 1}. ${event.name}</b></div>
+                        ${event.address ? `<div class="text-muted small"><i class="fas fa-map-marker-alt me-1"></i> ${event.address}</div>` : ''}
                     </div>
                 `;
             });
@@ -128,7 +166,7 @@
     function updateDayTooltip(dateString, tooltipContent) {
         const dayButton = $(`button[data-date="${dateString}"]`);
 
-        if (!tooltipContent || tooltipContent === '<div style="max-width: 300px;"></div>') {
+        if (!tooltipContent || tooltipContent === '<div class="calendar-tooltip" style="max-width: 300px;"></div>') {
             dayButton.removeAttr('data-bs-toggle');
             dayButton.removeAttr('data-bs-title');
             dayButton.removeAttr('data-bs-html');

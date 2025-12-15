@@ -18,33 +18,37 @@
 
 .day-cell {
     min-height: 100px;
+    padding: 2px !important; /* Добавлено для отступов между плитками */
 }
 
 .btn-day {
     width: 100%;
     height: 100%;
     border: 2px solid var(--superset-border);
-    border-radius: 8px;
+    border-radius: 12px; /* Увеличено для более округлых углов */
     background: white;
     transition: all 0.3s ease;
-    padding: 0.5rem;
+    padding: 0.75rem 0.5rem; /* Увеличено padding */
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
     font-size: 0.85rem;
-    position: relative; /* Добавлено */
+    position: relative;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* Добавлена тень */
 }
 
 .btn-day:hover {
     border-color: var(--superset-primary);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(32, 167, 201, 0.15);
+    box-shadow: 0 6px 12px rgba(32, 167, 201, 0.15); /* Усилена тень при наведении */
+    background: #f8fdff;
 }
 
 .btn-day.today {
     border-color: var(--superset-warning);
     background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+    box-shadow: 0 4px 8px rgba(255, 167, 38, 0.2);
 }
 
 .btn-day.has-events {
@@ -53,29 +57,82 @@
 }
 
 .day-number {
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin-bottom: 0.25rem;
+    font-size: 1.2rem; /* Увеличено */
+    font-weight: 700; /* Жирнее */
+    margin-bottom: 0.5rem; /* Увеличен отступ */
+    color: var(--superset-dark);
 }
 
 .events-indicator {
     font-size: 0.8rem;
     color: var(--superset-success);
     min-height: 1rem;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Счетчик событий */
+.events-counter {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+}
+
+.events-counter .badge {
+    font-size: 0.7rem;
+    padding: 3px 7px;
+    background: var(--superset-primary);
+    color: white;
+    box-shadow: 0 2px 4px rgba(32, 167, 201, 0.3);
 }
 
 .event-preview {
+    background: rgba(32, 167, 201, 0.1);
+    border-radius: 6px;
+    padding: 4px 6px;
+    margin: 3px 0;
     font-size: 0.75rem;
+    text-align: left;
+    width: 100%;
     color: var(--superset-dark);
     font-weight: 500;
-    line-height: 1.2;
-    max-height: 2.4rem;
+    line-height: 1.3;
+    max-height: 2.6rem;
     overflow: hidden;
     text-overflow: ellipsis;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
+    border-left: 3px solid var(--superset-primary); /* Добавлена цветная полоса */
+}
+
+.event-preview:hover {
+    background: rgba(32, 167, 201, 0.2);
+}
+
+/* Стили для пустых дней */
+.day-cell.empty {
+    background-color: var(--superset-light);
+    border-radius: 12px;
+}
+
+/* Улучшенные стили для событий */
+.has-events .day-number {
+    color: var(--superset-success);
+    font-weight: 700;
+}
+
+.today .day-number {
+    color: var(--superset-warning);
+    font-weight: 700;
+}
+
+/* Контейнер для содержимого внутри кнопки */
+.btn-day-content {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .event-item {
@@ -86,7 +143,7 @@
 
 .event-item:hover {
     background: white;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 .event-item h6 {
@@ -114,68 +171,22 @@
     opacity: 1;
 }
 
-/* ДОБАВЛЕННЫЕ СТИЛИ ДЛЯ ПЛИТОЧЕК */
-.btn-day .day-number {
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin-bottom: 0.25rem;
-}
-
-.btn-day .events-indicator {
-    font-size: 0.8rem;
-    color: var(--superset-success);
-    min-height: 1rem;
-    margin-bottom: 0.25rem;
-}
-
-.btn-day .event-preview {
-    background: rgba(32, 167, 201, 0.1);
-    border-radius: 4px;
-    padding: 2px 4px;
-    margin: 2px 0;
-    font-size: 0.7rem;
-    text-align: left;
-    width: 100%;
-    color: var(--superset-dark);
-    font-weight: 500;
-    line-height: 1.2;
-    max-height: 2.4rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-}
-
-.btn-day .event-preview:hover {
-    background: rgba(32, 167, 201, 0.2);
-}
-
-/* Стили для пустых дней */
-.day-cell.empty {
-    background-color: var(--superset-light);
-    border-radius: 8px;
-}
-
-/* Улучшенные стили для событий */
-.has-events .day-number {
-    color: var(--superset-success);
-    font-weight: 700;
-}
-
-.today .day-number {
-    color: var(--superset-warning);
-    font-weight: 700;
-}
-
 /* Адаптивность */
 @media (max-width: 768px) {
     .day-cell {
-        min-height: 80px;
+        min-height: 85px;
+        padding: 1px !important;
+    }
+
+    .btn-day {
+        padding: 0.5rem 0.25rem;
+        font-size: 0.8rem;
+        border-radius: 10px;
     }
 
     .day-number {
-        font-size: 0.9rem;
+        font-size: 1rem;
+        margin-bottom: 0.25rem;
     }
 
     .events-indicator {
@@ -183,14 +194,20 @@
     }
 
     .event-preview {
-        font-size: 0.7rem;
+        font-size: 0.65rem;
         -webkit-line-clamp: 1;
-        max-height: 1.2rem;
+        max-height: 1.3rem;
+        padding: 2px 4px;
     }
 
-    .btn-day {
-        padding: 0.25rem;
-        font-size: 0.8rem;
+    .events-counter {
+        top: 4px;
+        right: 4px;
+    }
+
+    .events-counter .badge {
+        font-size: 0.6rem;
+        padding: 2px 5px;
     }
 
     .tooltip .tooltip-inner {
@@ -200,15 +217,15 @@
 
 @media (max-width: 576px) {
     .weekdays-row, .week-row {
-        min-height: 60px;
-    }
-
-    .day-cell {
         min-height: 70px;
     }
 
+    .day-cell {
+        min-height: 75px;
+    }
+
     .event-preview {
-        display: none;
+        display: none; /* Скрываем предпросмотр на очень маленьких экранах */
     }
 
     .tooltip .tooltip-inner {
@@ -238,4 +255,140 @@
 
 .student-card.hidden {
     display: none;
+}
+
+/* Улучшение внешнего вида календаря */
+.calendar-grid {
+    background: white;
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.weekdays-row {
+    background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+    border-radius: 10px;
+    margin-bottom: 0.5rem !important;
+}
+
+.week-row {
+    margin-bottom: 0.5rem !important;
+}
+/* Добавьте эти стили в конец файла competitions.css */
+
+.btn-day-content {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.day-header-row {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.day-events {
+    flex-grow: 1;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    overflow: hidden;
+}
+
+.no-events {
+    font-size: 0.7rem;
+    opacity: 0.7;
+    margin-top: 0.5rem;
+}
+
+.empty-day {
+    background: var(--superset-light);
+    border-radius: 12px;
+    height: 100px;
+}
+
+/* Стили для тултипа */
+.calendar-tooltip {
+    text-align: left;
+}
+
+.tooltip-event-item {
+    margin-bottom: 0.5rem;
+}
+
+.tooltip-event-item:last-child {
+    margin-bottom: 0;
+}
+
+/* Улучшенные стили для событий в плитке */
+.event-preview {
+    background: rgba(32, 167, 201, 0.1);
+    border-radius: 6px;
+    padding: 4px 6px;
+    margin: 2px 0;
+    font-size: 0.75rem;
+    text-align: left;
+    width: 100%;
+    color: var(--superset-dark);
+    font-weight: 500;
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    border-left: 3px solid var(--superset-primary);
+    transition: all 0.2s ease;
+}
+
+.event-preview:hover {
+    background: rgba(32, 167, 201, 0.2);
+    transform: translateX(2px);
+}
+
+.event-preview.text-muted {
+    background: rgba(108, 117, 125, 0.1);
+    border-left-color: var(--superset-gray);
+}
+
+.event-preview i {
+    font-size: 0.7rem;
+}
+
+/* Адаптивность для плиток */
+@media (max-width: 768px) {
+    .btn-day-content {
+        padding: 0.25rem;
+    }
+
+    .day-number {
+        font-size: 1rem;
+    }
+
+    .event-preview {
+        font-size: 0.65rem;
+        padding: 2px 4px;
+    }
+
+    .no-events {
+        font-size: 0.6rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .day-events {
+        display: none;
+    }
+
+    .no-events {
+        display: none;
+    }
+
+    .events-counter .badge {
+        font-size: 0.6rem;
+        padding: 1px 3px;
+    }
 }
