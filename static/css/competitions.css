@@ -221,3 +221,30 @@
         display: none;
     }
 }
+
+/* Обновляем стили для .day-events */
+.day-events {
+    width: 100%;
+    flex-grow: 1;
+    margin-top: 6px;
+    /* Если нет событий, этот блок просто займет оставшееся пространство */
+}
+
+/* Убираем или скрываем стили для .no-events */
+.no-events {
+    display: none !important; /* Полностью скрываем, если где-то остался */
+}
+
+/* Если хотите, чтобы плитки без событий выглядели чище, добавьте: */
+.btn-day:not(.has-events) .day-events {
+    min-height: 0; /* Не занимает лишнюю высоту */
+}
+
+/* Можно добавить минимальный отступ для всех плиток */
+.btn-day-content {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* Номер сверху, события снизу */
+}
