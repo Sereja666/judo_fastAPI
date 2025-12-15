@@ -6,8 +6,10 @@ from sqlalchemy import and_
 from typing import List
 from datetime import datetime, timedelta
 from config import templates, settings
+
+
 from database.models import Сompetition, MedCertificat_type, Students, Trainers, \
-    Сompetition_student, Сompetition_trainer, Сompetition_MedCertificat, get_db
+    Competition_student, Сompetition_trainer, Сompetition_MedCertificat, get_db
 from config import templates
 from logger_config import logger
 
@@ -136,8 +138,8 @@ async def get_competition_data(competition_id: int, db: Session = Depends(get_db
             raise HTTPException(status_code=404, detail="Мероприятие не найдено")
 
         # Получаем приглашенных студентов
-        competition_students = db.query(Сompetition_student).filter(
-            Сompetition_student.competition_id == competition_id
+        competition_students = db.query(Competition_student).filter(
+            Competition_student.competition_id == competition_id
         ).all()
 
         # Получаем ответственных тренеров
@@ -191,7 +193,7 @@ async def create_competition(
 
         # Добавляем студентов
         for student_id in student_ids:
-            competition_student = Сompetition_student(
+            competition_student = Competition_student(
                 competition_id=new_competition.id,
                 student_id=student_id
             )
@@ -249,12 +251,12 @@ async def update_competition(
         competition.date = datetime.fromisoformat(date)
 
         # Удаляем старых студентов и добавляем новых
-        db.query(Сompetition_student).filter(
-            Сompetition_student.competition_id == competition_id
+        db.query(Competition_student).filter(
+            Competition_student.competition_id == competition_id
         ).delete()
 
         for student_id in student_ids:
-            competition_student = Сompetition_student(
+            competition_student = Competition_student(
                 competition_id=competition_id,
                 student_id=student_id
             )
@@ -310,8 +312,8 @@ async def delete_competition(
             raise HTTPException(status_code=404, detail="Мероприятие не найдено")
 
         # Удаляем связанные записи
-        db.query(Сompetition_student).filter(
-            Сompetition_student.competition_id == competition_id
+        db.query(Competition_student).filter(
+            Competition_student.competition_id == competition_id
         ).delete()
 
         db.query(Сompetition_trainer).filter(

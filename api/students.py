@@ -7,7 +7,7 @@ from sqlalchemy import and_
 from typing import Optional, List
 from datetime import datetime
 from database.models import get_db, Students, Sport, Trainers, Prices, Sports_rank, Belt_сolor, MedCertificat_received, \
-    MedCertificat_type, Сompetition_student, Сompetition
+    MedCertificat_type, Competition_student, Сompetition
 from config import templates
 from logger_config import logger
 
@@ -510,8 +510,8 @@ async def get_awards(student_id: int, db: Session = Depends(get_db)):
         print(f"🔹 Запрос наград ученика ID: {student_id}")
 
         # Получаем записи о соревнованиях ученика
-        awards = db.query(Сompetition_student).filter(
-            Сompetition_student.student_id == student_id
+        awards = db.query(Competition_student).filter(
+            Competition_student.student_id == student_id
         ).all()
 
         result = []
@@ -575,8 +575,8 @@ async def update_award(
         if not award_id:
             raise HTTPException(status_code=400, detail="ID записи обязательно")
 
-        award = db.query(Сompetition_student).filter(
-            Сompetition_student.id == award_id
+        award = db.query(Competition_student).filter(
+            Competition_student.id == award_id
         ).first()
 
         if not award:
@@ -641,10 +641,10 @@ async def add_award(
             raise HTTPException(status_code=404, detail="Соревнование не найдено")
 
         # Проверяем, не существует ли уже запись для этого ученика и соревнования
-        existing_award = db.query(Сompetition_student).filter(
+        existing_award = db.query(Competition_student).filter(
             and_(
-                Сompetition_student.student_id == student_id,
-                Сompetition_student.competition_id == competition_id
+                Competition_student.student_id == student_id,
+                Competition_student.competition_id == competition_id
             )
         ).first()
 
@@ -652,7 +652,7 @@ async def add_award(
             raise HTTPException(status_code=400, detail="Запись для этого соревнования уже существует")
 
         # Создаем новую запись
-        new_award = Сompetition_student(
+        new_award = Competition_student(
             student_id=student_id,
             competition_id=competition_id,
             status_id=status_id
@@ -688,8 +688,8 @@ async def delete_award(award_id: int, db: Session = Depends(get_db)):
     try:
         print(f"🔹 Удаление записи о соревновании ID: {award_id}")
 
-        award = db.query(Сompetition_student).filter(
-            Сompetition_student.id == award_id
+        award = db.query(Competition_student).filter(
+            Competition_student.id == award_id
         ).first()
 
         if not award:
