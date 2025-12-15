@@ -219,11 +219,90 @@
     }
 
     function sendInvitations() {
-    // Заглушка - функция пока не реализована
-    alert('Функция отправки приглашений будет реализована позже');
-    console.log('Отправка приглашений выбранным ученикам:', selectedStudents);
-}
+        const competitionId = $('#competitionId').val();
+        if (!competitionId) {
+            showMessage('Ошибка: мероприятие не найдено', 'danger');
+            return;
+        }
 
+        if (selectedStudents.length === 0) {
+            showMessage('Не выбраны ученики для отправки приглашений', 'warning');
+            return;
+        }
+
+        // Сначала сохраняем мероприятие (если есть изменения)
+        saveCompetitionForInvitations(competitionId);
+    }
+
+function saveCompetitionForInvitations(competitionId) {
+    const formData = new FormData();
+
+    formData.append('name', $('#competitionName').val());
+    formData.append('address', $('#competitionAddress').val());
+    formData.append('date', $('#competitionDate').val());
+
+    selectedStudents.forEach(id => formData.append('student_ids', id));
+    selectedTrainers.forEach(id => formData.append('trainer_ids', id));
+    selectedCertificates.forEach(id => formData.append('certificate_ids', id));
+
+    // Сначала обновляем мероприятие
+    fetch(`/competitions/update-competition/${competitionId}`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // После успешного сохранения отправляем приглашения
+            sendInvitationsToServer(competitionId);
+        } else {
+            showMessage(data.message || 'Ошибка сохранения', 'danger');
+        }
+    })
+    .catch(error => {
+        showMessage('Ошибка сохранения: ' + error, 'danger');
+    });
+}
+function sendInvitationsToServer(competitionId) {
+    // Показываем индикатор загрузки
+    const sendBtn = $('#sendInvitationsBtn');
+    const originalText = sendBtn.html();
+    sendBtn.html('<i class="fas fa-spinner fa-spin me-1"></i> Отправка...');
+    sendBtn.prop('disabled', true);
+
+    fetch(`/competitions/send-invitations/${competitionId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Восстанавливаем кнопку
+        sendBtn.html(originalText);
+        sendBtn.prop('disabled', false);
+
+        if (data.status === 'success') {
+            showMessage(data.message, 'success');
+            console.log('✅ Приглашения успешно отправлены:');
+            console.log('   Мероприятие:', data.competition_name);
+            console.log('   Количество:', data.student_count);
+            console.log('   ID студентов:', data.student_ids);
+        } else if (data.status === 'warning') {
+            showMessage(data.message, 'warning');
+        } else {
+            showMessage(data.message || 'Ошибка отправки приглашений', 'danger');
+        }
+    })
+    .catch(error => {
+        // Восстанавливаем кнопку
+        sendBtn.html(originalText);
+        sendBtn.prop('disabled', false);
+
+        showMessage('Ошибка отправки: ' + error, 'danger');
+        console.error('❌ Ошибка отправки приглашений:', error);
+    });
+}
 // Обновите функцию editCompetition чтобы показывать кнопку при редактировании
     function editCompetition(competitionId) {
         $('#dayModal').modal('hide');

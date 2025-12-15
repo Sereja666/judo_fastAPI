@@ -337,3 +337,57 @@ async def delete_competition(
         db.rollback()
         print(f"Error in delete_competition: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Ошибка удаления мероприятия: {str(e)}")
+
+
+@router.post("/competitions/send-invitations/{competition_id}")
+async def send_invitations(
+        competition_id: int,
+        db: Session = Depends(get_db)
+):
+    """Отправка приглашений на мероприятие"""
+    try:
+        logger.debug(f"🔹 Отправка приглашений для мероприятия ID: {competition_id}")
+
+        # Получаем мероприятие
+        competition = db.query(Сompetition).filter(Сompetition.id == competition_id).first()
+        if not competition:
+            raise HTTPException(status_code=404, detail="Мероприятие не найдено")
+
+        # Получаем всех приглашенных студентов
+        competition_students = db.query(Competition_student).filter(
+            Competition_student.competition_id == competition_id
+        ).all()
+
+        if not competition_students:
+            return JSONResponse({
+                "status": "warning",
+                "message": "Нет приглашенных студентов для отправки приглашений"
+            })
+
+        # Здесь будет логика отправки приглашений
+        # Пока что просто обновляем статус участия на "отправлено" (1)
+        for comp_student in competition_students:
+            comp_student.participation = 1  # 1 = отправлено
+
+        db.commit()
+
+        # Для отладки собираем информацию
+        student_count = len(competition_students)
+        student_ids = [cs.student_id for cs in competition_students]
+
+        logger.info(f"✅ Приглашения отправлены для мероприятия '{competition.name}'")
+        logger.info(f"   Количество приглашений: {student_count}")
+        logger.info(f"   ID студентов: {student_ids}")
+
+        return JSONResponse({
+            "status": "success",
+            "message": f"Приглашения отправлены {student_count} студентам",
+            "competition_name": competition.name,
+            "student_count": student_count,
+            "student_ids": student_ids
+        })
+
+    except Exception as e:
+        db.rollback()
+        logger.error(f"❌ Ошибка в send_invitations: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Ошибка отправки приглашений: {str(e)}")
