@@ -7,15 +7,32 @@
         </h5>
     </div>
     <div class="card-body">
+        <!-- Навигация по месяцам -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <button class="btn btn-outline-secondary" onclick="previousMonth()">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <span id="currentMonth" class="mx-3 fw-bold fs-5"></span>
+                <button class="btn btn-outline-secondary" onclick="nextMonth()">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+            <div class="text-muted small">
+                <span class="badge bg-primary me-2">●</span> Сегодня
+                <span class="badge bg-success ms-3 me-2">●</span> События
+            </div>
+        </div>
+
         <!-- Дни недели -->
-        <div class="row weekdays-row mb-2">
-            <div class="col day-header text-center">Пн</div>
-            <div class="col day-header text-center">Вт</div>
-            <div class="col day-header text-center">Ср</div>
-            <div class="col day-header text-center">Чт</div>
-            <div class="col day-header text-center">Пт</div>
-            <div class="col day-header text-center">Сб</div>
-            <div class="col day-header text-center">Вс</div>
+        <div class="row weekdays-row mb-2 g-1">
+            <div class="col day-header text-center p-2">Пн</div>
+            <div class="col day-header text-center p-2">Вт</div>
+            <div class="col day-header text-center p-2">Ср</div>
+            <div class="col day-header text-center p-2">Чт</div>
+            <div class="col day-header text-center p-2">Пт</div>
+            <div class="col day-header text-center p-2">Сб</div>
+            <div class="col day-header text-center p-2">Вс</div>
         </div>
 
         <!-- Контейнер для календаря -->

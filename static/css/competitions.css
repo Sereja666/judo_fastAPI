@@ -1,6 +1,9 @@
 /* static/css/competitions.css */
 .calendar-grid {
-    min-height: 400px;
+    min-height: 500px;
+    background: white;
+    border-radius: 12px;
+    padding: 10px;
 }
 
 .weekdays-row, .week-row {
@@ -10,64 +13,91 @@
 .day-header {
     font-weight: 600;
     color: var(--superset-dark);
-    padding: 0.5rem;
-    background-color: var(--superset-light);
-    border-radius: 8px;
+    padding: 0.75rem 0.5rem;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 10px;
     margin: 0 2px;
+    border: 1px solid var(--superset-border);
 }
 
+/* Стили для ячеек дней */
 .day-cell {
-    min-height: 100px;
-    padding: 2px !important; /* Добавлено для отступов между плитками */
+    min-height: 110px;
+    padding: 3px !important;
+    display: flex;
 }
 
+/* Основные стили плиток */
 .btn-day {
     width: 100%;
     height: 100%;
-    border: 2px solid var(--superset-border);
-    border-radius: 12px; /* Увеличено для более округлых углов */
+    min-height: 105px;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
     background: white;
-    transition: all 0.3s ease;
-    padding: 0.75rem 0.5rem; /* Увеличено padding */
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 10px 8px;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: flex-start;
     justify-content: flex-start;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     position: relative;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* Добавлена тень */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    text-align: left;
+    cursor: pointer;
 }
 
+/* Плитка при наведении */
 .btn-day:hover {
     border-color: var(--superset-primary);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(32, 167, 201, 0.15); /* Усилена тень при наведении */
-    background: #f8fdff;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(32, 167, 201, 0.15);
+    background: linear-gradient(135deg, #f8fdff 0%, #f0f9ff 100%);
 }
 
+/* Сегодняшний день */
 .btn-day.today {
     border-color: var(--superset-warning);
-    background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
-    box-shadow: 0 4px 8px rgba(255, 167, 38, 0.2);
+    background: linear-gradient(135deg, #fff9e6 0%, #fff3cd 100%);
+    box-shadow: 0 4px 12px rgba(255, 193, 7, 0.15);
 }
 
+/* Дни с событиями */
 .btn-day.has-events {
     border-color: var(--superset-success);
-    background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%);
+    background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
 }
 
+/* Стили для пустых ячеек */
+.day-cell.empty {
+    background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+    border-radius: 12px;
+    opacity: 0.5;
+}
+
+/* Номер дня */
 .day-number {
-    font-size: 1.2rem; /* Увеличено */
-    font-weight: 700; /* Жирнее */
-    margin-bottom: 0.5rem; /* Увеличен отступ */
+    font-size: 1.3rem;
+    font-weight: 700;
     color: var(--superset-dark);
+    margin-bottom: 8px;
+    display: inline-block;
+    padding: 2px 6px;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 6px;
 }
 
-.events-indicator {
-    font-size: 0.8rem;
+/* Для сегодняшнего дня */
+.today .day-number {
+    color: var(--superset-warning);
+    background: rgba(255, 193, 7, 0.1);
+}
+
+/* Для дней с событиями */
+.has-events .day-number {
     color: var(--superset-success);
-    min-height: 1rem;
-    margin-bottom: 0.5rem;
+    background: rgba(60, 179, 113, 0.1);
 }
 
 /* Счетчик событий */
@@ -79,211 +109,78 @@
 
 .events-counter .badge {
     font-size: 0.7rem;
-    padding: 3px 7px;
+    padding: 4px 8px;
     background: var(--superset-primary);
     color: white;
     box-shadow: 0 2px 4px rgba(32, 167, 201, 0.3);
-}
-
-.event-preview {
-    background: rgba(32, 167, 201, 0.1);
-    border-radius: 6px;
-    padding: 4px 6px;
-    margin: 3px 0;
-    font-size: 0.75rem;
-    text-align: left;
-    width: 100%;
-    color: var(--superset-dark);
-    font-weight: 500;
-    line-height: 1.3;
-    max-height: 2.6rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    border-left: 3px solid var(--superset-primary); /* Добавлена цветная полоса */
-}
-
-.event-preview:hover {
-    background: rgba(32, 167, 201, 0.2);
-}
-
-/* Стили для пустых дней */
-.day-cell.empty {
-    background-color: var(--superset-light);
-    border-radius: 12px;
-}
-
-/* Улучшенные стили для событий */
-.has-events .day-number {
-    color: var(--superset-success);
-    font-weight: 700;
-}
-
-.today .day-number {
-    color: var(--superset-warning);
-    font-weight: 700;
-}
-
-/* Контейнер для содержимого внутри кнопки */
-.btn-day-content {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.event-item {
-    background: var(--superset-light);
-    border-left: 4px solid var(--superset-primary) !important;
-    transition: all 0.3s ease;
-}
-
-.event-item:hover {
-    background: white;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
-
-.event-item h6 {
-    color: var(--superset-primary);
-    margin: 0;
     font-weight: 600;
 }
 
-/* Стили для tooltip */
-.tooltip {
-    --bs-tooltip-bg: var(--superset-dark);
-    --bs-tooltip-color: white;
+.has-events .events-counter .badge {
+    background: var(--superset-success);
 }
 
-.tooltip .tooltip-inner {
-    background-color: var(--superset-dark);
-    color: white;
-    padding: 0.75rem 1rem;
-    border-radius: 8px;
-    max-width: 300px;
-    text-align: left;
-}
-
-.tooltip.show {
-    opacity: 1;
-}
-
-/* Адаптивность */
-@media (max-width: 768px) {
-    .day-cell {
-        min-height: 85px;
-        padding: 1px !important;
-    }
-
-    .btn-day {
-        padding: 0.5rem 0.25rem;
-        font-size: 0.8rem;
-        border-radius: 10px;
-    }
-
-    .day-number {
-        font-size: 1rem;
-        margin-bottom: 0.25rem;
-    }
-
-    .events-indicator {
-        font-size: 0.7rem;
-    }
-
-    .event-preview {
-        font-size: 0.65rem;
-        -webkit-line-clamp: 1;
-        max-height: 1.3rem;
-        padding: 2px 4px;
-    }
-
-    .events-counter {
-        top: 4px;
-        right: 4px;
-    }
-
-    .events-counter .badge {
-        font-size: 0.6rem;
-        padding: 2px 5px;
-    }
-
-    .tooltip .tooltip-inner {
-        max-width: 200px;
-    }
-}
-
-@media (max-width: 576px) {
-    .weekdays-row, .week-row {
-        min-height: 70px;
-    }
-
-    .day-cell {
-        min-height: 75px;
-    }
-
-    .event-preview {
-        display: none; /* Скрываем предпросмотр на очень маленьких экранах */
-    }
-
-    .tooltip .tooltip-inner {
-        max-width: 150px;
-        font-size: 0.8rem;
-    }
-}
-
-/* Дополнительные утилитарные классы */
-.hidden {
-    display: none !important;
-}
-
-.card.border-danger {
-    border: 2px solid #dc3545 !important;
-}
-
-.badge.text-success {
-    background-color: #d1e7dd;
-    color: #0f5132;
-}
-
-.badge.text-danger {
-    background-color: #f8d7da;
-    color: #721c24;
-}
-
-.student-card.hidden {
-    display: none;
-}
-
-/* Улучшение внешнего вида календаря */
-.calendar-grid {
-    background: white;
-    border-radius: 12px;
-    padding: 1rem;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-}
-
-.weekdays-row {
-    background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
-    border-radius: 10px;
-    margin-bottom: 0.5rem !important;
-}
-
-.week-row {
-    margin-bottom: 0.5rem !important;
-}
-/* Добавьте эти стили в конец файла competitions.css */
-
-.btn-day-content {
+/* Контейнер для событий в плитке */
+.day-events {
     width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    flex-grow: 1;
+    margin-top: 5px;
+    overflow: hidden;
 }
 
+/* Предпросмотр событий */
+.event-preview {
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 8px;
+    padding: 4px 6px;
+    margin: 3px 0;
+    font-size: 0.75rem;
+    color: var(--superset-dark);
+    font-weight: 500;
+    line-height: 1.3;
+    width: 100%;
+    text-align: left;
+    border-left: 3px solid var(--superset-primary);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.event-preview:hover {
+    background: white;
+    transform: translateX(3px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.event-preview i {
+    margin-right: 4px;
+    font-size: 0.7rem;
+    color: var(--superset-primary);
+}
+
+/* Текст "нет мероприятий" */
+.no-events {
+    font-size: 0.75rem;
+    color: var(--superset-gray);
+    opacity: 0.7;
+    margin-top: 15px;
+    text-align: center;
+    width: 100%;
+    font-style: italic;
+}
+
+/* Пустые дни */
+.empty-day {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 12px;
+    height: 105px;
+    border: 1px dashed var(--superset-border);
+}
+
+/* Заголовок дня */
 .day-header-row {
     width: 100%;
     display: flex;
@@ -291,81 +188,55 @@
     align-items: flex-start;
 }
 
-.day-events {
-    flex-grow: 1;
+/* Контейнер содержимого плитки */
+.btn-day-content {
     width: 100%;
+    height: 100%;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    overflow: hidden;
 }
 
-.no-events {
-    font-size: 0.7rem;
-    opacity: 0.7;
-    margin-top: 0.5rem;
+/* Адаптивность */
+@media (max-width: 992px) {
+    .day-cell {
+        min-height: 95px;
+    }
+
+    .btn-day {
+        min-height: 90px;
+        padding: 8px 6px;
+    }
+
+    .day-number {
+        font-size: 1.1rem;
+    }
+
+    .event-preview {
+        font-size: 0.7rem;
+        padding: 3px 5px;
+    }
 }
 
-.empty-day {
-    background: var(--superset-light);
-    border-radius: 12px;
-    height: 100px;
-}
-
-/* Стили для тултипа */
-.calendar-tooltip {
-    text-align: left;
-}
-
-.tooltip-event-item {
-    margin-bottom: 0.5rem;
-}
-
-.tooltip-event-item:last-child {
-    margin-bottom: 0;
-}
-
-/* Улучшенные стили для событий в плитке */
-.event-preview {
-    background: rgba(32, 167, 201, 0.1);
-    border-radius: 6px;
-    padding: 4px 6px;
-    margin: 2px 0;
-    font-size: 0.75rem;
-    text-align: left;
-    width: 100%;
-    color: var(--superset-dark);
-    font-weight: 500;
-    line-height: 1.3;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    border-left: 3px solid var(--superset-primary);
-    transition: all 0.2s ease;
-}
-
-.event-preview:hover {
-    background: rgba(32, 167, 201, 0.2);
-    transform: translateX(2px);
-}
-
-.event-preview.text-muted {
-    background: rgba(108, 117, 125, 0.1);
-    border-left-color: var(--superset-gray);
-}
-
-.event-preview i {
-    font-size: 0.7rem;
-}
-
-/* Адаптивность для плиток */
 @media (max-width: 768px) {
-    .btn-day-content {
-        padding: 0.25rem;
+    .calendar-grid {
+        padding: 5px;
+    }
+
+    .day-cell {
+        min-height: 85px;
+        padding: 2px !important;
+    }
+
+    .btn-day {
+        min-height: 80px;
+        padding: 6px 4px;
+        border-radius: 10px;
     }
 
     .day-number {
         font-size: 1rem;
+        padding: 1px 4px;
     }
 
     .event-preview {
@@ -374,21 +245,75 @@
     }
 
     .no-events {
-        font-size: 0.6rem;
+        font-size: 0.7rem;
+        margin-top: 10px;
+    }
+
+    .events-counter .badge {
+        font-size: 0.65rem;
+        padding: 3px 6px;
     }
 }
 
 @media (max-width: 576px) {
-    .day-events {
-        display: none;
+    .day-cell {
+        min-height: 75px;
     }
 
-    .no-events {
-        display: none;
+    .btn-day {
+        min-height: 70px;
+        padding: 4px 3px;
     }
 
-    .events-counter .badge {
+    .day-number {
+        font-size: 0.9rem;
+    }
+
+    .event-preview {
         font-size: 0.6rem;
         padding: 1px 3px;
     }
+
+    .no-events {
+        font-size: 0.65rem;
+        margin-top: 5px;
+    }
+}
+
+/* Улучшенные стили для недельных строк */
+.week-row {
+    margin-bottom: 4px !important;
+}
+
+/* Легенда вверху календаря */
+.calendar-legend {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.85rem;
+    color: var(--superset-gray);
+}
+
+.legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+}
+
+.legend-today {
+    background: linear-gradient(135deg, #fff9e6 0%, #fff3cd 100%);
+    border: 2px solid var(--superset-warning);
+}
+
+.legend-events {
+    background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+    border: 2px solid var(--superset-success);
 }
