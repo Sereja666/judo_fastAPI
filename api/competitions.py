@@ -366,66 +366,57 @@ async def send_invitations(
 
         # Статистика
         total_students = len(competition_students)
-        sent_count = 0
-        already_answered_count = 0  # статусы 2 и 3
-        already_sent_count = 0  # статус 1
-        skipped_answered_count = 0  # пропущено из-за статуса 2 или 3
+        updated_count = 0  # статус изменён с 0 на 1
+        already_sent_count = 0  # уже статус 1
+        already_responded_count = 0  # статусы 2 или 3
+        not_changed_ids = []  # ID студентов, чей статус не изменился
 
-        # Отправляем приглашения только тем, у кого статус "необработанно" (0)
+        # Простая и понятная логика:
         for comp_student in competition_students:
             current_status = comp_student.participation
 
-            if current_status == 0:  # Необработанно - отправляем
-                comp_student.participation = 1  # 1 = отправлено
-                sent_count += 1
-                logger.debug(f"   Студент {comp_student.student_id}: статус 0 → 1 (отправлено)")
+            if current_status == 0:
+                # Меняем только с 0 на 1
+                comp_student.participation = 1
+                updated_count += 1
+                logger.debug(f"   Студент {comp_student.student_id}: 0 → 1 (отправлено)")
 
-            elif current_status == 1:  # Уже отправлено
+            elif current_status == 1:
+                # Уже отправлено - ничего не делаем
                 already_sent_count += 1
-                logger.debug(f"   Студент {comp_student.student_id}: статус уже 1 (отправлено)")
+                not_changed_ids.append(comp_student.student_id)
+                logger.debug(f"   Студент {comp_student.student_id}: остаётся 1 (уже отправлено)")
 
-            elif current_status == 2:  # Принято
-                already_answered_count += 1
-                skipped_answered_count += 1
-                logger.debug(f"   Студент {comp_student.student_id}: статус 2 (принято) - НЕ МЕНЯЕМ!")
-
-            elif current_status == 3:  # Отклонено
-                already_answered_count += 1
-                skipped_answered_count += 1
-                logger.debug(f"   Студент {comp_student.student_id}: статус 3 (отклонено) - НЕ МЕНЯЕМ!")
+            elif current_status == 2 or current_status == 3:
+                # Уже ответили (2=принято, 3=отклонено) - НИЧЕГО НЕ ДЕЛАЕМ
+                already_responded_count += 1
+                not_changed_ids.append(comp_student.student_id)
+                status_text = "принято" if current_status == 2 else "отклонено"
+                logger.debug(f"   Студент {comp_student.student_id}: остаётся {current_status} ({status_text})")
 
             else:
-                # Неизвестный статус
+                # Неизвестный статус - ничего не делаем
+                not_changed_ids.append(comp_student.student_id)
                 logger.warning(f"   Студент {comp_student.student_id}: неизвестный статус {current_status}")
 
         db.commit()
 
-        logger.info(f"✅ Отправка приглашений для мероприятия '{competition.name}' завершена")
-        logger.info(f"   Всего студентов: {total_students}")
-        logger.info(f"   Отправлено новых (0→1): {sent_count}")
-        logger.info(f"   Уже отправлено ранее (статус 1): {already_sent_count}")
-        logger.info(f"   Уже ответили (статусы 2,3): {already_answered_count}")
-        logger.info(f"   Из них пропущено: {skipped_answered_count}")
+        # Формируем сообщение
+        if updated_count > 0:
+            message = f"Приглашения отправлены {updated_count} студентам"
+            if already_responded_count > 0:
+                message += f" ({already_responded_count} уже ответили ранее)"
+            if already_sent_count > 0:
+                message += f" ({already_sent_count} уже имеют отправленное приглашение)"
+        else:
+            if already_responded_count > 0:
+                message = f"Все студенты уже ответили на приглашения ({already_responded_count} чел.)"
+            elif already_sent_count > 0:
+                message = f"Приглашения уже отправлены всем студентам ({already_sent_count} чел.)"
+            else:
+                message = "Нет студентов для отправки приглашений"
 
-        # Формируем детальное сообщение
-        message_parts = []
-
-        if sent_count > 0:
-            message_parts.append(f"Приглашения отправлены {sent_count} студентам")
-
-        if already_answered_count > 0:
-            message_parts.append(f"{already_answered_count} студентов уже ответили на приглашение (статус сохранен)")
-
-        if already_sent_count > 0:
-            message_parts.append(f"{already_sent_count} студентов уже имеют отправленное приглашение")
-
-        if sent_count == 0 and already_answered_count == 0 and already_sent_count > 0:
-            message_parts.append("Все приглашения уже отправлены ранее")
-
-        if sent_count == 0 and already_answered_count == 0 and already_sent_count == 0:
-            message_parts.append("Нет студентов для отправки приглашений")
-
-        message = ". ".join(message_parts)
+        logger.info(f"✅ Итог отправки приглашений для '{competition.name}': {message}")
 
         return JSONResponse({
             "status": "success",
@@ -433,11 +424,11 @@ async def send_invitations(
             "details": {
                 "competition_name": competition.name,
                 "total_students": total_students,
-                "sent_count": sent_count,
-                "already_answered_count": already_answered_count,
-                "already_sent_count": already_sent_count,
-                "skipped_answered_count": skipped_answered_count,
-                "note": "Статусы 2 (принято) и 3 (отклонено) не изменяются"
+                "updated_count": updated_count,  # изменили с 0 на 1
+                "already_sent_count": already_sent_count,  # уже 1
+                "already_responded_count": already_responded_count,  # 2 или 3
+                "not_changed_students": not_changed_ids,
+                "logic": "Меняем только статус 0 → 1. Статусы 1, 2, 3 не изменяются."
             }
         })
 
