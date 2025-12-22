@@ -228,6 +228,7 @@ async def create_competition(
         print(f"Error in create_competition: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Ошибка создания мероприятия: {str(e)}")
 
+
 @router.post("/competitions/update-competition/{competition_id}")
 async def update_competition(
         competition_id: int,
@@ -239,8 +240,11 @@ async def update_competition(
         certificate_ids: List[int] = Form([]),
         db: Session = Depends(get_db)
 ):
-    """Обновление мероприятия"""
+    """Обновление мероприятия - ВНИМАНИЕ: может сбрасывать статусы!"""
     try:
+        logger.info(f"🔄 ОБНОВЛЕНИЕ мероприятия ID: {competition_id}")
+        logger.info(f"   Новые студенты: {student_ids}")
+
         competition = db.query(Сompetition).filter(Сompetition.id == competition_id).first()
         if not competition:
             raise HTTPException(status_code=404, detail="Мероприятие не найдено")
@@ -250,18 +254,40 @@ async def update_competition(
         competition.address = address
         competition.date = datetime.fromisoformat(date)
 
+        # ПРОВЕРЯЕМ ТЕКУЩИЕ СТАТУСЫ ПЕРЕД УДАЛЕНИЕМ
+        current_students = db.query(Competition_student).filter(
+            Competition_student.competition_id == competition_id
+        ).all()
+
+        logger.info("📋 ТЕКУЩИЕ СТАТУСЫ СТУДЕНТОВ ПЕРЕД ОБНОВЛЕНИЕМ:")
+        for cs in current_students:
+            status_map = {0: "0-не отправлено", 1: "1-отправлено", 2: "2-принято", 3: "3-отклонено"}
+            status_text = status_map.get(cs.participation, f"{cs.participation}-неизвестно")
+            logger.info(f"   Студент {cs.student_id}: статус {status_text}")
+
         # Удаляем старых студентов и добавляем новых
         db.query(Competition_student).filter(
             Competition_student.competition_id == competition_id
         ).delete()
 
+        # ВОССТАНАВЛИВАЕМ СТАТУСЫ при добавлении
         for student_id in student_ids:
+            # Ищем старый статус этого студента
+            old_status = 0  # по умолчанию
+            for cs in current_students:
+                if cs.student_id == student_id:
+                    old_status = cs.participation
+                    break
+
             competition_student = Competition_student(
                 competition_id=competition_id,
-                student_id=student_id
+                student_id=student_id,
+                participation=old_status  # ВОССТАНАВЛИВАЕМ СТАТУС!
             )
             db.add(competition_student)
+            logger.info(f"   ➕ Студент {student_id} добавлен со статусом {old_status}")
 
+        # Остальное без изменений...
         # Удаляем старых тренеров и добавляем новых
         db.query(Сompetition_trainer).filter(
             Сompetition_trainer.competition_id == competition_id
@@ -288,6 +314,8 @@ async def update_competition(
 
         db.commit()
 
+        logger.info(f"✅ Мероприятие {competition_id} обновлено")
+
         return JSONResponse({
             "status": "success",
             "message": "Мероприятие успешно обновлено"
@@ -295,7 +323,7 @@ async def update_competition(
 
     except Exception as e:
         db.rollback()
-        print(f"Error in update_competition: {str(e)}")
+        logger.error(f"❌ Ошибка в update_competition: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Ошибка обновления мероприятия: {str(e)}")
 
 
@@ -344,97 +372,138 @@ async def send_invitations(
         competition_id: int,
         db: Session = Depends(get_db)
 ):
-    """Отправка приглашений на мероприятие"""
+    """Отправка приглашений на мероприятие - ТОЛЬКО 0 → 1"""
     try:
-        logger.debug(f"🔹 Отправка приглашений для мероприятия ID: {competition_id}")
+        logger.info(f"🚀 НАЧАЛО отправки приглашений для мероприятия ID: {competition_id}")
 
         # Получаем мероприятие
         competition = db.query(Сompetition).filter(Сompetition.id == competition_id).first()
         if not competition:
+            logger.error(f"❌ Мероприятие {competition_id} не найдено")
             raise HTTPException(status_code=404, detail="Мероприятие не найдено")
 
-        # Получаем всех приглашенных студентов
+        logger.info(f"📋 Мероприятие: {competition.name} (ID: {competition.id})")
+
+        # Получаем ВСЕХ приглашенных студентов С ПРОСМОТРОМ ТЕКУЩИХ СТАТУСОВ
         competition_students = db.query(Competition_student).filter(
             Competition_student.competition_id == competition_id
         ).all()
 
+        logger.info(f"👥 Найдено студентов: {len(competition_students)}")
+
+        # ЛОГИРУЕМ ВСЕ ТЕКУЩИЕ СТАТУСЫ ПЕРЕД ИЗМЕНЕНИЯМИ
+        logger.info("📊 ТЕКУЩИЕ СТАТУСЫ СТУДЕНТОВ:")
+        for cs in competition_students:
+            status_map = {0: "0-не отправлено", 1: "1-отправлено", 2: "2-принято", 3: "3-отклонено"}
+            status_text = status_map.get(cs.participation, f"{cs.participation}-неизвестно")
+            logger.info(f"   Студент ID {cs.student_id}: статус = {status_text}")
+
         if not competition_students:
+            logger.warning("⚠️ Нет студентов для отправки приглашений")
             return JSONResponse({
                 "status": "warning",
                 "message": "Нет приглашенных студентов для отправки приглашений"
             })
 
-        # Статистика
-        total_students = len(competition_students)
-        updated_count = 0  # статус изменён с 0 на 1
-        already_sent_count = 0  # уже статус 1
-        already_responded_count = 0  # статусы 2 или 3
-        not_changed_ids = []  # ID студентов, чей статус не изменился
+        # Счетчики
+        updated_0_to_1 = 0
+        already_1 = 0
+        already_2 = 0
+        already_3 = 0
+        other_status = 0
 
-        # Простая и понятная логика:
+        # ОЧЕНЬ ПРОСТАЯ ЛОГИКА: меняем ТОЛЬКО 0 → 1
         for comp_student in competition_students:
-            current_status = comp_student.participation
+            current = comp_student.participation
+            student_id = comp_student.student_id
 
-            if current_status == 0:
-                # Меняем только с 0 на 1
+            if current == 0:
+                # МЕНЯЕМ ТОЛЬКО 0 на 1
+                old_status = comp_student.participation
                 comp_student.participation = 1
-                updated_count += 1
-                logger.debug(f"   Студент {comp_student.student_id}: 0 → 1 (отправлено)")
+                updated_0_to_1 += 1
+                logger.info(f"   ✅ Студент {student_id}: {old_status} → {comp_student.participation} (ОТПРАВЛЕНО)")
 
-            elif current_status == 1:
-                # Уже отправлено - ничего не делаем
-                already_sent_count += 1
-                not_changed_ids.append(comp_student.student_id)
-                logger.debug(f"   Студент {comp_student.student_id}: остаётся 1 (уже отправлено)")
+            elif current == 1:
+                already_1 += 1
+                logger.info(f"   ⏸️ Студент {student_id}: остаётся {current} (уже отправлено)")
 
-            elif current_status == 2 or current_status == 3:
-                # Уже ответили (2=принято, 3=отклонено) - НИЧЕГО НЕ ДЕЛАЕМ
-                already_responded_count += 1
-                not_changed_ids.append(comp_student.student_id)
-                status_text = "принято" if current_status == 2 else "отклонено"
-                logger.debug(f"   Студент {comp_student.student_id}: остаётся {current_status} ({status_text})")
+            elif current == 2:
+                already_2 += 1
+                logger.info(f"   🔒 Студент {student_id}: остаётся {current} (ПРИНЯТО - НЕ ТРОГАЕМ!)")
+                # ЯВНО проверяем, что не меняем
+                assert comp_student.participation == 2, f"Статус студента {student_id} изменился на {comp_student.participation}!"
+
+            elif current == 3:
+                already_3 += 1
+                logger.info(f"   🔒 Студент {student_id}: остаётся {current} (ОТКЛОНЕНО - НЕ ТРОГАЕМ!)")
+                # ЯВНО проверяем, что не меняем
+                assert comp_student.participation == 3, f"Статус студента {student_id} изменился на {comp_student.participation}!"
 
             else:
-                # Неизвестный статус - ничего не делаем
-                not_changed_ids.append(comp_student.student_id)
-                logger.warning(f"   Студент {comp_student.student_id}: неизвестный статус {current_status}")
+                other_status += 1
+                logger.warning(f"   ❓ Студент {student_id}: неизвестный статус {current}")
 
+        # Сохраняем изменения
         db.commit()
 
-        # Формируем сообщение
-        if updated_count > 0:
-            message = f"Приглашения отправлены {updated_count} студентам"
-            if already_responded_count > 0:
-                message += f" ({already_responded_count} уже ответили ранее)"
-            if already_sent_count > 0:
-                message += f" ({already_sent_count} уже имеют отправленное приглашение)"
-        else:
-            if already_responded_count > 0:
-                message = f"Все студенты уже ответили на приглашения ({already_responded_count} чел.)"
-            elif already_sent_count > 0:
-                message = f"Приглашения уже отправлены всем студентам ({already_sent_count} чел.)"
-            else:
-                message = "Нет студентов для отправки приглашений"
+        # ПРОВЕРЯЕМ СТАТУСЫ ПОСЛЕ ИЗМЕНЕНИЙ
+        logger.info("📊 СТАТУСЫ СТУДЕНТОВ ПОСЛЕ ОБРАБОТКИ:")
+        db.refresh(competition)  # Обновляем объект
+        check_students = db.query(Competition_student).filter(
+            Competition_student.competition_id == competition_id
+        ).all()
 
-        logger.info(f"✅ Итог отправки приглашений для '{competition.name}': {message}")
+        for cs in check_students:
+            status_map = {0: "0-не отправлено", 1: "1-отправлено", 2: "2-принято", 3: "3-отклонено"}
+            status_text = status_map.get(cs.participation, f"{cs.participation}-неизвестно")
+            logger.info(f"   Студент ID {cs.student_id}: статус = {status_text}")
+
+        # Формируем итоговое сообщение
+        total = len(competition_students)
+        message_parts = []
+
+        if updated_0_to_1 > 0:
+            message_parts.append(f"Отправлено {updated_0_to_1} новых приглашений")
+
+        if already_2 > 0:
+            message_parts.append(f"{already_2} уже приняли приглашение")
+
+        if already_3 > 0:
+            message_parts.append(f"{already_3} уже отклонили приглашение")
+
+        if already_1 > 0:
+            message_parts.append(f"{already_1} уже имеют отправленное приглашение")
+
+        if not message_parts:
+            message_parts.append("Нет изменений")
+
+        message = ". ".join(message_parts)
+
+        logger.info(f"📈 ИТОГ: {message}")
+        logger.info(
+            f"   Всего: {total}, 0→1: {updated_0_to_1}, уже 1: {already_1}, принято(2): {already_2}, отклонено(3): {already_3}")
 
         return JSONResponse({
             "status": "success",
             "message": message,
             "details": {
                 "competition_name": competition.name,
-                "total_students": total_students,
-                "updated_count": updated_count,  # изменили с 0 на 1
-                "already_sent_count": already_sent_count,  # уже 1
-                "already_responded_count": already_responded_count,  # 2 или 3
-                "not_changed_students": not_changed_ids,
-                "logic": "Меняем только статус 0 → 1. Статусы 1, 2, 3 не изменяются."
+                "total_students": total,
+                "updated_0_to_1": updated_0_to_1,
+                "already_1": already_1,
+                "already_2": already_2,
+                "already_3": already_3,
+                "other_status": other_status,
+                "logic": "ИЗМЕНЕНЫ ТОЛЬКО СТАТУСЫ 0 → 1. Статусы 1, 2, 3 НЕ ИЗМЕНЯЮТСЯ."
             }
         })
 
     except Exception as e:
         db.rollback()
-        logger.error(f"❌ Ошибка в send_invitations: {str(e)}")
+        logger.error(f"❌ КРИТИЧЕСКАЯ ОШИБКА в send_invitations: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=f"Ошибка отправки приглашений: {str(e)}")
 
 
