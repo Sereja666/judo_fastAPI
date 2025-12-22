@@ -67,6 +67,7 @@
         }
 
         const status = studentStatuses[studentId].participation;
+        const statusText = studentStatuses[studentId].status_text || "";
 
         switch(status) {
             case 0: // Не отправлено
@@ -74,9 +75,9 @@
             case 1: // Отправлено
                 return '<i class="fas fa-paper-plane text-warning me-1" title="Отправлено, ждём ответ"></i>';
             case 2: // Принято
-                return '<i class="fas fa-check-circle text-success me-1" title="Принято"></i>';
+                return '<i class="fas fa-check-circle text-success me-1" title="Принято ✓"></i>';
             case 3: // Отклонено
-                return '<i class="fas fa-times-circle text-danger me-1" title="Отклонено"></i>';
+                return '<i class="fas fa-times-circle text-danger me-1" title="Отклонено ✗"></i>';
             default:
                 return '<i class="fas fa-question-circle text-secondary me-1" title="Неизвестный статус"></i>';
         }

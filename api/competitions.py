@@ -367,57 +367,63 @@ async def send_invitations(
         # Статистика
         total_students = len(competition_students)
         sent_count = 0
-        already_answered_count = 0
-        already_sent_count = 0
-        skipped_count = 0
-        student_details = []
+        already_answered_count = 0  # статусы 2 и 3
+        already_sent_count = 0  # статус 1
+        skipped_answered_count = 0  # пропущено из-за статуса 2 или 3
 
         # Отправляем приглашения только тем, у кого статус "необработанно" (0)
         for comp_student in competition_students:
-            student_info = {
-                "student_id": comp_student.student_id,
-                "current_status": comp_student.participation,
-                "status_id": comp_student.status_id
-            }
+            current_status = comp_student.participation
 
-            if comp_student.participation == 0:  # Необработанно - отправляем
+            if current_status == 0:  # Необработанно - отправляем
                 comp_student.participation = 1  # 1 = отправлено
                 sent_count += 1
-                student_info["action"] = "отправлено"
-                student_info["new_status"] = 1
-            elif comp_student.participation == 1:  # Уже отправлено
-                already_sent_count += 1
-                student_info["action"] = "уже отправлено"
-                student_info["new_status"] = comp_student.participation  # не меняем
-            elif comp_student.participation >= 2:  # Уже ответили (2=принято, 3=отклонено)
-                already_answered_count += 1
-                student_info["action"] = "уже ответили - не изменяется"
-                student_info["new_status"] = comp_student.participation  # не меняем
-                skipped_count += 1
-            else:
-                # На всякий случай для неизвестных статусов
-                student_info["action"] = "неизвестный статус - пропущено"
-                skipped_count += 1
+                logger.debug(f"   Студент {comp_student.student_id}: статус 0 → 1 (отправлено)")
 
-            student_details.append(student_info)
+            elif current_status == 1:  # Уже отправлено
+                already_sent_count += 1
+                logger.debug(f"   Студент {comp_student.student_id}: статус уже 1 (отправлено)")
+
+            elif current_status == 2:  # Принято
+                already_answered_count += 1
+                skipped_answered_count += 1
+                logger.debug(f"   Студент {comp_student.student_id}: статус 2 (принято) - НЕ МЕНЯЕМ!")
+
+            elif current_status == 3:  # Отклонено
+                already_answered_count += 1
+                skipped_answered_count += 1
+                logger.debug(f"   Студент {comp_student.student_id}: статус 3 (отклонено) - НЕ МЕНЯЕМ!")
+
+            else:
+                # Неизвестный статус
+                logger.warning(f"   Студент {comp_student.student_id}: неизвестный статус {current_status}")
 
         db.commit()
 
-        logger.info(f"✅ Приглашения отправлены для мероприятия '{competition.name}'")
+        logger.info(f"✅ Отправка приглашений для мероприятия '{competition.name}' завершена")
         logger.info(f"   Всего студентов: {total_students}")
-        logger.info(f"   Отправлено новых: {sent_count}")
-        logger.info(f"   Уже отправлено ранее: {already_sent_count}")
-        logger.info(f"   Уже ответили: {already_answered_count}")
-        logger.info(f"   Пропущено: {skipped_count}")
+        logger.info(f"   Отправлено новых (0→1): {sent_count}")
+        logger.info(f"   Уже отправлено ранее (статус 1): {already_sent_count}")
+        logger.info(f"   Уже ответили (статусы 2,3): {already_answered_count}")
+        logger.info(f"   Из них пропущено: {skipped_answered_count}")
 
         # Формируем детальное сообщение
         message_parts = []
+
         if sent_count > 0:
             message_parts.append(f"Приглашения отправлены {sent_count} студентам")
+
         if already_answered_count > 0:
-            message_parts.append(f"{already_answered_count} уже ответили на приглашение (статус сохранен)")
+            message_parts.append(f"{already_answered_count} студентов уже ответили на приглашение (статус сохранен)")
+
         if already_sent_count > 0:
-            message_parts.append(f"{already_sent_count} уже имеют отправленное приглашение")
+            message_parts.append(f"{already_sent_count} студентов уже имеют отправленное приглашение")
+
+        if sent_count == 0 and already_answered_count == 0 and already_sent_count > 0:
+            message_parts.append("Все приглашения уже отправлены ранее")
+
+        if sent_count == 0 and already_answered_count == 0 and already_sent_count == 0:
+            message_parts.append("Нет студентов для отправки приглашений")
 
         message = ". ".join(message_parts)
 
@@ -430,8 +436,8 @@ async def send_invitations(
                 "sent_count": sent_count,
                 "already_answered_count": already_answered_count,
                 "already_sent_count": already_sent_count,
-                "skipped_count": skipped_count,
-                "student_details": student_details
+                "skipped_answered_count": skipped_answered_count,
+                "note": "Статусы 2 (принято) и 3 (отклонено) не изменяются"
             }
         })
 
@@ -477,32 +483,39 @@ async def get_invitations_status(
             if comp_student.participation == 0:
                 status_counts["not_processed"] += 1
                 status_text = "Не отправлено"
+                status_class = "danger"
             elif comp_student.participation == 1:
                 status_counts["sent"] += 1
-                status_text = "Отправлено"
+                status_text = "Отправлено (ждём ответ)"
+                status_class = "warning"
             elif comp_student.participation == 2:
                 status_counts["accepted"] += 1
-                status_text = "Принято"
+                status_text = "Принято ✓"
+                status_class = "success"
             elif comp_student.participation == 3:
                 status_counts["declined"] += 1
-                status_text = "Отклонено"
+                status_text = "Отклонено ✗"
+                status_class = "danger"
             else:
                 status_text = "Неизвестно"
+                status_class = "secondary"
 
             student_statuses.append({
                 "student_id": comp_student.student_id,
                 "student_name": student_name,
                 "participation": comp_student.participation,
                 "status_id": comp_student.status_id,
-                "status_text": status_text
+                "status_text": status_text,
+                "status_class": status_class
             })
 
-        return JSONResponse({
+        return {
             "status": "success",
             "competition_name": competition.name,
+            "competition_date": competition.date.isoformat() if competition.date else None,
             "status_counts": status_counts,
             "students": student_statuses
-        })
+        }
 
     except Exception as e:
         logger.error(f"❌ Ошибка в get_invitations_status: {str(e)}")
