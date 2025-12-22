@@ -284,10 +284,21 @@ function sendInvitationsToServer(competitionId) {
 
         if (data.status === 'success') {
             showMessage(data.message, 'success');
-            console.log('✅ Приглашения успешно отправлены:');
-            console.log('   Мероприятие:', data.competition_name);
-            console.log('   Количество:', data.student_count);
-            console.log('   ID студентов:', data.student_ids);
+            console.log('✅ Статус отправки приглашений:');
+            console.log('   Мероприятие:', data.details.competition_name);
+            console.log('   Всего студентов:', data.details.total_students);
+            console.log('   Отправлено новых:', data.details.sent_count);
+            console.log('   Уже ответили:', data.details.already_answered_count);
+            console.log('   Уже отправлено:', data.details.already_sent_count);
+            console.log('   Детали:', data.details.student_details);
+
+            // Можно обновить статус на кнопке или показать детали
+            if (data.details.already_answered_count > 0) {
+                // Если есть уже ответившие, покажем дополнительное сообщение
+                setTimeout(() => {
+                    showMessage(`Примечание: ${data.details.already_answered_count} студентов уже ответили на приглашение`, 'info');
+                }, 1000);
+            }
         } else if (data.status === 'warning') {
             showMessage(data.message, 'warning');
         } else {
@@ -303,33 +314,65 @@ function sendInvitationsToServer(competitionId) {
         console.error('❌ Ошибка отправки приглашений:', error);
     });
 }
-// Обновите функцию editCompetition чтобы показывать кнопку при редактировании
-    function editCompetition(competitionId) {
-        $('#dayModal').modal('hide');
 
-        $.get(`/competitions/get-competition-data/${competitionId}`, function(data) {
-            $('#competitionId').val(data.competition.id);
-            $('#competitionName').val(data.competition.name);
-            $('#competitionAddress').val(data.competition.address || '');
-            $('#competitionDate').val(data.competition.date ? data.competition.date.split('T')[0] : '');
-            $('#competitionDateDisplay').val(formatDisplayDate(data.competition.date ? data.competition.date.split('T')[0] : ''));
 
-            selectedStudents = data.students || [];
-            selectedTrainers = data.trainers || [];
-            selectedCertificates = data.certificates || [];
+// Опционально: функция для проверки статуса приглашений
+function checkInvitationsStatus(competitionId) {
+    fetch(`/competitions/get-invitations-status/${competitionId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                console.log('📊 Статус приглашений:');
+                console.log('   Не отправлено:', data.status_counts.not_processed);
+                console.log('   Отправлено:', data.status_counts.sent);
+                console.log('   Принято:', data.status_counts.accepted);
+                console.log('   Отклонено:', data.status_counts.declined);
 
-            renderStudentsList();
-            renderTrainersList();
-            renderCertificatesList();
-
-            $('#competitionFormTitle').text('Редактирование мероприятия');
-            $('#deleteCompetitionBtn').show();
-            $('#sendInvitationsBtn').show(); // Показываем кнопку отправки приглашений
-            $('#competitionFormModal').modal('show');
-
-        }).fail(function() {
-            showMessage('Ошибка загрузки данных мероприятия', 'danger');
+                // Можно обновить текст кнопки в зависимости от статуса
+                const sendBtn = $('#sendInvitationsBtn');
+                if (data.status_counts.accepted > 0 || data.status_counts.declined > 0) {
+                    // Есть уже ответившие
+                    sendBtn.html('<i class="fas fa-paper-plane me-1"></i> Отправить остальным');
+                    sendBtn.attr('title', `Есть ${data.status_counts.accepted + data.status_counts.declined} ответивших студентов`);
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка проверки статуса:', error);
         });
-    }
+}
+
+
+function editCompetition(competitionId) {
+    $('#dayModal').modal('hide');
+
+    $.get(`/competitions/get-competition-data/${competitionId}`, function(data) {
+        $('#competitionId').val(data.competition.id);
+        $('#competitionName').val(data.competition.name);
+        $('#competitionAddress').val(data.competition.address || '');
+        $('#competitionDate').val(data.competition.date ? data.competition.date.split('T')[0] : '');
+        $('#competitionDateDisplay').val(formatDisplayDate(data.competition.date ? data.competition.date.split('T')[0] : ''));
+
+        selectedStudents = data.students || [];
+        selectedTrainers = data.trainers || [];
+        selectedCertificates = data.certificates || [];
+
+        renderStudentsList();
+        renderTrainersList();
+        renderCertificatesList();
+
+        $('#competitionFormTitle').text('Редактирование мероприятия');
+        $('#deleteCompetitionBtn').show();
+        $('#sendInvitationsBtn').show();
+
+        // Проверяем статус приглашений
+        checkInvitationsStatus(competitionId);
+
+        $('#competitionFormModal').modal('show');
+
+    }).fail(function() {
+        showMessage('Ошибка загрузки данных мероприятия', 'danger');
+    });
+}
 
 </script>

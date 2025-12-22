@@ -4,7 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ee547eef-2e63-46d4-8d9a-feffb711966c" name="Changes" comment="внедряю Редис" />
+    <list default="true" id="ee547eef-2e63-46d4-8d9a-feffb711966c" name="Changes" comment="добавляю кнопку отправки приглашений">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -13,13 +15,14 @@
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
-        <option value="Python Script" />
         <option value="HTML File" />
+        <option value="Python Script" />
       </list>
     </option>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="RESET_MODE" value="HARD" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
   &quot;lastFilter&quot;: {
@@ -48,7 +51,12 @@
   &quot;keyToString&quot;: {
     &quot;DefaultHtmlFileTemplate&quot;: &quot;HTML File&quot;,
     &quot;Python.aiogram_run.executor&quot;: &quot;Run&quot;,
+    &quot;Python.aiogram_tg_notif.executor&quot;: &quot;Run&quot;,
     &quot;Python.api_Students_shedule.executor&quot;: &quot;Run&quot;,
+    &quot;Python.api_main.executor&quot;: &quot;Run&quot;,
+    &quot;Python.backup_judo.executor&quot;: &quot;Run&quot;,
+    &quot;Python.backup_sql.executor&quot;: &quot;Run&quot;,
+    &quot;Python.check_syntax.executor&quot;: &quot;Run&quot;,
     &quot;Python.chenge_permis.executor&quot;: &quot;Run&quot;,
     &quot;Python.config.executor&quot;: &quot;Run&quot;,
     &quot;Python.daily_attendance.executor&quot;: &quot;Run&quot;,
@@ -56,17 +64,24 @@
     &quot;Python.fff.executor&quot;: &quot;Run&quot;,
     &quot;Python.kill_dublicates (1).executor&quot;: &quot;Run&quot;,
     &quot;Python.kill_dublicates.executor&quot;: &quot;Run&quot;,
+    &quot;Python.main.executor&quot;: &quot;Run&quot;,
+    &quot;Python.qqq.executor&quot;: &quot;Run&quot;,
     &quot;Python.qqqq.executor&quot;: &quot;Run&quot;,
     &quot;Python.qwe.executor&quot;: &quot;Run&quot;,
+    &quot;Python.run.executor&quot;: &quot;Run&quot;,
     &quot;Python.run_bot.executor&quot;: &quot;Run&quot;,
+    &quot;Python.run_notif_admin (1).executor&quot;: &quot;Run&quot;,
     &quot;Python.sekret_key_generator.executor&quot;: &quot;Run&quot;,
     &quot;Python.simple_set_password (1).executor&quot;: &quot;Run&quot;,
     &quot;Python.simple_set_password_fixed (1).executor&quot;: &quot;Run&quot;,
     &quot;Python.telegram_user_update (1).executor&quot;: &quot;Run&quot;,
+    &quot;Python.test_local_superset_https.executor&quot;: &quot;Run&quot;,
     &quot;Python.test_redis.executor&quot;: &quot;Run&quot;,
     &quot;Python.tools.executor&quot;: &quot;Run&quot;,
+    &quot;Python.trainer_salary.executor&quot;: &quot;Run&quot;,
     &quot;Python.update_pasw (1).executor&quot;: &quot;Run&quot;,
     &quot;Python.update_pasw.executor&quot;: &quot;Run&quot;,
+    &quot;Python.фвыф.executor&quot;: &quot;Run&quot;,
     &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
@@ -82,14 +97,15 @@
       <recent name="C:\Python\Judo_aiogram_superset" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Python_projects\Judo_aiogram_superset\tg_bot_notif" />
+      <recent name="C:\Python_projects\Judo_aiogram_superset" />
+      <recent name="C:\Python_projects\Judo_aiogram_superset\templates\partials\modals" />
       <recent name="C:\Python\Judo_aiogram_superset" />
       <recent name="C:\Python\Judo_aiogram_superset\regulatory_tasks" />
-      <recent name="C:\Python\Judo_aiogram_superset\database\redis" />
-      <recent name="C:\Python\Judo_aiogram_superset\database" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.aiogram_run">
-    <configuration name="aiogram_run" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+  <component name="RunManager" selected="Python.qqq">
+    <configuration name="aiogram_tg_notif" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="Judo_aiogram_superset" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -102,7 +118,7 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/aiogram_run.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/aiogram_tg_notif.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -111,7 +127,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="api_Students_shedule" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+    <configuration name="api_main" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="Judo_aiogram_superset" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -124,7 +140,7 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/api_Students_shedule.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/api_main.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -133,7 +149,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="set_password_simple" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+    <configuration name="backup_judo" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="Judo_aiogram_superset" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -142,11 +158,11 @@
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/utils" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/regulatory_tasks" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="C:\Python\Judo_aiogram_superset\set_password_simple.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/regulatory_tasks/backup_judo.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -155,29 +171,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="set_password_with_config" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="Judo_aiogram_superset" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="C:\Python\Judo_aiogram_superset\set_password_with_config.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
-    <configuration name="simple_set_password" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+    <configuration name="qqq" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="Judo_aiogram_superset" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -190,7 +184,7 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="C:\Python\Judo_aiogram_superset\simple_set_password.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/qqq.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -199,7 +193,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="simple_set_password_fixed" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+    <configuration name="run_notif_admin (1)" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="Judo_aiogram_superset" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -212,51 +206,7 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="C:\Python\Judo_aiogram_superset\simple_set_password_fixed.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
-    <configuration name="telegram_user_update (1)" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="Judo_aiogram_superset" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/telegram_user_update.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
-    <configuration name="telegram_user_update" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="Judo_aiogram_superset" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="C:\Python\Judo_aiogram_superset\telegram_user_update.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/run_notif_admin.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -267,11 +217,11 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.aiogram_run" />
-        <item itemvalue="Python.api_Students_shedule" />
-        <item itemvalue="Python.set_password_with_config" />
-        <item itemvalue="Python.simple_set_password_fixed" />
-        <item itemvalue="Python.telegram_user_update (1)" />
+        <item itemvalue="Python.qqq" />
+        <item itemvalue="Python.backup_judo" />
+        <item itemvalue="Python.run_notif_admin (1)" />
+        <item itemvalue="Python.api_main" />
+        <item itemvalue="Python.aiogram_tg_notif" />
       </list>
     </recent_temporary>
   </component>
@@ -291,159 +241,399 @@
       <option name="presentableId" value="Default" />
       <updated>1741959141895</updated>
     </task>
-    <task id="LOCAL-00001" summary="перед отправкой на сервер">
+    <task id="LOCAL-00101" summary="мидлваре для авторизации">
       <option name="closed" value="true" />
-      <created>1759152484758</created>
-      <option name="number" value="00001" />
-      <option name="presentableId" value="LOCAL-00001" />
+      <created>1764514427628</created>
+      <option name="number" value="00101" />
+      <option name="presentableId" value="LOCAL-00101" />
       <option name="project" value="LOCAL" />
-      <updated>1759152484758</updated>
+      <updated>1764514427628</updated>
     </task>
-    <task id="LOCAL-00002" summary="1">
+    <task id="LOCAL-00102" summary="мидлваре для авторизации">
       <option name="closed" value="true" />
-      <created>1759152707636</created>
-      <option name="number" value="00002" />
-      <option name="presentableId" value="LOCAL-00002" />
+      <created>1764514902158</created>
+      <option name="number" value="00102" />
+      <option name="presentableId" value="LOCAL-00102" />
       <option name="project" value="LOCAL" />
-      <updated>1759152707636</updated>
+      <updated>1764514902158</updated>
     </task>
-    <task id="LOCAL-00003" summary="добавлен актив для тренера">
+    <task id="LOCAL-00103" summary="мидлваре для авторизации">
       <option name="closed" value="true" />
-      <created>1760897965684</created>
-      <option name="number" value="00003" />
-      <option name="presentableId" value="LOCAL-00003" />
+      <created>1764515341782</created>
+      <option name="number" value="00103" />
+      <option name="presentableId" value="LOCAL-00103" />
       <option name="project" value="LOCAL" />
-      <updated>1760897965684</updated>
+      <updated>1764515341782</updated>
     </task>
-    <task id="LOCAL-00004" summary="вынес урл суперсета в конфиг">
+    <task id="LOCAL-00104" summary="мидлваре для авторизации">
       <option name="closed" value="true" />
-      <created>1760939685840</created>
-      <option name="number" value="00004" />
-      <option name="presentableId" value="LOCAL-00004" />
+      <created>1764515589367</created>
+      <option name="number" value="00104" />
+      <option name="presentableId" value="LOCAL-00104" />
       <option name="project" value="LOCAL" />
-      <updated>1760939685840</updated>
+      <updated>1764515589367</updated>
     </task>
-    <task id="LOCAL-00005" summary="вынес урл суперсета в конфиг1">
+    <task id="LOCAL-00105" summary="мидлваре для авторизации">
       <option name="closed" value="true" />
-      <created>1760939924320</created>
-      <option name="number" value="00005" />
-      <option name="presentableId" value="LOCAL-00005" />
+      <created>1764516036820</created>
+      <option name="number" value="00105" />
+      <option name="presentableId" value="LOCAL-00105" />
       <option name="project" value="LOCAL" />
-      <updated>1760939924320</updated>
+      <updated>1764516036820</updated>
     </task>
-    <task id="LOCAL-00006" summary="добавляю редактор тренеров">
+    <task id="LOCAL-00106" summary="мидлваре для авторизации">
       <option name="closed" value="true" />
-      <created>1760988801818</created>
-      <option name="number" value="00006" />
-      <option name="presentableId" value="LOCAL-00006" />
+      <created>1764516256698</created>
+      <option name="number" value="00106" />
+      <option name="presentableId" value="LOCAL-00106" />
       <option name="project" value="LOCAL" />
-      <updated>1760988801818</updated>
+      <updated>1764516256698</updated>
     </task>
-    <task id="LOCAL-00007" summary="добавляю редактор тренеров">
+    <task id="LOCAL-00107" summary="мидлваре для авторизации">
       <option name="closed" value="true" />
-      <created>1761302427328</created>
-      <option name="number" value="00007" />
-      <option name="presentableId" value="LOCAL-00007" />
+      <created>1764516798616</created>
+      <option name="number" value="00107" />
+      <option name="presentableId" value="LOCAL-00107" />
       <option name="project" value="LOCAL" />
-      <updated>1761302427328</updated>
+      <updated>1764516798616</updated>
     </task>
-    <task id="LOCAL-00008" summary="добавляю схемы мед справок">
+    <task id="LOCAL-00108" summary="мидлваре для авторизации">
       <option name="closed" value="true" />
-      <created>1761717789642</created>
-      <option name="number" value="00008" />
-      <option name="presentableId" value="LOCAL-00008" />
+      <created>1764516938788</created>
+      <option name="number" value="00108" />
+      <option name="presentableId" value="LOCAL-00108" />
       <option name="project" value="LOCAL" />
-      <updated>1761717789642</updated>
+      <updated>1764516938788</updated>
     </task>
-    <task id="LOCAL-00009" summary="добавил  справками по болезни">
+    <task id="LOCAL-00109" summary="мидлваре для авторизации">
       <option name="closed" value="true" />
-      <created>1761739967038</created>
-      <option name="number" value="00009" />
-      <option name="presentableId" value="LOCAL-00009" />
+      <created>1764519848615</created>
+      <option name="number" value="00109" />
+      <option name="presentableId" value="LOCAL-00109" />
       <option name="project" value="LOCAL" />
-      <updated>1761739967038</updated>
+      <updated>1764519848615</updated>
     </task>
-    <task id="LOCAL-00010" summary="добавил  справками по болезни">
+    <task id="LOCAL-00110" summary="мидлваре для авторизации">
       <option name="closed" value="true" />
-      <created>1761939936862</created>
-      <option name="number" value="00010" />
-      <option name="presentableId" value="LOCAL-00010" />
+      <created>1764523149785</created>
+      <option name="number" value="00110" />
+      <option name="presentableId" value="LOCAL-00110" />
       <option name="project" value="LOCAL" />
-      <updated>1761939936862</updated>
+      <updated>1764523149785</updated>
     </task>
-    <task id="LOCAL-00011" summary="переместил ежедневное списание в папку с регламентными заданиями">
+    <task id="LOCAL-00111" summary="мидлваре для авторизации">
       <option name="closed" value="true" />
-      <created>1761978952482</created>
-      <option name="number" value="00011" />
-      <option name="presentableId" value="LOCAL-00011" />
+      <created>1764526736549</created>
+      <option name="number" value="00111" />
+      <option name="presentableId" value="LOCAL-00111" />
       <option name="project" value="LOCAL" />
-      <updated>1761978952482</updated>
+      <updated>1764526736549</updated>
     </task>
-    <task id="LOCAL-00012" summary="021125">
+    <task id="LOCAL-00112" summary="мидлваре для авторизации">
       <option name="closed" value="true" />
-      <created>1762073837178</created>
-      <option name="number" value="00012" />
-      <option name="presentableId" value="LOCAL-00012" />
+      <created>1764527026025</created>
+      <option name="number" value="00112" />
+      <option name="presentableId" value="LOCAL-00112" />
       <option name="project" value="LOCAL" />
-      <updated>1762073837178</updated>
+      <updated>1764527026025</updated>
     </task>
-    <task id="LOCAL-00013" summary="фикс русских букв в запросе">
+    <task id="LOCAL-00113" summary="мидлваре для авторизации">
       <option name="closed" value="true" />
-      <created>1762074316331</created>
-      <option name="number" value="00013" />
-      <option name="presentableId" value="LOCAL-00013" />
+      <created>1764527281949</created>
+      <option name="number" value="00113" />
+      <option name="presentableId" value="LOCAL-00113" />
       <option name="project" value="LOCAL" />
-      <updated>1762074316331</updated>
+      <updated>1764527281949</updated>
     </task>
-    <task id="LOCAL-00014" summary="фикс русских букв в запросе">
+    <task id="LOCAL-00114" summary="мидлваре для авторизации">
       <option name="closed" value="true" />
-      <created>1762601159529</created>
-      <option name="number" value="00014" />
-      <option name="presentableId" value="LOCAL-00014" />
+      <created>1764527860286</created>
+      <option name="number" value="00114" />
+      <option name="presentableId" value="LOCAL-00114" />
       <option name="project" value="LOCAL" />
-      <updated>1762601159529</updated>
+      <updated>1764527860286</updated>
     </task>
-    <task id="LOCAL-00015" summary="111">
+    <task id="LOCAL-00115" summary="мидлваре для авторизации">
       <option name="closed" value="true" />
-      <created>1762618520634</created>
-      <option name="number" value="00015" />
-      <option name="presentableId" value="LOCAL-00015" />
+      <created>1764528040300</created>
+      <option name="number" value="00115" />
+      <option name="presentableId" value="LOCAL-00115" />
       <option name="project" value="LOCAL" />
-      <updated>1762618520634</updated>
+      <updated>1764528040300</updated>
     </task>
-    <task id="LOCAL-00016" summary="тестовый коммит">
+    <task id="LOCAL-00116" summary="мидлваре для авторизации">
       <option name="closed" value="true" />
-      <created>1762693617024</created>
-      <option name="number" value="00016" />
-      <option name="presentableId" value="LOCAL-00016" />
+      <created>1764541043598</created>
+      <option name="number" value="00116" />
+      <option name="presentableId" value="LOCAL-00116" />
       <option name="project" value="LOCAL" />
-      <updated>1762693617024</updated>
+      <updated>1764541043598</updated>
     </task>
-    <task id="LOCAL-00017" summary="обновляю справки">
+    <task id="LOCAL-00117" summary="мидлваре для авторизации">
       <option name="closed" value="true" />
-      <created>1762949020986</created>
-      <option name="number" value="00017" />
-      <option name="presentableId" value="LOCAL-00017" />
+      <created>1764541219489</created>
+      <option name="number" value="00117" />
+      <option name="presentableId" value="LOCAL-00117" />
       <option name="project" value="LOCAL" />
-      <updated>1762949020986</updated>
+      <updated>1764541219490</updated>
     </task>
-    <task id="LOCAL-00018" summary="обновляю справки">
+    <task id="LOCAL-00118" summary="убираю лишнее">
       <option name="closed" value="true" />
-      <created>1762949324342</created>
-      <option name="number" value="00018" />
-      <option name="presentableId" value="LOCAL-00018" />
+      <created>1764572735076</created>
+      <option name="number" value="00118" />
+      <option name="presentableId" value="LOCAL-00118" />
       <option name="project" value="LOCAL" />
-      <updated>1762949324342</updated>
+      <updated>1764572735076</updated>
     </task>
-    <task id="LOCAL-00019" summary="внедряю Редис">
+    <task id="LOCAL-00119" summary="обновил Base">
       <option name="closed" value="true" />
-      <created>1762950763884</created>
-      <option name="number" value="00019" />
-      <option name="presentableId" value="LOCAL-00019" />
+      <created>1764573241626</created>
+      <option name="number" value="00119" />
+      <option name="presentableId" value="LOCAL-00119" />
       <option name="project" value="LOCAL" />
-      <updated>1762950763884</updated>
+      <updated>1764573241626</updated>
     </task>
-    <option name="localTasksCounter" value="20" />
+    <task id="LOCAL-00120" summary="обновил Base">
+      <option name="closed" value="true" />
+      <created>1764573437717</created>
+      <option name="number" value="00120" />
+      <option name="presentableId" value="LOCAL-00120" />
+      <option name="project" value="LOCAL" />
+      <updated>1764573437717</updated>
+    </task>
+    <task id="LOCAL-00121" summary="Добавляю в анкету ученика НАГРАДЫ">
+      <option name="closed" value="true" />
+      <created>1764658700662</created>
+      <option name="number" value="00121" />
+      <option name="presentableId" value="LOCAL-00121" />
+      <option name="project" value="LOCAL" />
+      <updated>1764658700663</updated>
+    </task>
+    <task id="LOCAL-00122" summary="Добавляю в анкету ученика НАГРАДЫ">
+      <option name="closed" value="true" />
+      <created>1764661711888</created>
+      <option name="number" value="00122" />
+      <option name="presentableId" value="LOCAL-00122" />
+      <option name="project" value="LOCAL" />
+      <updated>1764661711888</updated>
+    </task>
+    <task id="LOCAL-00123" summary=" добаивл таблицы родители и связи">
+      <option name="closed" value="true" />
+      <created>1764662999608</created>
+      <option name="number" value="00123" />
+      <option name="presentableId" value="LOCAL-00123" />
+      <option name="project" value="LOCAL" />
+      <updated>1764662999608</updated>
+    </task>
+    <task id="LOCAL-00124" summary=" добаивл таблицы родители и связи">
+      <option name="closed" value="true" />
+      <created>1764663307731</created>
+      <option name="number" value="00124" />
+      <option name="presentableId" value="LOCAL-00124" />
+      <option name="project" value="LOCAL" />
+      <updated>1764663307734</updated>
+    </task>
+    <task id="LOCAL-00125" summary="заменил название схемы на модели">
+      <option name="closed" value="true" />
+      <created>1765106309254</created>
+      <option name="number" value="00125" />
+      <option name="presentableId" value="LOCAL-00125" />
+      <option name="project" value="LOCAL" />
+      <updated>1765106309256</updated>
+    </task>
+    <task id="LOCAL-00126" summary="добавил таблицу lesson_write_offs">
+      <option name="closed" value="true" />
+      <created>1765268888620</created>
+      <option name="number" value="00126" />
+      <option name="presentableId" value="LOCAL-00126" />
+      <option name="project" value="LOCAL" />
+      <updated>1765268888620</updated>
+    </task>
+    <task id="LOCAL-00127" summary="исправлена функция списания тренеровок">
+      <option name="closed" value="true" />
+      <created>1765270236693</created>
+      <option name="number" value="00127" />
+      <option name="presentableId" value="LOCAL-00127" />
+      <option name="project" value="LOCAL" />
+      <updated>1765270236693</updated>
+    </task>
+    <task id="LOCAL-00128" summary="обновил Competition_student добавил статус о принятии">
+      <option name="closed" value="true" />
+      <created>1765785436574</created>
+      <option name="number" value="00128" />
+      <option name="presentableId" value="LOCAL-00128" />
+      <option name="project" value="LOCAL" />
+      <updated>1765785436574</updated>
+    </task>
+    <task id="LOCAL-00129" summary="2 мероприятия в 1 день">
+      <option name="closed" value="true" />
+      <created>1765787893113</created>
+      <option name="number" value="00129" />
+      <option name="presentableId" value="LOCAL-00129" />
+      <option name="project" value="LOCAL" />
+      <updated>1765787893113</updated>
+    </task>
+    <task id="LOCAL-00130" summary="2 мероприятия в 1 день">
+      <option name="closed" value="true" />
+      <created>1765788280517</created>
+      <option name="number" value="00130" />
+      <option name="presentableId" value="LOCAL-00130" />
+      <option name="project" value="LOCAL" />
+      <updated>1765788280517</updated>
+    </task>
+    <task id="LOCAL-00131" summary="2 мероприятия в 1 день">
+      <option name="closed" value="true" />
+      <created>1765790253785</created>
+      <option name="number" value="00131" />
+      <option name="presentableId" value="LOCAL-00131" />
+      <option name="project" value="LOCAL" />
+      <updated>1765790253785</updated>
+    </task>
+    <task id="LOCAL-00132" summary="2 мероприятия в 1 день">
+      <option name="closed" value="true" />
+      <created>1765790791989</created>
+      <option name="number" value="00132" />
+      <option name="presentableId" value="LOCAL-00132" />
+      <option name="project" value="LOCAL" />
+      <updated>1765790791989</updated>
+    </task>
+    <task id="LOCAL-00133" summary="2 мероприятия в 1 день">
+      <option name="closed" value="true" />
+      <created>1765792439458</created>
+      <option name="number" value="00133" />
+      <option name="presentableId" value="LOCAL-00133" />
+      <option name="project" value="LOCAL" />
+      <updated>1765792439458</updated>
+    </task>
+    <task id="LOCAL-00134" summary="2 мероприятия в 1 день">
+      <option name="closed" value="true" />
+      <created>1765792773961</created>
+      <option name="number" value="00134" />
+      <option name="presentableId" value="LOCAL-00134" />
+      <option name="project" value="LOCAL" />
+      <updated>1765792773961</updated>
+    </task>
+    <task id="LOCAL-00135" summary="2 мероприятия в 1 день">
+      <option name="closed" value="true" />
+      <created>1765797302163</created>
+      <option name="number" value="00135" />
+      <option name="presentableId" value="LOCAL-00135" />
+      <option name="project" value="LOCAL" />
+      <updated>1765797302163</updated>
+    </task>
+    <task id="LOCAL-00136" summary="2 мероприятия в 1 день">
+      <option name="closed" value="true" />
+      <created>1765797813256</created>
+      <option name="number" value="00136" />
+      <option name="presentableId" value="LOCAL-00136" />
+      <option name="project" value="LOCAL" />
+      <updated>1765797813256</updated>
+    </task>
+    <task id="LOCAL-00137" summary="2 мероприятия в 1 день">
+      <option name="closed" value="true" />
+      <created>1765797934867</created>
+      <option name="number" value="00137" />
+      <option name="presentableId" value="LOCAL-00137" />
+      <option name="project" value="LOCAL" />
+      <updated>1765797934867</updated>
+    </task>
+    <task id="LOCAL-00138" summary="2 мероприятия в 1 день">
+      <option name="closed" value="true" />
+      <created>1765800481150</created>
+      <option name="number" value="00138" />
+      <option name="presentableId" value="LOCAL-00138" />
+      <option name="project" value="LOCAL" />
+      <updated>1765800481150</updated>
+    </task>
+    <task id="LOCAL-00139" summary="2 мероприятия в 1 день">
+      <option name="closed" value="true" />
+      <created>1765801078288</created>
+      <option name="number" value="00139" />
+      <option name="presentableId" value="LOCAL-00139" />
+      <option name="project" value="LOCAL" />
+      <updated>1765801078289</updated>
+    </task>
+    <task id="LOCAL-00140" summary="2 мероприятия в 1 день">
+      <option name="closed" value="true" />
+      <created>1765801587986</created>
+      <option name="number" value="00140" />
+      <option name="presentableId" value="LOCAL-00140" />
+      <option name="project" value="LOCAL" />
+      <updated>1765801587986</updated>
+    </task>
+    <task id="LOCAL-00141" summary="2 мероприятия в 1 день">
+      <option name="closed" value="true" />
+      <created>1765801851217</created>
+      <option name="number" value="00141" />
+      <option name="presentableId" value="LOCAL-00141" />
+      <option name="project" value="LOCAL" />
+      <updated>1765801851217</updated>
+    </task>
+    <task id="LOCAL-00142" summary="2 мероприятия в 1 день">
+      <option name="closed" value="true" />
+      <created>1765802071225</created>
+      <option name="number" value="00142" />
+      <option name="presentableId" value="LOCAL-00142" />
+      <option name="project" value="LOCAL" />
+      <updated>1765802071225</updated>
+    </task>
+    <task id="LOCAL-00143" summary="2 мероприятия в 1 день">
+      <option name="closed" value="true" />
+      <created>1765802326085</created>
+      <option name="number" value="00143" />
+      <option name="presentableId" value="LOCAL-00143" />
+      <option name="project" value="LOCAL" />
+      <updated>1765802326085</updated>
+    </task>
+    <task id="LOCAL-00144" summary="2 мероприятия в 1 день">
+      <option name="closed" value="true" />
+      <created>1765803053738</created>
+      <option name="number" value="00144" />
+      <option name="presentableId" value="LOCAL-00144" />
+      <option name="project" value="LOCAL" />
+      <updated>1765803053738</updated>
+    </task>
+    <task id="LOCAL-00145" summary="2 мероприятия в 1 день">
+      <option name="closed" value="true" />
+      <created>1765803378710</created>
+      <option name="number" value="00145" />
+      <option name="presentableId" value="LOCAL-00145" />
+      <option name="project" value="LOCAL" />
+      <updated>1765803378710</updated>
+    </task>
+    <task id="LOCAL-00146" summary="2 мероприятия в 1 день">
+      <option name="closed" value="true" />
+      <created>1765803647035</created>
+      <option name="number" value="00146" />
+      <option name="presentableId" value="LOCAL-00146" />
+      <option name="project" value="LOCAL" />
+      <updated>1765803647035</updated>
+    </task>
+    <task id="LOCAL-00147" summary="2 мероприятия в 1 день">
+      <option name="closed" value="true" />
+      <created>1765804060173</created>
+      <option name="number" value="00147" />
+      <option name="presentableId" value="LOCAL-00147" />
+      <option name="project" value="LOCAL" />
+      <updated>1765804060173</updated>
+    </task>
+    <task id="LOCAL-00148" summary="добавляю кнопку отправки приглашений">
+      <option name="closed" value="true" />
+      <created>1765807288911</created>
+      <option name="number" value="00148" />
+      <option name="presentableId" value="LOCAL-00148" />
+      <option name="project" value="LOCAL" />
+      <updated>1765807288911</updated>
+    </task>
+    <task id="LOCAL-00149" summary="добавляю кнопку отправки приглашений">
+      <option name="closed" value="true" />
+      <created>1765807648215</created>
+      <option name="number" value="00149" />
+      <option name="presentableId" value="LOCAL-00149" />
+      <option name="project" value="LOCAL" />
+      <updated>1765807648215</updated>
+    </task>
+    <option name="localTasksCounter" value="150" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -458,21 +648,31 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="перед отправкой на сервер" />
-    <MESSAGE value="1" />
-    <MESSAGE value="добавлен актив для тренера" />
-    <MESSAGE value="вынес урл суперсета в конфиг" />
-    <MESSAGE value="вынес урл суперсета в конфиг1" />
-    <MESSAGE value="добавляю редактор тренеров" />
-    <MESSAGE value="добавляю схемы мед справок" />
-    <MESSAGE value="добавил  справками по болезни" />
-    <MESSAGE value="переместил ежедневное списание в папку с регламентными заданиями" />
-    <MESSAGE value="021125" />
-    <MESSAGE value="фикс русских букв в запросе" />
-    <MESSAGE value="111" />
-    <MESSAGE value="тестовый коммит" />
-    <MESSAGE value="обновляю справки" />
-    <MESSAGE value="внедряю Редис" />
-    <option name="LAST_COMMIT_MESSAGE" value="внедряю Редис" />
+    <MESSAGE value="фиксы медсправок для работы с редис" />
+    <MESSAGE value="настройка кнопки НАЗАД для работы с Редис" />
+    <MESSAGE value="календарь мероприятий" />
+    <MESSAGE value="переделал логи для ежедненого списания" />
+    <MESSAGE value="фиксы списаний и логов" />
+    <MESSAGE value="добавил разрады и ранги" />
+    <MESSAGE value="обновляю пояса" />
+    <MESSAGE value="сохранялка" />
+    <MESSAGE value="разделил judo_fastapi на модули" />
+    <MESSAGE value="Добавляю в анкету справки" />
+    <MESSAGE value="Добавляю в анкету справки 1" />
+    <MESSAGE value="Добавляю в анкету справки 2" />
+    <MESSAGE value="Добавляю в анкету справки 3" />
+    <MESSAGE value="Добавляю стартовую страницу для апи" />
+    <MESSAGE value="мидлваре для авторизации" />
+    <MESSAGE value="убираю лишнее" />
+    <MESSAGE value="обновил Base" />
+    <MESSAGE value="Добавляю в анкету ученика НАГРАДЫ" />
+    <MESSAGE value=" добаивл таблицы родители и связи" />
+    <MESSAGE value="заменил название схемы на модели" />
+    <MESSAGE value="добавил таблицу lesson_write_offs" />
+    <MESSAGE value="исправлена функция списания тренеровок" />
+    <MESSAGE value="обновил Competition_student добавил статус о принятии" />
+    <MESSAGE value="2 мероприятия в 1 день" />
+    <MESSAGE value="добавляю кнопку отправки приглашений" />
+    <option name="LAST_COMMIT_MESSAGE" value="добавляю кнопку отправки приглашений" />
   </component>
 </project>

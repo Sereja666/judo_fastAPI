@@ -364,30 +364,139 @@ async def send_invitations(
                 "message": "Нет приглашенных студентов для отправки приглашений"
             })
 
-        # Здесь будет логика отправки приглашений
-        # Пока что просто обновляем статус участия на "отправлено" (1)
+        # Статистика
+        total_students = len(competition_students)
+        sent_count = 0
+        already_answered_count = 0
+        already_sent_count = 0
+        student_details = []
+
+        # Отправляем приглашения только тем, у кого статус "необработанно" (0)
         for comp_student in competition_students:
-            comp_student.participation = 1  # 1 = отправлено
+            student_info = {
+                "student_id": comp_student.student_id,
+                "current_status": comp_student.participation,
+                "status_id": comp_student.status_id
+            }
+
+            if comp_student.participation == 0:  # Необработанно - отправляем
+                comp_student.participation = 1  # 1 = отправлено
+                sent_count += 1
+                student_info["action"] = "отправлено"
+            elif comp_student.participation == 1:  # Уже отправлено
+                already_sent_count += 1
+                student_info["action"] = "уже отправлено"
+            elif comp_student.participation >= 2:  # Уже ответили (2=принято, 3=отклонено)
+                already_answered_count += 1
+                student_info["action"] = "уже ответили"
+
+            student_details.append(student_info)
 
         db.commit()
 
-        # Для отладки собираем информацию
-        student_count = len(competition_students)
-        student_ids = [cs.student_id for cs in competition_students]
-
         logger.info(f"✅ Приглашения отправлены для мероприятия '{competition.name}'")
-        logger.info(f"   Количество приглашений: {student_count}")
-        logger.info(f"   ID студентов: {student_ids}")
+        logger.info(f"   Всего студентов: {total_students}")
+        logger.info(f"   Отправлено новых: {sent_count}")
+        logger.info(f"   Уже отправлено ранее: {already_sent_count}")
+        logger.info(f"   Уже ответили: {already_answered_count}")
+
+        # Формируем детальное сообщение
+        if sent_count > 0:
+            message = f"Приглашения отправлены {sent_count} студентам"
+            if already_answered_count > 0:
+                message += f" ({already_answered_count} уже ответили на приглашение)"
+            if already_sent_count > 0:
+                message += f" ({already_sent_count} уже имеют отправленное приглашение)"
+        else:
+            if already_answered_count > 0:
+                message = f"Все студенты уже ответили на приглашения ({already_answered_count} чел.)"
+            elif already_sent_count > 0:
+                message = f"Приглашения уже отправлены всем студентам ({already_sent_count} чел.)"
+            else:
+                message = "Нет студентов для отправки приглашений"
 
         return JSONResponse({
             "status": "success",
-            "message": f"Приглашения отправлены {student_count} студентам",
-            "competition_name": competition.name,
-            "student_count": student_count,
-            "student_ids": student_ids
+            "message": message,
+            "details": {
+                "competition_name": competition.name,
+                "total_students": total_students,
+                "sent_count": sent_count,
+                "already_answered_count": already_answered_count,
+                "already_sent_count": already_sent_count,
+                "student_details": student_details
+            }
         })
 
     except Exception as e:
         db.rollback()
         logger.error(f"❌ Ошибка в send_invitations: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Ошибка отправки приглашений: {str(e)}")
+
+
+@router.get("/competitions/get-invitations-status/{competition_id}")
+async def get_invitations_status(
+        competition_id: int,
+        db: Session = Depends(get_db)
+):
+    """Получение статуса приглашений на мероприятие"""
+    try:
+        competition = db.query(Сompetition).filter(Сompetition.id == competition_id).first()
+        if not competition:
+            raise HTTPException(status_code=404, detail="Мероприятие не найдено")
+
+        # Получаем статусы приглашений с именами студентов
+        competition_students = db.query(
+            Competition_student,
+            Students.name
+        ).join(
+            Students, Competition_student.student_id == Students.id
+        ).filter(
+            Competition_student.competition_id == competition_id
+        ).all()
+
+        status_counts = {
+            "not_processed": 0,  # 0 - необработанно
+            "sent": 0,  # 1 - отправлено
+            "accepted": 0,  # 2 - принято
+            "declined": 0,  # 3 - отклонено
+            "total": len(competition_students)
+        }
+
+        student_statuses = []
+
+        for comp_student, student_name in competition_students:
+            # Считаем статусы
+            if comp_student.participation == 0:
+                status_counts["not_processed"] += 1
+                status_text = "Не отправлено"
+            elif comp_student.participation == 1:
+                status_counts["sent"] += 1
+                status_text = "Отправлено"
+            elif comp_student.participation == 2:
+                status_counts["accepted"] += 1
+                status_text = "Принято"
+            elif comp_student.participation == 3:
+                status_counts["declined"] += 1
+                status_text = "Отклонено"
+            else:
+                status_text = "Неизвестно"
+
+            student_statuses.append({
+                "student_id": comp_student.student_id,
+                "student_name": student_name,
+                "participation": comp_student.participation,
+                "status_id": comp_student.status_id,
+                "status_text": status_text
+            })
+
+        return JSONResponse({
+            "status": "success",
+            "competition_name": competition.name,
+            "status_counts": status_counts,
+            "students": student_statuses
+        })
+
+    except Exception as e:
+        logger.error(f"❌ Ошибка в get_invitations_status: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Ошибка получения статуса приглашений: {str(e)}")
