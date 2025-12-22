@@ -248,3 +248,16 @@
     flex-direction: column;
     justify-content: space-between; /* Номер сверху, события снизу */
 }
+
+.status-icon {
+    font-size: 0.9em;
+    margin-right: 5px;
+}
+
+.student-item {
+    transition: background-color 0.2s;
+}
+
+.student-item:hover {
+    background-color: #f8f9fa;
+}

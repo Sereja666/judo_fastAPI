@@ -369,6 +369,7 @@ async def send_invitations(
         sent_count = 0
         already_answered_count = 0
         already_sent_count = 0
+        skipped_count = 0
         student_details = []
 
         # Отправляем приглашения только тем, у кого статус "необработанно" (0)
@@ -383,12 +384,20 @@ async def send_invitations(
                 comp_student.participation = 1  # 1 = отправлено
                 sent_count += 1
                 student_info["action"] = "отправлено"
+                student_info["new_status"] = 1
             elif comp_student.participation == 1:  # Уже отправлено
                 already_sent_count += 1
                 student_info["action"] = "уже отправлено"
+                student_info["new_status"] = comp_student.participation  # не меняем
             elif comp_student.participation >= 2:  # Уже ответили (2=принято, 3=отклонено)
                 already_answered_count += 1
-                student_info["action"] = "уже ответили"
+                student_info["action"] = "уже ответили - не изменяется"
+                student_info["new_status"] = comp_student.participation  # не меняем
+                skipped_count += 1
+            else:
+                # На всякий случай для неизвестных статусов
+                student_info["action"] = "неизвестный статус - пропущено"
+                skipped_count += 1
 
             student_details.append(student_info)
 
@@ -399,21 +408,18 @@ async def send_invitations(
         logger.info(f"   Отправлено новых: {sent_count}")
         logger.info(f"   Уже отправлено ранее: {already_sent_count}")
         logger.info(f"   Уже ответили: {already_answered_count}")
+        logger.info(f"   Пропущено: {skipped_count}")
 
         # Формируем детальное сообщение
+        message_parts = []
         if sent_count > 0:
-            message = f"Приглашения отправлены {sent_count} студентам"
-            if already_answered_count > 0:
-                message += f" ({already_answered_count} уже ответили на приглашение)"
-            if already_sent_count > 0:
-                message += f" ({already_sent_count} уже имеют отправленное приглашение)"
-        else:
-            if already_answered_count > 0:
-                message = f"Все студенты уже ответили на приглашения ({already_answered_count} чел.)"
-            elif already_sent_count > 0:
-                message = f"Приглашения уже отправлены всем студентам ({already_sent_count} чел.)"
-            else:
-                message = "Нет студентов для отправки приглашений"
+            message_parts.append(f"Приглашения отправлены {sent_count} студентам")
+        if already_answered_count > 0:
+            message_parts.append(f"{already_answered_count} уже ответили на приглашение (статус сохранен)")
+        if already_sent_count > 0:
+            message_parts.append(f"{already_sent_count} уже имеют отправленное приглашение")
+
+        message = ". ".join(message_parts)
 
         return JSONResponse({
             "status": "success",
@@ -424,6 +430,7 @@ async def send_invitations(
                 "sent_count": sent_count,
                 "already_answered_count": already_answered_count,
                 "already_sent_count": already_sent_count,
+                "skipped_count": skipped_count,
                 "student_details": student_details
             }
         })

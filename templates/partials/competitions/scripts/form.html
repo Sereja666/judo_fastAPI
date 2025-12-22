@@ -56,6 +56,61 @@
         }
     }
 
+    // Глобальная переменная для хранения статусов учеников
+let studentStatuses = {};
+
+// Функция для загрузки статусов учеников
+function loadStudentStatuses(competitionId) {
+    if (!competitionId) {
+        studentStatuses = {};
+        return;
+    }
+
+    fetch(`/competitions/get-invitations-status/${competitionId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Сохраняем статусы в глобальную переменную
+                studentStatuses = {};
+                data.students.forEach(student => {
+                    studentStatuses[student.student_id] = {
+                        participation: student.participation,
+                        status_text: student.status_text
+                    };
+                });
+                // Перерисовываем список учеников с иконками
+                renderStudentsList();
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка загрузки статусов:', error);
+        });
+}
+
+    // Функция для получения иконки статуса
+    function getStatusIcon(studentId) {
+        if (!studentStatuses[studentId]) {
+            // Если статус неизвестен - иконка вопроса
+            return '<i class="fas fa-question-circle text-secondary me-1" title="Статус неизвестен"></i>';
+        }
+
+        const status = studentStatuses[studentId].participation;
+
+        switch(status) {
+            case 0: // Не отправлено
+                return '<i class="fas fa-times-circle text-danger me-1" title="Не отправлено"></i>';
+            case 1: // Отправлено
+                return '<i class="fas fa-paper-plane text-warning me-1" title="Отправлено, ждём ответ"></i>';
+            case 2: // Принято
+                return '<i class="fas fa-check-circle text-success me-1" title="Принято"></i>';
+            case 3: // Отклонено
+                return '<i class="fas fa-times-circle text-danger me-1" title="Отклонено"></i>';
+            default:
+                return '<i class="fas fa-question-circle text-secondary me-1" title="Неизвестный статус"></i>';
+        }
+    }
+
+
     function renderStudentsList() {
         const studentsList = $('#studentsList');
         studentsList.empty();
@@ -63,9 +118,15 @@
         selectedStudents.forEach(studentId => {
             const student = allStudents.find(s => s.id === studentId);
             if (student) {
+                // Получаем иконку статуса
+                const statusIcon = getStatusIcon(studentId);
+
                 const studentElement = `
                     <div class="d-flex justify-content-between align-items-center p-2 border-bottom">
-                        <span>${student.name}</span>
+                        <div class="d-flex align-items-center">
+                            ${statusIcon}
+                            <span>${student.name}</span>
+                        </div>
                         <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeStudent(${studentId})">
                             <i class="fas fa-times"></i>
                         </button>
@@ -131,12 +192,19 @@
             selectedTrainers = data.trainers || [];
             selectedCertificates = data.certificates || [];
 
-            renderStudentsList();
+            // Загружаем статусы учеников
+            loadStudentStatuses(competitionId);
+
             renderTrainersList();
             renderCertificatesList();
 
             $('#competitionFormTitle').text('Редактирование мероприятия');
             $('#deleteCompetitionBtn').show();
+            $('#sendInvitationsBtn').show();
+
+            // Обновляем текст кнопки в зависимости от статусов
+            updateSendButtonText(competitionId);
+
             $('#competitionFormModal').modal('show');
 
         }).fail(function() {
@@ -144,16 +212,54 @@
         });
     }
 
+
+
+    // Функция для обновления текста кнопки отправки
+    function updateSendButtonText(competitionId) {
+        if (!competitionId) return;
+
+        fetch(`/competitions/get-invitations-status/${competitionId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const sendBtn = $('#sendInvitationsBtn');
+                    const notProcessed = data.status_counts.not_processed;
+                    const answered = data.status_counts.accepted + data.status_counts.declined;
+
+                    if (answered > 0) {
+                        sendBtn.html('<i class="fas fa-paper-plane me-1"></i> Отправить остальным');
+                        sendBtn.attr('title', `${answered} из ${data.status_counts.total} уже ответили`);
+                    } else if (notProcessed === 0) {
+                        sendBtn.html('<i class="fas fa-check me-1"></i> Все приглашения отправлены');
+                        sendBtn.prop('disabled', true);
+                    } else {
+                        sendBtn.html('<i class="fas fa-paper-plane me-1"></i> Отправить приглашения');
+                        sendBtn.removeAttr('title');
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка обновления кнопки:', error);
+            });
+    }
+
+
+
+    // Добавим функцию для сброса статусов при создании нового мероприятия
     function resetCompetitionForm() {
         $('#competitionForm')[0].reset();
         $('#competitionId').val('');
         selectedStudents = [];
         selectedTrainers = [];
         selectedCertificates = [];
+        studentStatuses = {}; // Сбрасываем статусы
         renderStudentsList();
         renderTrainersList();
         renderCertificatesList();
-        $('#sendInvitationsBtn').hide(); // Скрываем кнопку отправки приглашений
+        $('#deleteCompetitionBtn').hide();
+        $('#sendInvitationsBtn').hide();
+        $('#sendInvitationsBtn').prop('disabled', false);
+        $('#sendInvitationsBtn').html('<i class="fas fa-paper-plane me-1"></i> Отправить приглашения');
     }
 
     function saveCompetition() {
@@ -263,57 +369,49 @@ function saveCompetitionForInvitations(competitionId) {
         showMessage('Ошибка сохранения: ' + error, 'danger');
     });
 }
-function sendInvitationsToServer(competitionId) {
-    // Показываем индикатор загрузки
-    const sendBtn = $('#sendInvitationsBtn');
-    const originalText = sendBtn.html();
-    sendBtn.html('<i class="fas fa-spinner fa-spin me-1"></i> Отправка...');
-    sendBtn.prop('disabled', true);
+    fufunction sendInvitationsToServer(competitionId) {
+        // Показываем индикатор загрузки
+        const sendBtn = $('#sendInvitationsBtn');
+        const originalText = sendBtn.html();
+        sendBtn.html('<i class="fas fa-spinner fa-spin me-1"></i> Отправка...');
+        sendBtn.prop('disabled', true);
 
-    fetch(`/competitions/send-invitations/${competitionId}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        // Восстанавливаем кнопку
-        sendBtn.html(originalText);
-        sendBtn.prop('disabled', false);
-
-        if (data.status === 'success') {
-            showMessage(data.message, 'success');
-            console.log('✅ Статус отправки приглашений:');
-            console.log('   Мероприятие:', data.details.competition_name);
-            console.log('   Всего студентов:', data.details.total_students);
-            console.log('   Отправлено новых:', data.details.sent_count);
-            console.log('   Уже ответили:', data.details.already_answered_count);
-            console.log('   Уже отправлено:', data.details.already_sent_count);
-            console.log('   Детали:', data.details.student_details);
-
-            // Можно обновить статус на кнопке или показать детали
-            if (data.details.already_answered_count > 0) {
-                // Если есть уже ответившие, покажем дополнительное сообщение
-                setTimeout(() => {
-                    showMessage(`Примечание: ${data.details.already_answered_count} студентов уже ответили на приглашение`, 'info');
-                }, 1000);
+        fetch(`/competitions/send-invitations/${competitionId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
             }
-        } else if (data.status === 'warning') {
-            showMessage(data.message, 'warning');
-        } else {
-            showMessage(data.message || 'Ошибка отправки приглашений', 'danger');
-        }
-    })
-    .catch(error => {
-        // Восстанавливаем кнопку
-        sendBtn.html(originalText);
-        sendBtn.prop('disabled', false);
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Восстанавливаем кнопку
+            sendBtn.html(originalText);
+            sendBtn.prop('disabled', false);
 
-        showMessage('Ошибка отправки: ' + error, 'danger');
-        console.error('❌ Ошибка отправки приглашений:', error);
-    });
-}
+            if (data.status === 'success') {
+                showMessage(data.message, 'success');
+                console.log('✅ Статус отправки приглашений:', data.details);
+
+                // Перезагружаем статусы учеников
+                loadStudentStatuses(competitionId);
+                // Обновляем текст кнопки
+                updateSendButtonText(competitionId);
+
+            } else if (data.status === 'warning') {
+                showMessage(data.message, 'warning');
+            } else {
+                showMessage(data.message || 'Ошибка отправки приглашений', 'danger');
+            }
+        })
+        .catch(error => {
+            // Восстанавливаем кнопку
+            sendBtn.html(originalText);
+            sendBtn.prop('disabled', false);
+
+            showMessage('Ошибка отправки: ' + error, 'danger');
+            console.error('❌ Ошибка отправки приглашений:', error);
+        });
+    }}
 
 
 // Опционально: функция для проверки статуса приглашений
