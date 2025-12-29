@@ -29,14 +29,7 @@
         setTimeout(() => $('.alert').alert('close'), 5000);
     }
 
-    function formatDisplayDate(dateString) {
-        const date = new Date(dateString + 'T00:00:00');
-        return date.toLocaleDateString('ru-RU', {
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric'
-        });
-    }
+
 
     function formatDateForAPI(date) {
         const year = date.getFullYear();

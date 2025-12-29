@@ -261,3 +261,23 @@
 .student-item:hover {
     background-color: #f8f9fa;
 }
+
+/* Стиль для поля выбора даты */
+#competitionDateInput {
+    cursor: pointer;
+}
+
+#competitionDateInput:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Иконка календаря в поле даты */
+#competitionDateInput::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    filter: invert(0.5);
+}
+
+#competitionDateInput::-webkit-calendar-picker-indicator:hover {
+    filter: invert(0.3);
+}

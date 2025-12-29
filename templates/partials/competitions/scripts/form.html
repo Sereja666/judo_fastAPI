@@ -202,8 +202,10 @@
     function showCompetitionForm() {
         $('#dayModal').modal('hide');
         resetCompetitionForm();
-        $('#competitionDate').val(currentSelectedDate);
-        $('#competitionDateDisplay').val(formatDisplayDate(currentSelectedDate));
+
+        // Устанавливаем текущую дату как значение по умолчанию
+        $('#competitionDateInput').val(currentSelectedDate);
+
         $('#competitionFormTitle').text('Создание мероприятия');
         $('#deleteCompetitionBtn').hide();
         $('#sendInvitationsBtn').hide();
@@ -218,14 +220,19 @@
                 $('#competitionId').val(data.competition.id);
                 $('#competitionName').val(data.competition.name);
                 $('#competitionAddress').val(data.competition.address || '');
-                $('#competitionDate').val(data.competition.date ? data.competition.date.split('T')[0] : '');
-                $('#competitionDateDisplay').val(formatDisplayDate(data.competition.date ? data.competition.date.split('T')[0] : ''));
+
+                // Преобразуем дату в формат YYYY-MM-DD для input type="date"
+                if (data.competition.date) {
+                    const dateObj = new Date(data.competition.date);
+                    const formattedDate = dateObj.toISOString().split('T')[0];
+                    $('#competitionDateInput').val(formattedDate);
+                }
 
                 selectedStudents = data.students || [];
                 selectedTrainers = data.trainers || [];
                 selectedCertificates = data.certificates || [];
 
-                // Загружаем статусы учеников (если endpoint существует)
+                // Загружаем статусы учеников
                 loadStudentStatuses(competitionId);
 
                 renderTrainersList();
@@ -268,7 +275,10 @@
 
         formData.append('name', $('#competitionName').val());
         formData.append('address', $('#competitionAddress').val());
-        formData.append('date', $('#competitionDate').val());
+
+        // Используем новое поле даты
+        const dateValue = $('#competitionDateInput').val();
+        formData.append('date', dateValue);
 
         selectedStudents.forEach(id => formData.append('student_ids', id));
         selectedTrainers.forEach(id => formData.append('trainer_ids', id));
@@ -299,6 +309,7 @@
             showMessage('Ошибка сохранения: ' + error, 'danger');
         });
     }
+
 
     function deleteCompetition() {
         const competitionId = $('#competitionId').val();
@@ -346,7 +357,10 @@
 
         formData.append('name', $('#competitionName').val());
         formData.append('address', $('#competitionAddress').val());
-        formData.append('date', $('#competitionDate').val());
+
+        // Используем новое поле даты и здесь
+        const dateValue = $('#competitionDateInput').val();
+        formData.append('date', dateValue);
 
         selectedStudents.forEach(id => formData.append('student_ids', id));
         selectedTrainers.forEach(id => formData.append('trainer_ids', id));
