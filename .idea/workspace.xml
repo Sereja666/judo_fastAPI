@@ -4,7 +4,15 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ee547eef-2e63-46d4-8d9a-feffb711966c" name="Changes" comment="фикс отправки заявлений" />
+    <list default="true" id="ee547eef-2e63-46d4-8d9a-feffb711966c" name="Changes" comment="фикс отправки заявлений">
+      <change afterPath="$PROJECT_DIR$/templates/partials/edit_students/parents_js.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/templates/partials/modals/parent_modal.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/students.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/students.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/edit_students.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/edit_students.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/partials/edit_students/additional_info.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/partials/edit_students/additional_info.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/partials/edit_students/main_js.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/partials/edit_students/main_js.html" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -13,8 +21,8 @@
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
-        <option value="HTML File" />
         <option value="Python Script" />
+        <option value="HTML File" />
       </list>
     </option>
   </component>
@@ -102,7 +110,7 @@
       <recent name="C:\Python\Judo_aiogram_superset\regulatory_tasks" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.qqq">
+  <component name="RunManager" selected="Python.run_notif_admin (1)">
     <configuration name="aiogram_tg_notif" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="Judo_aiogram_superset" />
       <option name="ENV_FILES" value="" />
@@ -215,9 +223,9 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.run_notif_admin (1)" />
         <item itemvalue="Python.qqq" />
         <item itemvalue="Python.backup_judo" />
-        <item itemvalue="Python.run_notif_admin (1)" />
         <item itemvalue="Python.api_main" />
         <item itemvalue="Python.aiogram_tg_notif" />
       </list>
@@ -238,30 +246,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1741959141895</updated>
-    </task>
-    <task id="LOCAL-00103" summary="мидлваре для авторизации">
-      <option name="closed" value="true" />
-      <created>1764515341782</created>
-      <option name="number" value="00103" />
-      <option name="presentableId" value="LOCAL-00103" />
-      <option name="project" value="LOCAL" />
-      <updated>1764515341782</updated>
-    </task>
-    <task id="LOCAL-00104" summary="мидлваре для авторизации">
-      <option name="closed" value="true" />
-      <created>1764515589367</created>
-      <option name="number" value="00104" />
-      <option name="presentableId" value="LOCAL-00104" />
-      <option name="project" value="LOCAL" />
-      <updated>1764515589367</updated>
-    </task>
-    <task id="LOCAL-00105" summary="мидлваре для авторизации">
-      <option name="closed" value="true" />
-      <created>1764516036820</created>
-      <option name="number" value="00105" />
-      <option name="presentableId" value="LOCAL-00105" />
-      <option name="project" value="LOCAL" />
-      <updated>1764516036820</updated>
     </task>
     <task id="LOCAL-00106" summary="мидлваре для авторизации">
       <option name="closed" value="true" />
@@ -631,7 +615,31 @@
       <option name="project" value="LOCAL" />
       <updated>1766419103079</updated>
     </task>
-    <option name="localTasksCounter" value="152" />
+    <task id="LOCAL-00152" summary="фикс отправки заявлений">
+      <option name="closed" value="true" />
+      <created>1766419629608</created>
+      <option name="number" value="00152" />
+      <option name="presentableId" value="LOCAL-00152" />
+      <option name="project" value="LOCAL" />
+      <updated>1766419629608</updated>
+    </task>
+    <task id="LOCAL-00153" summary="фикс отправки заявлений">
+      <option name="closed" value="true" />
+      <created>1766420805953</created>
+      <option name="number" value="00153" />
+      <option name="presentableId" value="LOCAL-00153" />
+      <option name="project" value="LOCAL" />
+      <updated>1766420805953</updated>
+    </task>
+    <task id="LOCAL-00154" summary="фикс отправки заявлений">
+      <option name="closed" value="true" />
+      <created>1766421113553</created>
+      <option name="number" value="00154" />
+      <option name="presentableId" value="LOCAL-00154" />
+      <option name="project" value="LOCAL" />
+      <updated>1766421113553</updated>
+    </task>
+    <option name="localTasksCounter" value="155" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">

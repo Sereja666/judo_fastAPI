@@ -95,7 +95,8 @@
                     $('#priceInfo').text(infoText);
                 }
             }
-
+            // Загружаем родителей ученика
+            loadStudentParents(studentId);
             // Загружаем медицинские справки ПОСЛЕ загрузки основных данных
             loadMedicalCertificates(studentId);
 
@@ -107,6 +108,56 @@
             showMessage('Ошибка загрузки данных ученика: ' + error, 'danger');
         });
     }
+
+
+
+    function loadStudentParents(studentId) {
+        console.log('🔄 Загрузка родителей ученика ID:', studentId);
+
+        $.get(`/edit-students/get-parents/${studentId}`, function(parents) {
+            console.log('✅ Получены родители ученика:', parents);
+
+            const container = $('#parentsContainer');
+            const placeholder = $('#parentsPlaceholder');
+
+            if (parents && parents.length > 0) {
+                placeholder.hide();
+
+                let html = '<div class="list-group">';
+                parents.forEach(parent => {
+                    html += `
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>${parent.full_name || parent.telegram_username || 'Родитель'}</strong>
+                            <br>
+                            <small class="text-muted">
+                                ${parent.phone ? '📱 ' + parent.phone + ' ' : ''}
+                                ${parent.email ? '📧 ' + parent.email + ' ' : ''}
+                                ${parent.telegram_username ? '👤 @' + parent.telegram_username : ''}
+                            </small>
+                        </div>
+                        <button class="btn btn-outline-danger btn-sm" onclick="removeParent(${parent.relation_id}, this)">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                    `;
+                });
+                html += '</div>';
+
+                container.html(html);
+            } else {
+                placeholder.show();
+                container.html('<div class="text-muted" id="parentsPlaceholder">У данного ученика пока нет добавленных родителей</div>');
+            }
+
+        }).fail(function(xhr, status, error) {
+            console.error('❌ Ошибка загрузки родителей:', error);
+            showMessage('Ошибка загрузки списка родителей', 'warning');
+        });
+    }
+
+
+
 
     function updateStudent() {
         const formData = new FormData(document.getElementById('studentForm'));

@@ -3,11 +3,11 @@ from config import templates, settings
 from fastapi import APIRouter, Request, Form, Depends, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.orm import Session
-from sqlalchemy import and_
+from sqlalchemy import and_, or_
 from typing import Optional, List
 from datetime import datetime
 from database.models import get_db, Students, Sport, Trainers, Prices, Sports_rank, Belt_сolor, MedCertificat_received, \
-    MedCertificat_type, Competition_student, Сompetition
+    MedCertificat_type, Competition_student, Сompetition, Students_parents, Tg_notif_user
 from config import templates
 from logger_config import logger
 
@@ -709,4 +709,160 @@ async def delete_award(award_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"Ошибка удаления записи: {str(e)}")
 
 
-# ----------------------------------------------------------
+# ----------------Родители---------------------
+
+@router.get("/edit-students/get-parents/{student_id}")
+async def get_student_parents(student_id: int, db: Session = Depends(get_db)):
+    """Получение списка родителей ученика"""
+    try:
+        print(f"🔹 Запрос родителей ученика ID: {student_id}")
+
+        # Получаем связи ученик-родители
+        parent_relations = db.query(Students_parents).filter(
+            Students_parents.student == student_id
+        ).all()
+
+        result = []
+        for relation in parent_relations:
+            # Получаем информацию о родителе из Tg_notif_user
+            parent = db.query(Tg_notif_user).filter(
+                Tg_notif_user.id == relation.parents
+            ).first()
+
+            if parent:
+                result.append({
+                    "id": parent.id,
+                    "relation_id": relation.id,
+                    "telegram_id": parent.telegram_id,
+                    "full_name": parent.full_name or "",
+                    "telegram_username": parent.telegram_username or "",
+                    "phone": parent.phone or "",
+                    "email": parent.email or "",
+                    "get_info_student": parent.get_info_student
+                })
+
+        return JSONResponse(result)
+
+    except Exception as e:
+        logger.error(f"❌ Ошибка загрузки родителей: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Ошибка загрузки родителей: {str(e)}")
+
+
+@router.get("/edit-students/search-parents")
+async def search_parents(query: str, db: Session = Depends(get_db)):
+    """Поиск родителей для автозаполнения"""
+    try:
+        if not query or len(query) < 2:
+            return JSONResponse([])
+
+        # Ищем родителей по различным полям
+        parents = db.query(Tg_notif_user).filter(
+            and_(
+                Tg_notif_user.is_active == True,
+                or_(
+                    Tg_notif_user.full_name.ilike(f"%{query}%"),
+                    Tg_notif_user.telegram_username.ilike(f"%{query}%"),
+                    Tg_notif_user.phone.ilike(f"%{query}%"),
+                    Tg_notif_user.email.ilike(f"%{query}%")
+                )
+            )
+        ).limit(10).all()
+
+        result = [
+            {
+                "id": parent.id,
+                "full_name": parent.full_name or "",
+                "telegram_username": parent.telegram_username or "",
+                "phone": parent.phone or "",
+                "email": parent.email or ""
+            }
+            for parent in parents
+        ]
+
+        return JSONResponse(result)
+
+    except Exception as e:
+        logger.error(f"❌ Ошибка поиска родителей: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Ошибка поиска родителей: {str(e)}")
+
+
+@router.post("/edit-students/add-parent")
+async def add_parent(
+        student_id: int = Form(...),
+        parent_id: int = Form(...),
+        db: Session = Depends(get_db)
+):
+    """Добавление родителя к ученику"""
+    try:
+        # Проверяем существование ученика
+        student = db.query(Students).filter(Students.id == student_id).first()
+        if not student:
+            raise HTTPException(status_code=404, detail="Ученик не найден")
+
+        # Проверяем существование родителя
+        parent = db.query(Tg_notif_user).filter(Tg_notif_user.id == parent_id).first()
+        if not parent:
+            raise HTTPException(status_code=404, detail="Родитель не найден")
+
+        # Проверяем, не существует ли уже связь
+        existing_relation = db.query(Students_parents).filter(
+            and_(
+                Students_parents.student == student_id,
+                Students_parents.parents == parent_id
+            )
+        ).first()
+
+        if existing_relation:
+            raise HTTPException(status_code=400, detail="Родитель уже добавлен к ученику")
+
+        # Создаем новую связь
+        new_relation = Students_parents(
+            student=student_id,
+            parents=parent_id
+        )
+
+        db.add(new_relation)
+        db.commit()
+        db.refresh(new_relation)
+
+        logger.info(f"✅ Добавлен родитель {parent.full_name} к ученику {student.name}")
+
+        return JSONResponse({
+            "status": "success",
+            "message": "Родитель успешно добавлен",
+            "relation_id": new_relation.id
+        })
+
+    except Exception as e:
+        db.rollback()
+        logger.error(f"❌ Ошибка при добавлении родителя: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Ошибка добавления родителя: {str(e)}")
+
+
+@router.delete("/edit-students/remove-parent/{relation_id}")
+async def remove_parent(relation_id: int, db: Session = Depends(get_db)):
+    """Удаление связи с родителем"""
+    try:
+        print(f"🔹 Удаление связи с родителем ID: {relation_id}")
+
+        relation = db.query(Students_parents).filter(
+            Students_parents.id == relation_id
+        ).first()
+
+        if not relation:
+            raise HTTPException(status_code=404, detail="Связь не найдена")
+
+        db.delete(relation)
+        db.commit()
+
+        return JSONResponse({
+            "status": "success",
+            "message": "Родитель успешно удален из ученика"
+        })
+
+    except Exception as e:
+        db.rollback()
+        logger.error(f"❌ Ошибка при удалении связи: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Ошибка удаления связи: {str(e)}")

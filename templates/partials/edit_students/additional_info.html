@@ -1,18 +1,40 @@
 <!-- templates/partials/edit_students/additional_info.html -->
 <div class="form-section">
-    <h5 class="section-title">Дополнительно</h5>
-    <div class="row">
+    <h5 class="section-title">Родители</h5>
+
+    <!-- Контейнер для списка родителей -->
+    <div id="parentsContainer" class="mb-3">
+        <div class="text-muted" id="parentsPlaceholder">
+            У данного ученика пока нет добавленных родителей
+        </div>
+    </div>
+
+    <!-- Кнопка добавления родителя -->
+    <button type="button" class="btn btn-outline-primary btn-sm mb-3" onclick="openAddParentModal()">
+        <i class="fas fa-user-plus"></i> Добавить родителя
+    </button>
+
+    <!-- Форма поиска родителя -->
+    <div class="mb-3" id="parentSearchForm" style="display: none;">
+        <label class="form-label">Поиск родителя</label>
+        <div class="input-group">
+            <input type="text"
+                   class="form-control"
+                   id="parentSearchInput"
+                   placeholder="Введите ФИО, телефон или username Telegram..."
+                   onkeyup="searchParents(this.value)">
+            <button class="btn btn-outline-secondary" type="button" onclick="clearParentSearch()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div id="parentSearchResults" class="mt-2"></div>
+    </div>
+
+    <!-- Дополнительные поля -->
+    <div class="row mt-3">
         <div class="col-md-6 mb-3">
-            <label for="telegram_id" class="form-label">Telegram ID</label>
+            <label for="telegram_id" class="form-label">Telegram ID ученика</label>
             <input type="number" class="form-control" id="telegram_id" name="telegram_id">
-        </div>
-        <div class="col-md-3 mb-3">
-            <label for="parent1" class="form-label">Родитель 1 ID</label>
-            <input type="number" class="form-control" id="parent1" name="parent1">
-        </div>
-        <div class="col-md-3 mb-3">
-            <label for="parent2" class="form-label">Родитель 2 ID</label>
-            <input type="number" class="form-control" id="parent2" name="parent2">
         </div>
     </div>
 </div>

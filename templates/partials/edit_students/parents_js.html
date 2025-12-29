@@ -1,0 +1,144 @@
+<!-- templates/partials/edit_students/parents_js.html -->
+<script>
+    // Функция открытия модального окна добавления родителя
+    function openAddParentModal() {
+        const studentId = $('#studentId').val();
+        if (!studentId || studentId === 'new') {
+            showMessage('Сначала сохраните данные ученика', 'warning');
+            return;
+        }
+
+        $('#studentIdForParent').val(studentId);
+        $('#parentId').val('');
+        $('#searchParent').val('');
+        $('#parentSearchResultsModal').html('');
+        $('#selectedParentInfo').hide();
+        $('#saveParentBtn').prop('disabled', true);
+        $('#parentInfoDetails').html('');
+
+        $('#parentModal').modal('show');
+    }
+
+    // Поиск родителей в модальном окне
+    function searchParentsModal(query) {
+        if (!query || query.length < 2) {
+            $('#parentSearchResultsModal').html('');
+            return;
+        }
+
+        $.get(`/edit-students/search-parents?query=${encodeURIComponent(query)}`, function(parents) {
+            const resultsContainer = $('#parentSearchResultsModal');
+            resultsContainer.html('');
+
+            if (parents.length === 0) {
+                resultsContainer.html('<div class="alert alert-info">Родители не найдены</div>');
+                return;
+            }
+
+            let html = '<div class="list-group">';
+            parents.forEach(parent => {
+                let displayText = '';
+                if (parent.full_name) displayText += parent.full_name + ' ';
+                if (parent.telegram_username) displayText += '(@' + parent.telegram_username + ') ';
+                if (parent.phone) displayText += parent.phone;
+
+                html += `
+                <button type="button"
+                        class="list-group-item list-group-item-action"
+                        onclick="selectParent(${parent.id}, '${parent.full_name || parent.telegram_username || 'Родитель'}', '${parent.telegram_username || ''}', '${parent.phone || ''}', '${parent.email || ''}')">
+                    ${displayText}
+                </button>
+                `;
+            });
+            html += '</div>';
+
+            resultsContainer.html(html);
+        }).fail(function(xhr, status, error) {
+            console.error('❌ Ошибка поиска родителей:', error);
+            $('#parentSearchResultsModal').html('<div class="alert alert-danger">Ошибка поиска родителей</div>');
+        });
+    }
+
+    // Выбор родителя из результатов поиска
+    function selectParent(parentId, fullName, telegramUsername, phone, email) {
+        $('#parentId').val(parentId);
+        $('#saveParentBtn').prop('disabled', false);
+
+        let infoHtml = `
+            <p><strong>${fullName}</strong></p>
+            ${telegramUsername ? `<p>Telegram: @${telegramUsername}</p>` : ''}
+            ${phone ? `<p>Телефон: ${phone}</p>` : ''}
+            ${email ? `<p>Email: ${email}</p>` : ''}
+        `;
+
+        $('#parentInfoDetails').html(infoHtml);
+        $('#selectedParentInfo').show();
+        $('#parentSearchResultsModal').html('');
+        $('#searchParent').val('');
+    }
+
+    // Добавление родителя к ученику
+    function addParent() {
+        const studentId = $('#studentIdForParent').val();
+        const parentId = $('#parentId').val();
+
+        if (!studentId || !parentId) {
+            showMessage('Выберите родителя', 'warning');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('student_id', studentId);
+        formData.append('parent_id', parentId);
+
+        fetch('/edit-students/add-parent', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showMessage(data.message, 'success');
+                $('#parentModal').modal('hide');
+                // Обновляем список родителей
+                loadStudentParents(studentId);
+            } else {
+                showMessage(data.detail || 'Ошибка добавления родителя', 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('❌ Ошибка добавления родителя:', error);
+            showMessage('Ошибка добавления родителя', 'danger');
+        });
+    }
+
+    // Удаление родителя
+    function removeParent(relationId, button) {
+        if (!confirm('Вы уверены, что хотите удалить этого родителя?')) {
+            return;
+        }
+
+        fetch(`/edit-students/remove-parent/${relationId}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showMessage(data.message, 'success');
+                // Удаляем элемент из списка
+                $(button).closest('.list-group-item').remove();
+
+                // Если список пуст, показываем заглушку
+                if ($('#parentsContainer .list-group-item').length === 0) {
+                    $('#parentsContainer').html('<div class="text-muted" id="parentsPlaceholder">У данного ученика пока нет добавленных родителей</div>');
+                }
+            } else {
+                showMessage(data.detail || 'Ошибка удаления родителя', 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('❌ Ошибка удаления родителя:', error);
+            showMessage('Ошибка удаления родителя', 'danger');
+        });
+    }
+</script>

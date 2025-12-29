@@ -1,0 +1,43 @@
+<!-- templates/partials/modals/parent_modal.html -->
+<div class="modal fade" id="parentModal" tabindex="-1" aria-labelledby="parentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="parentModalLabel">Добавление родителя</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="parentForm">
+                <div class="modal-body">
+                    <input type="hidden" id="studentIdForParent" name="student_id">
+                    <input type="hidden" id="parentId" name="parent_id">
+
+                    <div class="mb-3">
+                        <label for="searchParent" class="form-label">Поиск родителя</label>
+                        <input type="text"
+                               class="form-control"
+                               id="searchParent"
+                               placeholder="Введите ФИО, телефон или username..."
+                               onkeyup="searchParentsModal(this.value)">
+                        <div class="form-text">Начните вводить данные для поиска</div>
+                    </div>
+
+                    <div id="parentSearchResultsModal" class="mt-3"></div>
+
+                    <!-- Информация о выбранном родителе -->
+                    <div id="selectedParentInfo" class="card mt-3" style="display: none;">
+                        <div class="card-body">
+                            <h6 class="card-title">Выбранный родитель:</h6>
+                            <div id="parentInfoDetails"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-primary" id="saveParentBtn" onclick="addParent()" disabled>
+                        <i class="fas fa-user-plus"></i> Добавить родителя
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
