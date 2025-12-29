@@ -30,9 +30,8 @@
         <!-- Награды и достижения -->
         {% include "partials/edit_students/awards.html" %}
 
-        <!-- JavaScript для родителей -->
-        {% include "partials/edit_students/parents_js.html" %}
-        {% endblock %}
+        <!-- Дополнительно -->
+        {% include "partials/edit_students/additional_info.html" %}
 
         <button type="submit" class="btn btn-primary btn-lg">
             <i class="fas fa-save"></i>
@@ -47,6 +46,7 @@
 <!-- Модальные окна -->
 {% include "partials/modals/certificate_modal.html" %}
 {% include "partials/modals/award_modal.html" %}
+{% include "partials/modals/parent_modal.html" %}
 {% endblock %}
 
 {% block scripts %}
@@ -58,6 +58,9 @@
 
 <!-- JavaScript для наград -->
 {% include "partials/edit_students/awards_js.html" %}
+
+<!-- JavaScript для родителей -->
+{% include "partials/edit_students/parents_js.html" %}
 {% endblock %}
 
 {% block styles %}
