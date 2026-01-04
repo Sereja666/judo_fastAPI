@@ -9,7 +9,7 @@ from config import templates, settings
 
 
 from database.models import Сompetition, MedCertificat_type, Students, Trainers, \
-    Competition_student, Сompetition_trainer, Сompetition_MedCertificat, get_db
+    Competition_student, Сompetition_trainer, Сompetition_MedCertificat, get_db, MedCertificat_received
 from config import templates
 from logger_config import logger
 

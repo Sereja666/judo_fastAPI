@@ -283,22 +283,15 @@
 		resetCompetitionForm();
 
 		// Устанавливаем текущую дату как значение по умолчанию
+		// Проверьте формат currentSelectedDate
+		console.log('currentSelectedDate:', currentSelectedDate); // для отладки
+
 		$('#competitionDateInput').val(currentSelectedDate);
 
 		$('#competitionFormTitle').text('Создание мероприятия');
 		$('#deleteCompetitionBtn').hide();
 		$('#sendInvitationsBtn').hide();
 		$('#competitionFormModal').modal('show');
-	}
-
-	function handleDateChangeForCertificates() {
-		const competitionId = $('#competitionId').val();
-		const competitionDate = this.value;
-
-		// Проверяем справки у всех выбранных студентов
-		selectedStudents.forEach(function(studentId) {
-			checkStudentCertificates(studentId, competitionId, competitionDate);
-		});
 	}
 
 	function editCompetition(competitionId) {
@@ -311,9 +304,13 @@
 				$('#competitionAddress').val(data.competition.address || '');
 
 				if (data.competition.date) {
-					const dateObj = new Date(data.competition.date);
-					const formattedDate = dateObj.toISOString().split('T')[0];
-					$('#competitionDateInput').val(formattedDate);
+					// ВАЖНО: Просто берем часть до 'T', без преобразований часового пояса
+					const isoDate = data.competition.date;
+					if (isoDate.includes('T')) {
+						$('#competitionDateInput').val(isoDate.split('T')[0]);
+					} else {
+						$('#competitionDateInput').val(isoDate);
+					}
 				}
 
 				selectedStudents = data.students || [];
