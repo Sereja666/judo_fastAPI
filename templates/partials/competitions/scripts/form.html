@@ -65,6 +65,7 @@
 	}
 
 	// Функция для ручной проверки всех справок (можно добавить кнопку "Проверить справки")
+	// Функция для ручной проверки всех справок
 	function checkAllCertificates() {
 		const competitionId = $('#competitionId').val();
 		const competitionDate = $('#competitionDateInput').val();
@@ -73,6 +74,15 @@
 			showMessage('Сначала укажите дату мероприятия', 'warning');
 			return;
 		}
+
+		// Удаляем старые tooltip, чтобы не было дублирования
+		selectedStudents.forEach(function(studentId) {
+			const warningEl = $(`#cert_warning_${studentId}`);
+			const tooltipInstance = bootstrap.Tooltip.getInstance(warningEl[0]);
+			if (tooltipInstance) {
+				tooltipInstance.dispose();
+			}
+		});
 
 		selectedStudents.forEach(function(studentId) {
 			checkStudentCertificates(studentId, competitionId, competitionDate);
@@ -192,8 +202,8 @@
 						<div class="d-flex align-items-center">
 							${statusIcon}
 							<span>${student.name}</span>
-							<span id="cert_warning_${studentId}" class="ms-2" style="display: none;">
-								<i class="fas fa-exclamation-triangle text-danger" title="Не хватает медицинских справок!"></i>
+							<span id="cert_warning_${studentId}" class="ms-2" style="display: none; cursor: pointer;">
+								<i class="fas fa-exclamation-triangle text-danger"></i>
 							</span>
 						</div>
 						<button type="button" class="btn btn-sm btn-outline-danger" onclick="removeStudent(${studentId})">
@@ -214,37 +224,62 @@
 	// Новая функция для проверки справок студента
 	// Глобальная функция для проверки справок
 	function checkStudentCertificates(studentId, competitionId, competitionDate) {
-    const warningEl = $(`#cert_warning_${studentId}`);
+		const warningEl = $(`#cert_warning_${studentId}`);
 
-    // Формируем URL для запроса
-    let url = `/competitions/check-student-certificates/${studentId}?`;
+		// Формируем URL для запроса
+		let url = `/competitions/check-student-certificates/${studentId}?`;
 
-    if (competitionId) {
-        url += `competition_id=${competitionId}`;
-    } else if (competitionDate) {
-        url += `date=${competitionDate}`;
-    } else {
-        // Если нет даты, скрываем предупреждение
-        warningEl.hide();
-        return;
-    }
+		if (competitionId) {
+			url += `competition_id=${competitionId}`;
+		} else if (competitionDate) {
+			url += `date=${competitionDate}`;
+		} else {
+			// Если нет даты, скрываем предупреждение
+			warningEl.hide();
+			return;
+		}
 
-    $.get(url)
-        .done(function(data) {
-            // Показываем иконку только если не хватает справок
-            if (!data.has_all_certificates && data.missing_certificates.length > 0) {
-                const missingCerts = data.missing_certificates.map(c => c.name).join(', ');
-                warningEl.attr('title', `Отсутствуют справки: ${missingCerts}`);
-                warningEl.show();
-            } else {
-                warningEl.hide();
-            }
-        })
-        .fail(function(error) {
-            console.error('Ошибка проверки справок:', error);
-            warningEl.hide();
-        });
-    }
+		$.get(url)
+			.done(function(data) {
+				// Показываем иконку только если не хватает справок
+				if (!data.has_all_certificates && data.missing_certificates.length > 0) {
+					// Формируем красивый список отсутствующих справок
+					const missingCertsList = data.missing_certificates.map(c =>
+						`• ${c.name}`
+					).join('<br>');
+
+					const tooltipTitle = `
+						<div style="text-align: left; max-width: 250px;">
+							<strong>Отсутствуют справки:</strong><br>
+							${missingCertsList}
+						</div>
+					`;
+
+					// Устанавливаем HTML tooltip
+					warningEl.attr('data-bs-toggle', 'tooltip');
+					warningEl.attr('data-bs-html', 'true');
+					warningEl.attr('data-bs-title', tooltipTitle);
+					warningEl.attr('data-bs-placement', 'right');
+
+					// Показываем иконку
+					warningEl.show();
+
+					// Инициализируем tooltip Bootstrap
+					if (typeof bootstrap !== 'undefined') {
+						new bootstrap.Tooltip(warningEl[0], {
+							html: true,
+							sanitize: false
+						});
+					}
+				} else {
+					warningEl.hide();
+				}
+			})
+			.fail(function(error) {
+				console.error('Ошибка проверки справок:', error);
+				warningEl.hide();
+			});
+	}
 
 
 	function renderTrainersList() {
@@ -268,6 +303,13 @@
 	}
 
 	function removeStudent(studentId) {
+		// Удаляем tooltip перед удалением студента
+		const warningEl = $(`#cert_warning_${studentId}`);
+		const tooltipInstance = bootstrap.Tooltip.getInstance(warningEl[0]);
+		if (tooltipInstance) {
+			tooltipInstance.dispose();
+		}
+
 		selectedStudents = selectedStudents.filter(id => id !== studentId);
 		renderStudentsList();
 	}

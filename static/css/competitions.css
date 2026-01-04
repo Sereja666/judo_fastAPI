@@ -317,3 +317,26 @@
         align-self: flex-end;
     }
 }
+
+.tooltip-inner {
+    max-width: 300px !important;
+    text-align: left !important;
+}
+
+.bs-tooltip-end .tooltip-arrow {
+    border-right-color: #dc3545 !important;
+}
+
+.bs-tooltip-end .tooltip-inner {
+    background-color: #dc3545 !important;
+    color: white !important;
+    border: 1px solid #dc3545 !important;
+}
+
+/* Или для светлой версии */
+.bs-tooltip-end .tooltip-inner.light {
+    background-color: white !important;
+    color: #212529 !important;
+    border: 1px solid #dee2e6 !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
