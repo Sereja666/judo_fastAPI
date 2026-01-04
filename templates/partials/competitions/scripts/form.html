@@ -45,17 +45,40 @@
 			const student = filteredStudents[0];
 			if (!selectedStudents.includes(student.id)) {
 				selectedStudents.push(student.id);
-				renderStudentsList();
 
-				// Проверяем справки для нового студента
+				// Проверяем справки только после добавления студента
 				const competitionId = $('#competitionId').val();
 				const competitionDate = $('#competitionDateInput').val();
+
+				// Рендерим список
+				renderStudentsList();
+
+				// Если есть дата, проверяем справки для нового студента
 				if (competitionDate) {
-					checkStudentCertificates(student.id, competitionId, competitionDate);
+					setTimeout(function() {
+						checkStudentCertificates(student.id, competitionId, competitionDate);
+					}, 100);
 				}
 			}
 			$('#studentSearch').val('');
 		}
+	}
+
+	// Функция для ручной проверки всех справок (можно добавить кнопку "Проверить справки")
+	function checkAllCertificates() {
+		const competitionId = $('#competitionId').val();
+		const competitionDate = $('#competitionDateInput').val();
+
+		if (!competitionDate) {
+			showMessage('Сначала укажите дату мероприятия', 'warning');
+			return;
+		}
+
+		selectedStudents.forEach(function(studentId) {
+			checkStudentCertificates(studentId, competitionId, competitionDate);
+		});
+
+		showMessage('Проверка справок выполнена', 'info');
 	}
 
 	function addTrainer() {
@@ -150,6 +173,7 @@
 			});
 	}
 
+
 	function renderStudentsList() {
 		const studentsList = $('#studentsList');
 		studentsList.empty();
@@ -162,15 +186,15 @@
 			if (student) {
 				const statusIcon = getStatusIcon(studentId);
 
-				// Всегда отображаем контейнер для иконок состояния
+				// Создаем элемент студента
 				const studentElement = `
 					<div class="d-flex justify-content-between align-items-center p-2 border-bottom" id="student_${studentId}">
 						<div class="d-flex align-items-center">
 							${statusIcon}
 							<span>${student.name}</span>
-							<div id="cert_container_${studentId}" class="ms-2">
-								<!-- Иконки будут добавлены через JS -->
-							</div>
+							<span id="cert_warning_${studentId}" class="ms-2" style="display: none;">
+								<i class="fas fa-exclamation-triangle text-danger" title="Не хватает медицинских справок!"></i>
+							</span>
 						</div>
 						<button type="button" class="btn btn-sm btn-outline-danger" onclick="removeStudent(${studentId})">
 							<i class="fas fa-times"></i>
@@ -179,20 +203,7 @@
 				`;
 				studentsList.append(studentElement);
 
-				// Создаем иконки динамически
-				$(`#cert_container_${studentId}`).html(`
-					<span id="cert_warning_${studentId}" style="display: none;">
-						<i class="fas fa-exclamation-triangle text-warning" title="Проверка справок..."></i>
-					</span>
-					<span id="cert_error_${studentId}" style="display: none;">
-						<i class="fas fa-exclamation-circle text-danger" title="Не хватает медицинских справок!"></i>
-					</span>
-					<span id="cert_ok_${studentId}" style="display: none;">
-						<i class="fas fa-check-circle text-success" title="Все справки в порядке"></i>
-					</span>
-				`);
-
-				// Проверяем справки для этого студента
+				// Проверяем справки для этого студента только если есть дата мероприятия
 				if (competitionDate) {
 					checkStudentCertificates(studentId, competitionId, competitionDate);
 				}
@@ -203,49 +214,37 @@
 	// Новая функция для проверки справок студента
 	// Глобальная функция для проверки справок
 	function checkStudentCertificates(studentId, competitionId, competitionDate) {
-		const loadingEl = $(`#cert_warning_${studentId}`);
-		const errorEl = $(`#cert_error_${studentId}`);
-		const okEl = $(`#cert_ok_${studentId}`);
+    const warningEl = $(`#cert_warning_${studentId}`);
 
-		// Показываем индикатор загрузки
-		loadingEl.show();
-		errorEl.hide();
-		okEl.hide();
+    // Формируем URL для запроса
+    let url = `/competitions/check-student-certificates/${studentId}?`;
 
-		// Формируем URL для запроса
-		let url = `/competitions/check-student-certificates/${studentId}?`;
+    if (competitionId) {
+        url += `competition_id=${competitionId}`;
+    } else if (competitionDate) {
+        url += `date=${competitionDate}`;
+    } else {
+        // Если нет даты, скрываем предупреждение
+        warningEl.hide();
+        return;
+    }
 
-		if (competitionId) {
-			url += `competition_id=${competitionId}`;
-		} else if (competitionDate) {
-			url += `date=${competitionDate}`;
-		} else {
-			// Если нет ни competitionId ни date, скрываем все индикаторы
-			loadingEl.hide();
-			return;
-		}
-
-		$.get(url)
-			.done(function(data) {
-				loadingEl.hide();
-
-				if (data.has_all_certificates) {
-					okEl.show();
-					if (data.missing_certificates.length === 0) {
-						okEl.attr('title', 'Все медицинские справки в порядке');
-					}
-				} else {
-					errorEl.show();
-					// Формируем подробное описание отсутствующих справок
-					const missingCerts = data.missing_certificates.map(c => c.name).join(', ');
-					errorEl.attr('title', `Отсутствуют справки: ${missingCerts}`);
-				}
-			})
-			.fail(function(error) {
-				loadingEl.hide();
-				console.error('Ошибка проверки справок:', error);
-			});
-	}
+    $.get(url)
+        .done(function(data) {
+            // Показываем иконку только если не хватает справок
+            if (!data.has_all_certificates && data.missing_certificates.length > 0) {
+                const missingCerts = data.missing_certificates.map(c => c.name).join(', ');
+                warningEl.attr('title', `Отсутствуют справки: ${missingCerts}`);
+                warningEl.show();
+            } else {
+                warningEl.hide();
+            }
+        })
+        .fail(function(error) {
+            console.error('Ошибка проверки справок:', error);
+            warningEl.hide();
+        });
+    }
 
 
 	function renderTrainersList() {
@@ -280,26 +279,16 @@
 
 	// Функции для модальных окон
 	function showCompetitionForm() {
-			$('#dayModal').modal('hide');
-			resetCompetitionForm();
+		$('#dayModal').modal('hide');
+		resetCompetitionForm();
 
-			// Устанавливаем текущую дату как значение по умолчанию
-			$('#competitionDateInput').val(currentSelectedDate);
+		// Устанавливаем текущую дату как значение по умолчанию
+		$('#competitionDateInput').val(currentSelectedDate);
 
-			$('#competitionFormTitle').text('Создание мероприятия');
-			$('#deleteCompetitionBtn').hide();
-			$('#sendInvitationsBtn').hide();
-			$('#competitionFormModal').modal('show');
-
-			// Добавляем обработчик изменения даты для проверки справок
-			setTimeout(function() {
-				const dateInput = document.getElementById('competitionDateInput');
-				if (dateInput) {
-					// Удаляем предыдущие обработчики, чтобы не было дублирования
-					dateInput.removeEventListener('change', handleDateChangeForCertificates);
-					dateInput.addEventListener('change', handleDateChangeForCertificates);
-				}
-			}, 100);
+		$('#competitionFormTitle').text('Создание мероприятия');
+		$('#deleteCompetitionBtn').hide();
+		$('#sendInvitationsBtn').hide();
+		$('#competitionFormModal').modal('show');
 	}
 
 	function handleDateChangeForCertificates() {
@@ -336,7 +325,6 @@
 
 				renderTrainersList();
 				renderCertificatesList();
-				renderStudentsList(); // Теперь вызываем здесь
 
 				$('#competitionFormTitle').text('Редактирование мероприятия');
 				$('#deleteCompetitionBtn').show();
@@ -347,22 +335,10 @@
 
 				$('#competitionFormModal').modal('show');
 
-				// Добавляем обработчик изменения даты
+				// Ждем пока модальное окно откроется и рендерим студентов
 				setTimeout(function() {
-					const dateInput = document.getElementById('competitionDateInput');
-					if (dateInput) {
-						dateInput.removeEventListener('change', handleDateChangeForCertificates);
-						dateInput.addEventListener('change', handleDateChangeForCertificates);
-					}
-
-					// Проверяем справки после загрузки данных
-					const competitionDate = $('#competitionDateInput').val();
-					if (competitionDate) {
-						selectedStudents.forEach(function(studentId) {
-							checkStudentCertificates(studentId, competitionId, competitionDate);
-						});
-					}
-				}, 100);
+					renderStudentsList();
+				}, 300);
 
 			})
 			.fail(function() {
