@@ -281,3 +281,39 @@
 #competitionDateInput::-webkit-calendar-picker-indicator:hover {
     filter: invert(0.3);
 }
+
+
+/* Иконка проверки справок в поле имени */
+.certificate-warning {
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.certificate-warning:hover {
+    transform: scale(1.2);
+}
+
+.student-item {
+    position: relative;
+}
+
+.student-item:hover {
+    background-color: #f8f9fa;
+}
+
+.certificate-tooltip {
+    max-width: 300px;
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+    .student-item {
+        flex-direction: column;
+        align-items: flex-start !important;
+    }
+
+    .student-item .btn {
+        margin-top: 5px;
+        align-self: flex-end;
+    }
+}

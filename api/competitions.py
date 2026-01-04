@@ -129,6 +129,104 @@ async def get_all_competition_data(db: Session = Depends(get_db)):
         print(f"Error in get_all_competition_data: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Ошибка получения данных: {str(e)}")
 
+
+@router.get("/competitions/check-student-certificates/{student_id}")
+async def check_student_certificates(
+        student_id: int,
+        competition_id: int = None,
+        date: str = None,
+        db: Session = Depends(get_db)
+):
+    """Проверка наличия актуальных справок у студента"""
+    try:
+        result = {
+            "student_id": student_id,
+            "has_all_certificates": True,
+            "missing_certificates": [],
+            "details": []
+        }
+
+        if not competition_id and not date:
+            return JSONResponse(result)
+
+        # Определяем дату мероприятия
+        competition_date = None
+        if competition_id:
+            competition = db.query(Сompetition).filter(Сompetition.id == competition_id).first()
+            if competition and competition.date:
+                competition_date = competition.date.date()
+        elif date:
+            competition_date = datetime.fromisoformat(date).date()
+
+        if not competition_date:
+            return JSONResponse(result)
+
+        # Получаем требуемые справки для мероприятия
+        required_certificates = []
+        if competition_id:
+            certs = db.query(Сompetition_MedCertificat).filter(
+                Сompetition_MedCertificat.competition_id == competition_id
+            ).all()
+            required_certificates = [c.med_certificat_id for c in certs]
+        else:
+            # Если нет competition_id, но есть date, можно проверить все типы справок
+            required_certificates = [c.id for c in db.query(MedCertificat_type).all()]
+
+        if not required_certificates:
+            return JSONResponse(result)
+
+        # Получаем актуальные справки студента
+        active_certificates = db.query(MedCertificat_received).filter(
+            and_(
+                MedCertificat_received.student_id == student_id,
+                MedCertificat_received.active == True,
+                MedCertificat_received.date_start <= competition_date,
+                MedCertificat_received.date_end >= competition_date
+            )
+        ).all()
+
+        active_cert_ids = [cert.cert_id for cert in active_certificates]
+
+        # Проверяем, каких справок не хватает
+        for cert_id in required_certificates:
+            cert_type = db.query(MedCertificat_type).filter(
+                MedCertificat_type.id == cert_id
+            ).first()
+
+            if cert_id not in active_cert_ids:
+                result["has_all_certificates"] = False
+                result["missing_certificates"].append({
+                    "id": cert_id,
+                    "name": cert_type.name_cert if cert_type else f"Справка {cert_id}"
+                })
+
+            # Добавляем детали
+            cert_info = {
+                "certificate_id": cert_id,
+                "certificate_name": cert_type.name_cert if cert_type else f"Справка {cert_id}",
+                "required": True,
+                "has_certificate": cert_id in active_cert_ids
+            }
+
+            # Если есть справка, добавляем даты
+            if cert_id in active_cert_ids:
+                cert = next((c for c in active_certificates if c.cert_id == cert_id), None)
+                if cert:
+                    cert_info.update({
+                        "date_start": cert.date_start.isoformat(),
+                        "date_end": cert.date_end.isoformat(),
+                        "is_active": cert.active
+                    })
+
+            result["details"].append(cert_info)
+
+        return JSONResponse(result)
+
+    except Exception as e:
+        print(f"Error in check_student_certificates: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Ошибка проверки справок: {str(e)}")
+
+
 @router.get("/competitions/get-competition-data/{competition_id}")
 async def get_competition_data(competition_id: int, db: Session = Depends(get_db)):
     """Получение данных конкретного мероприятия"""

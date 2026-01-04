@@ -1,431 +1,549 @@
 <!-- templates/partials/competitions/scripts/form.html -->
 <script>
-    // Глобальные переменные для статусов
-    let studentStatuses = {};
+	// Глобальные переменные для статусов
+	let studentStatuses = {};
 
-    // Основные функции формы
-    function renderCertificatesList() {
-        const certificatesList = $('#certificatesList');
-        certificatesList.empty();
+	// Основные функции формы
+	function renderCertificatesList() {
+		const certificatesList = $('#certificatesList');
+		certificatesList.empty();
 
-        allMedCertificates.forEach(cert => {
-            const isSelected = selectedCertificates.includes(cert.id);
-            const certElement = `
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" value="${cert.id}"
-                           id="cert_${cert.id}" ${isSelected ? 'checked' : ''}
-                           onchange="toggleCertificate(${cert.id})">
-                    <label class="form-check-label" for="cert_${cert.id}">
-                        ${cert.name}
-                    </label>
-                </div>
-            `;
-            certificatesList.append(certElement);
-        });
-    }
+		allMedCertificates.forEach(cert => {
+			const isSelected = selectedCertificates.includes(cert.id);
+			const certElement = `
+				<div class="form-check">
+					<input class="form-check-input" type="checkbox" value="${cert.id}"
+						   id="cert_${cert.id}" ${isSelected ? 'checked' : ''}
+						   onchange="toggleCertificate(${cert.id})">
+					<label class="form-check-label" for="cert_${cert.id}">
+						${cert.name}
+					</label>
+				</div>
+			`;
+			certificatesList.append(certElement);
+		});
+	}
 
-    function toggleCertificate(certId) {
-        const index = selectedCertificates.indexOf(certId);
-        if (index > -1) {
-            selectedCertificates.splice(index, 1);
-        } else {
-            selectedCertificates.push(certId);
-        }
-    }
+	function toggleCertificate(certId) {
+		const index = selectedCertificates.indexOf(certId);
+		if (index > -1) {
+			selectedCertificates.splice(index, 1);
+		} else {
+			selectedCertificates.push(certId);
+		}
+	}
 
-    function searchStudent() {
-        const searchTerm = $('#studentSearch').val().toLowerCase();
-        if (!searchTerm) return;
+	function searchStudent() {
+		const searchTerm = $('#studentSearch').val().toLowerCase();
+		if (!searchTerm) return;
 
-        const filteredStudents = allStudents.filter(student =>
-            student.name.toLowerCase().includes(searchTerm)
-        );
+		const filteredStudents = allStudents.filter(student =>
+			student.name.toLowerCase().includes(searchTerm)
+		);
 
-        if (filteredStudents.length > 0) {
-            const student = filteredStudents[0];
-            if (!selectedStudents.includes(student.id)) {
-                selectedStudents.push(student.id);
-                renderStudentsList();
-            }
-            $('#studentSearch').val('');
-        }
-    }
+		if (filteredStudents.length > 0) {
+			const student = filteredStudents[0];
+			if (!selectedStudents.includes(student.id)) {
+				selectedStudents.push(student.id);
+				renderStudentsList();
 
-    function addTrainer() {
-        const trainerId = $('#trainerSelect').val();
-        if (trainerId && !selectedTrainers.includes(parseInt(trainerId))) {
-            selectedTrainers.push(parseInt(trainerId));
-            renderTrainersList();
-            $('#trainerSelect').val('');
-        }
-    }
+				// Проверяем справки для нового студента
+				const competitionId = $('#competitionId').val();
+				const competitionDate = $('#competitionDateInput').val();
+				if (competitionDate) {
+					checkStudentCertificates(student.id, competitionId, competitionDate);
+				}
+			}
+			$('#studentSearch').val('');
+		}
+	}
 
-    // Функции для работы со статусами
-    function getStatusIcon(studentId) {
-        if (!studentStatuses[studentId]) {
-            return '<i class="fas fa-question-circle text-secondary me-1" title="Статус неизвестен"></i>';
-        }
+	function addTrainer() {
+		const trainerId = $('#trainerSelect').val();
+		if (trainerId && !selectedTrainers.includes(parseInt(trainerId))) {
+			selectedTrainers.push(parseInt(trainerId));
+			renderTrainersList();
+			$('#trainerSelect').val('');
+		}
+	}
 
-        const status = studentStatuses[studentId].participation;
-        const statusText = studentStatuses[studentId].status_text || "";
+	// Функции для работы со статусами
+	function getStatusIcon(studentId) {
+		if (!studentStatuses[studentId]) {
+			return '<i class="fas fa-question-circle text-secondary me-1" title="Статус неизвестен"></i>';
+		}
 
-        switch(status) {
-            case 0: // Не отправлено
-                return '<i class="fas fa-times-circle text-danger me-1" title="Не отправлено"></i>';
-            case 1: // Отправлено
-                return '<i class="fas fa-paper-plane text-warning me-1" title="Отправлено, ждём ответ"></i>';
-            case 2: // Принято
-                return '<i class="fas fa-check-circle text-success me-1" title="Принято ✓"></i>';
-            case 3: // Отклонено
-                return '<i class="fas fa-times-circle text-danger me-1" title="Отклонено ✗"></i>';
-            default:
-                return '<i class="fas fa-question-circle text-secondary me-1" title="Неизвестный статус"></i>';
-        }
-    }
+		const status = studentStatuses[studentId].participation;
+		const statusText = studentStatuses[studentId].status_text || "";
 
-    function loadStudentStatuses(competitionId) {
-        if (!competitionId) {
-            studentStatuses = {};
-            renderStudentsList();
-            return;
-        }
+		switch(status) {
+			case 0: // Не отправлено
+				return '<i class="fas fa-times-circle text-danger me-1" title="Не отправлено"></i>';
+			case 1: // Отправлено
+				return '<i class="fas fa-paper-plane text-warning me-1" title="Отправлено, ждём ответ"></i>';
+			case 2: // Принято
+				return '<i class="fas fa-check-circle text-success me-1" title="Принято ✓"></i>';
+			case 3: // Отклонено
+				return '<i class="fas fa-times-circle text-danger me-1" title="Отклонено ✗"></i>';
+			default:
+				return '<i class="fas fa-question-circle text-secondary me-1" title="Неизвестный статус"></i>';
+		}
+	}
 
-        $.get(`/competitions/get-invitations-status/${competitionId}`)
-            .done(function(data) {
-                if (data.status === 'success') {
-                    studentStatuses = {};
-                    data.students.forEach(function(student) {
-                        studentStatuses[student.student_id] = {
-                            participation: student.participation,
-                            status_text: student.status_text
-                        };
-                    });
-                    renderStudentsList();
-                }
-            })
-            .fail(function(error) {
-                console.error('Ошибка загрузки статусов:', error);
-                // Если endpoint не существует, продолжаем без иконок
-                studentStatuses = {};
-                renderStudentsList();
-            });
-    }
+	function loadStudentStatuses(competitionId) {
+		if (!competitionId) {
+			studentStatuses = {};
+			renderStudentsList();
+			return;
+		}
 
-    function updateSendButtonText(competitionId) {
-        if (!competitionId) return;
+		$.get(`/competitions/get-invitations-status/${competitionId}`)
+			.done(function(data) {
+				if (data.status === 'success') {
+					studentStatuses = {};
+					data.students.forEach(function(student) {
+						studentStatuses[student.student_id] = {
+							participation: student.participation,
+							status_text: student.status_text
+						};
+					});
+					renderStudentsList();
+				}
+			})
+			.fail(function(error) {
+				console.error('Ошибка загрузки статусов:', error);
+				// Если endpoint не существует, продолжаем без иконок
+				studentStatuses = {};
+				renderStudentsList();
+			});
+	}
 
-        $.get(`/competitions/get-invitations-status/${competitionId}`)
-            .done(function(data) {
-                if (data.status === 'success') {
-                    const sendBtn = $('#sendInvitationsBtn');
-                    const notProcessed = data.status_counts.not_processed || 0;
-                    const answered = (data.status_counts.accepted || 0) + (data.status_counts.declined || 0);
-                    const total = data.status_counts.total || 0;
+	function updateSendButtonText(competitionId) {
+		if (!competitionId) return;
 
-                    if (answered > 0) {
-                        sendBtn.html('<i class="fas fa-paper-plane me-1"></i> Отправить остальным');
-                        sendBtn.attr('title', `${answered} из ${total} уже ответили`);
-                        sendBtn.prop('disabled', false);
-                    } else if (notProcessed === 0 && total > 0) {
-                        sendBtn.html('<i class="fas fa-check me-1"></i> Все приглашения отправлены');
-                        sendBtn.prop('disabled', true);
-                    } else {
-                        sendBtn.html('<i class="fas fa-paper-plane me-1"></i> Отправить приглашения');
-                        sendBtn.removeAttr('title');
-                        sendBtn.prop('disabled', false);
-                    }
-                }
-            })
-            .fail(function(error) {
-                console.error('Ошибка обновления кнопки:', error);
-                // В случае ошибки оставляем стандартный текст
-                $('#sendInvitationsBtn').html('<i class="fas fa-paper-plane me-1"></i> Отправить приглашения');
-            });
-    }
+		$.get(`/competitions/get-invitations-status/${competitionId}`)
+			.done(function(data) {
+				if (data.status === 'success') {
+					const sendBtn = $('#sendInvitationsBtn');
+					const notProcessed = data.status_counts.not_processed || 0;
+					const answered = (data.status_counts.accepted || 0) + (data.status_counts.declined || 0);
+					const total = data.status_counts.total || 0;
 
-    function renderStudentsList() {
-        const studentsList = $('#studentsList');
-        studentsList.empty();
+					if (answered > 0) {
+						sendBtn.html('<i class="fas fa-paper-plane me-1"></i> Отправить остальным');
+						sendBtn.attr('title', `${answered} из ${total} уже ответили`);
+						sendBtn.prop('disabled', false);
+					} else if (notProcessed === 0 && total > 0) {
+						sendBtn.html('<i class="fas fa-check me-1"></i> Все приглашения отправлены');
+						sendBtn.prop('disabled', true);
+					} else {
+						sendBtn.html('<i class="fas fa-paper-plane me-1"></i> Отправить приглашения');
+						sendBtn.removeAttr('title');
+						sendBtn.prop('disabled', false);
+					}
+				}
+			})
+			.fail(function(error) {
+				console.error('Ошибка обновления кнопки:', error);
+				// В случае ошибки оставляем стандартный текст
+				$('#sendInvitationsBtn').html('<i class="fas fa-paper-plane me-1"></i> Отправить приглашения');
+			});
+	}
 
-        selectedStudents.forEach(function(studentId) {
-            const student = allStudents.find(s => s.id === studentId);
-            if (student) {
-                const statusIcon = getStatusIcon(studentId);
+	function renderStudentsList() {
+		const studentsList = $('#studentsList');
+		studentsList.empty();
 
-                const studentElement = `
-                    <div class="d-flex justify-content-between align-items-center p-2 border-bottom">
-                        <div class="d-flex align-items-center">
-                            ${statusIcon}
-                            <span>${student.name}</span>
-                        </div>
-                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeStudent(${studentId})">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                `;
-                studentsList.append(studentElement);
-            }
-        });
-    }
+		const competitionId = $('#competitionId').val();
+		const competitionDate = $('#competitionDateInput').val();
 
-    function renderTrainersList() {
-        const trainersList = $('#trainersList');
-        trainersList.empty();
+		selectedStudents.forEach(function(studentId) {
+			const student = allStudents.find(s => s.id === studentId);
+			if (student) {
+				const statusIcon = getStatusIcon(studentId);
 
-        selectedTrainers.forEach(function(trainerId) {
-            const trainer = allTrainers.find(t => t.id === trainerId);
-            if (trainer) {
-                const trainerElement = `
-                    <div class="d-flex justify-content-between align-items-center p-2 border-bottom">
-                        <span>${trainer.name}</span>
-                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeTrainer(${trainerId})">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                `;
-                trainersList.append(trainerElement);
-            }
-        });
-    }
+				// Всегда отображаем контейнер для иконок состояния
+				const studentElement = `
+					<div class="d-flex justify-content-between align-items-center p-2 border-bottom" id="student_${studentId}">
+						<div class="d-flex align-items-center">
+							${statusIcon}
+							<span>${student.name}</span>
+							<div id="cert_container_${studentId}" class="ms-2">
+								<!-- Иконки будут добавлены через JS -->
+							</div>
+						</div>
+						<button type="button" class="btn btn-sm btn-outline-danger" onclick="removeStudent(${studentId})">
+							<i class="fas fa-times"></i>
+						</button>
+					</div>
+				`;
+				studentsList.append(studentElement);
 
-    function removeStudent(studentId) {
-        selectedStudents = selectedStudents.filter(id => id !== studentId);
-        renderStudentsList();
-    }
+				// Создаем иконки динамически
+				$(`#cert_container_${studentId}`).html(`
+					<span id="cert_warning_${studentId}" style="display: none;">
+						<i class="fas fa-exclamation-triangle text-warning" title="Проверка справок..."></i>
+					</span>
+					<span id="cert_error_${studentId}" style="display: none;">
+						<i class="fas fa-exclamation-circle text-danger" title="Не хватает медицинских справок!"></i>
+					</span>
+					<span id="cert_ok_${studentId}" style="display: none;">
+						<i class="fas fa-check-circle text-success" title="Все справки в порядке"></i>
+					</span>
+				`);
 
-    function removeTrainer(trainerId) {
-        selectedTrainers = selectedTrainers.filter(id => id !== trainerId);
-        renderTrainersList();
-    }
+				// Проверяем справки для этого студента
+				if (competitionDate) {
+					checkStudentCertificates(studentId, competitionId, competitionDate);
+				}
+			}
+		});
+	}
 
-    // Функции для модальных окон
-    function showCompetitionForm() {
-        $('#dayModal').modal('hide');
-        resetCompetitionForm();
+	// Новая функция для проверки справок студента
+	// Глобальная функция для проверки справок
+	function checkStudentCertificates(studentId, competitionId, competitionDate) {
+		const loadingEl = $(`#cert_warning_${studentId}`);
+		const errorEl = $(`#cert_error_${studentId}`);
+		const okEl = $(`#cert_ok_${studentId}`);
 
-        // Устанавливаем текущую дату как значение по умолчанию
-        $('#competitionDateInput').val(currentSelectedDate);
+		// Показываем индикатор загрузки
+		loadingEl.show();
+		errorEl.hide();
+		okEl.hide();
 
-        $('#competitionFormTitle').text('Создание мероприятия');
-        $('#deleteCompetitionBtn').hide();
-        $('#sendInvitationsBtn').hide();
-        $('#competitionFormModal').modal('show');
-    }
+		// Формируем URL для запроса
+		let url = `/competitions/check-student-certificates/${studentId}?`;
 
-    function editCompetition(competitionId) {
-        $('#dayModal').modal('hide');
+		if (competitionId) {
+			url += `competition_id=${competitionId}`;
+		} else if (competitionDate) {
+			url += `date=${competitionDate}`;
+		} else {
+			// Если нет ни competitionId ни date, скрываем все индикаторы
+			loadingEl.hide();
+			return;
+		}
 
-        $.get(`/competitions/get-competition-data/${competitionId}`)
-            .done(function(data) {
-                $('#competitionId').val(data.competition.id);
-                $('#competitionName').val(data.competition.name);
-                $('#competitionAddress').val(data.competition.address || '');
+		$.get(url)
+			.done(function(data) {
+				loadingEl.hide();
 
-                // Преобразуем дату в формат YYYY-MM-DD для input type="date"
-                if (data.competition.date) {
-                    const dateObj = new Date(data.competition.date);
-                    const formattedDate = dateObj.toISOString().split('T')[0];
-                    $('#competitionDateInput').val(formattedDate);
-                }
-
-                selectedStudents = data.students || [];
-                selectedTrainers = data.trainers || [];
-                selectedCertificates = data.certificates || [];
-
-                // Загружаем статусы учеников
-                loadStudentStatuses(competitionId);
-
-                renderTrainersList();
-                renderCertificatesList();
-
-                $('#competitionFormTitle').text('Редактирование мероприятия');
-                $('#deleteCompetitionBtn').show();
-                $('#sendInvitationsBtn').show();
-
-                // Обновляем текст кнопки
-                updateSendButtonText(competitionId);
-
-                $('#competitionFormModal').modal('show');
-            })
-            .fail(function() {
-                showMessage('Ошибка загрузки данных мероприятия', 'danger');
-            });
-    }
-
-    function resetCompetitionForm() {
-        $('#competitionForm')[0].reset();
-        $('#competitionId').val('');
-        selectedStudents = [];
-        selectedTrainers = [];
-        selectedCertificates = [];
-        studentStatuses = {};
-        renderStudentsList();
-        renderTrainersList();
-        renderCertificatesList();
-        $('#sendInvitationsBtn').hide();
-        $('#deleteCompetitionBtn').hide();
-        $('#sendInvitationsBtn').prop('disabled', false);
-        $('#sendInvitationsBtn').html('<i class="fas fa-paper-plane me-1"></i> Отправить приглашения');
-    }
-
-    // Функции сохранения и удаления
-    function saveCompetition() {
-        const competitionId = $('#competitionId').val();
-        const formData = new FormData();
-
-        formData.append('name', $('#competitionName').val());
-        formData.append('address', $('#competitionAddress').val());
-
-        // Используем новое поле даты
-        const dateValue = $('#competitionDateInput').val();
-        formData.append('date', dateValue);
-
-        selectedStudents.forEach(id => formData.append('student_ids', id));
-        selectedTrainers.forEach(id => formData.append('trainer_ids', id));
-        selectedCertificates.forEach(id => formData.append('certificate_ids', id));
-
-        const url = competitionId ? `/competitions/update-competition/${competitionId}` : '/competitions/create-competition';
-
-        fetch(url, {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                showMessage(data.message, 'success');
-                $('#competitionFormModal').modal('hide');
-
-                if (competitionId) {
-                    delete competitionParticipants[competitionId];
-                }
-
-                loadEventsForMonth(currentYear, currentMonth + 1);
-            } else {
-                showMessage(data.message || 'Ошибка сохранения', 'danger');
-            }
-        })
-        .catch(error => {
-            showMessage('Ошибка сохранения: ' + error, 'danger');
-        });
-    }
+				if (data.has_all_certificates) {
+					okEl.show();
+					if (data.missing_certificates.length === 0) {
+						okEl.attr('title', 'Все медицинские справки в порядке');
+					}
+				} else {
+					errorEl.show();
+					// Формируем подробное описание отсутствующих справок
+					const missingCerts = data.missing_certificates.map(c => c.name).join(', ');
+					errorEl.attr('title', `Отсутствуют справки: ${missingCerts}`);
+				}
+			})
+			.fail(function(error) {
+				loadingEl.hide();
+				console.error('Ошибка проверки справок:', error);
+			});
+	}
 
 
-    function deleteCompetition() {
-        const competitionId = $('#competitionId').val();
-        if (!competitionId) return;
+	function renderTrainersList() {
+		const trainersList = $('#trainersList');
+		trainersList.empty();
 
-        if (confirm('Вы уверены, что хотите удалить это мероприятие?')) {
-            fetch(`/competitions/delete-competition/${competitionId}`, {
-                method: 'DELETE',
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    showMessage(data.message, 'success');
-                    $('#competitionFormModal').modal('hide');
-                    loadEventsForMonth(currentYear, currentMonth + 1);
-                } else {
-                    showMessage(data.message || 'Ошибка удаления', 'danger');
-                }
-            })
-            .catch(error => {
-                showMessage('Ошибка удаления: ' + error, 'danger');
-            });
-        }
-    }
+		selectedTrainers.forEach(function(trainerId) {
+			const trainer = allTrainers.find(t => t.id === trainerId);
+			if (trainer) {
+				const trainerElement = `
+					<div class="d-flex justify-content-between align-items-center p-2 border-bottom">
+						<span>${trainer.name}</span>
+						<button type="button" class="btn btn-sm btn-outline-danger" onclick="removeTrainer(${trainerId})">
+							<i class="fas fa-times"></i>
+						</button>
+					</div>
+				`;
+				trainersList.append(trainerElement);
+			}
+		});
+	}
 
-    // Функции для отправки приглашений
-    function sendInvitations() {
-        const competitionId = $('#competitionId').val();
-        if (!competitionId) {
-            showMessage('Ошибка: мероприятие не найдено', 'danger');
-            return;
-        }
+	function removeStudent(studentId) {
+		selectedStudents = selectedStudents.filter(id => id !== studentId);
+		renderStudentsList();
+	}
 
-        if (selectedStudents.length === 0) {
-            showMessage('Не выбраны ученики для отправки приглашений', 'warning');
-            return;
-        }
+	function removeTrainer(trainerId) {
+		selectedTrainers = selectedTrainers.filter(id => id !== trainerId);
+		renderTrainersList();
+	}
 
-        // Сначала сохраняем мероприятие (если есть изменения)
-        saveCompetitionForInvitations(competitionId);
-    }
+	// Функции для модальных окон
+	function showCompetitionForm() {
+			$('#dayModal').modal('hide');
+			resetCompetitionForm();
 
-    function saveCompetitionForInvitations(competitionId) {
-        const formData = new FormData();
+			// Устанавливаем текущую дату как значение по умолчанию
+			$('#competitionDateInput').val(currentSelectedDate);
 
-        formData.append('name', $('#competitionName').val());
-        formData.append('address', $('#competitionAddress').val());
+			$('#competitionFormTitle').text('Создание мероприятия');
+			$('#deleteCompetitionBtn').hide();
+			$('#sendInvitationsBtn').hide();
+			$('#competitionFormModal').modal('show');
 
-        // Используем новое поле даты и здесь
-        const dateValue = $('#competitionDateInput').val();
-        formData.append('date', dateValue);
+			// Добавляем обработчик изменения даты для проверки справок
+			setTimeout(function() {
+				const dateInput = document.getElementById('competitionDateInput');
+				if (dateInput) {
+					// Удаляем предыдущие обработчики, чтобы не было дублирования
+					dateInput.removeEventListener('change', handleDateChangeForCertificates);
+					dateInput.addEventListener('change', handleDateChangeForCertificates);
+				}
+			}, 100);
+	}
 
-        selectedStudents.forEach(id => formData.append('student_ids', id));
-        selectedTrainers.forEach(id => formData.append('trainer_ids', id));
-        selectedCertificates.forEach(id => formData.append('certificate_ids', id));
+	function handleDateChangeForCertificates() {
+		const competitionId = $('#competitionId').val();
+		const competitionDate = this.value;
 
-        // Сначала обновляем мероприятие
-        fetch(`/competitions/update-competition/${competitionId}`, {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                // После успешного сохранения отправляем приглашения
-                sendInvitationsToServer(competitionId);
-            } else {
-                showMessage(data.message || 'Ошибка сохранения', 'danger');
-            }
-        })
-        .catch(error => {
-            showMessage('Ошибка сохранения: ' + error, 'danger');
-        });
-    }
+		// Проверяем справки у всех выбранных студентов
+		selectedStudents.forEach(function(studentId) {
+			checkStudentCertificates(studentId, competitionId, competitionDate);
+		});
+	}
 
-    function sendInvitationsToServer(competitionId) {
-        // Показываем индикатор загрузки
-        const sendBtn = $('#sendInvitationsBtn');
-        const originalText = sendBtn.html();
-        sendBtn.html('<i class="fas fa-spinner fa-spin me-1"></i> Отправка...');
-        sendBtn.prop('disabled', true);
+	function editCompetition(competitionId) {
+		$('#dayModal').modal('hide');
 
-        fetch(`/competitions/send-invitations/${competitionId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            // Восстанавливаем кнопку
-            sendBtn.html(originalText);
-            sendBtn.prop('disabled', false);
+		$.get(`/competitions/get-competition-data/${competitionId}`)
+			.done(function(data) {
+				$('#competitionId').val(data.competition.id);
+				$('#competitionName').val(data.competition.name);
+				$('#competitionAddress').val(data.competition.address || '');
 
-            if (data.status === 'success') {
-                showMessage(data.message, 'success');
-                console.log('✅ Приглашения успешно отправлены:', data.details);
+				if (data.competition.date) {
+					const dateObj = new Date(data.competition.date);
+					const formattedDate = dateObj.toISOString().split('T')[0];
+					$('#competitionDateInput').val(formattedDate);
+				}
 
-                // Перезагружаем статусы учеников
-                loadStudentStatuses(competitionId);
-                // Обновляем текст кнопки
-                updateSendButtonText(competitionId);
+				selectedStudents = data.students || [];
+				selectedTrainers = data.trainers || [];
+				selectedCertificates = data.certificates || [];
 
-            } else if (data.status === 'warning') {
-                showMessage(data.message, 'warning');
-            } else {
-                showMessage(data.message || 'Ошибка отправки приглашений', 'danger');
-            }
-        })
-        .catch(error => {
-            // Восстанавливаем кнопку
-            sendBtn.html(originalText);
-            sendBtn.prop('disabled', false);
+				// Загружаем статусы учеников
+				loadStudentStatuses(competitionId);
 
-            showMessage('Ошибка отправки: ' + error, 'danger');
-            console.error('❌ Ошибка отправки приглашений:', error);
-        });
-    }
+				renderTrainersList();
+				renderCertificatesList();
+				renderStudentsList(); // Теперь вызываем здесь
+
+				$('#competitionFormTitle').text('Редактирование мероприятия');
+				$('#deleteCompetitionBtn').show();
+				$('#sendInvitationsBtn').show();
+
+				// Обновляем текст кнопки
+				updateSendButtonText(competitionId);
+
+				$('#competitionFormModal').modal('show');
+
+				// Добавляем обработчик изменения даты
+				setTimeout(function() {
+					const dateInput = document.getElementById('competitionDateInput');
+					if (dateInput) {
+						dateInput.removeEventListener('change', handleDateChangeForCertificates);
+						dateInput.addEventListener('change', handleDateChangeForCertificates);
+					}
+
+					// Проверяем справки после загрузки данных
+					const competitionDate = $('#competitionDateInput').val();
+					if (competitionDate) {
+						selectedStudents.forEach(function(studentId) {
+							checkStudentCertificates(studentId, competitionId, competitionDate);
+						});
+					}
+				}, 100);
+
+			})
+			.fail(function() {
+				showMessage('Ошибка загрузки данных мероприятия', 'danger');
+			});
+	}
+
+	function resetCompetitionForm() {
+		$('#competitionForm')[0].reset();
+		$('#competitionId').val('');
+		selectedStudents = [];
+		selectedTrainers = [];
+		selectedCertificates = [];
+		studentStatuses = {};
+		renderStudentsList();
+		renderTrainersList();
+		renderCertificatesList();
+		$('#sendInvitationsBtn').hide();
+		$('#deleteCompetitionBtn').hide();
+		$('#sendInvitationsBtn').prop('disabled', false);
+		$('#sendInvitationsBtn').html('<i class="fas fa-paper-plane me-1"></i> Отправить приглашения');
+	}
+
+	// Функции сохранения и удаления
+	function saveCompetition() {
+		const competitionId = $('#competitionId').val();
+		const formData = new FormData();
+
+		formData.append('name', $('#competitionName').val());
+		formData.append('address', $('#competitionAddress').val());
+
+		// Используем новое поле даты
+		const dateValue = $('#competitionDateInput').val();
+		formData.append('date', dateValue);
+
+		selectedStudents.forEach(id => formData.append('student_ids', id));
+		selectedTrainers.forEach(id => formData.append('trainer_ids', id));
+		selectedCertificates.forEach(id => formData.append('certificate_ids', id));
+
+		const url = competitionId ? `/competitions/update-competition/${competitionId}` : '/competitions/create-competition';
+
+		fetch(url, {
+			method: 'POST',
+			body: formData
+		})
+		.then(response => response.json())
+		.then(data => {
+			if (data.status === 'success') {
+				showMessage(data.message, 'success');
+				$('#competitionFormModal').modal('hide');
+
+				if (competitionId) {
+					delete competitionParticipants[competitionId];
+				}
+
+				loadEventsForMonth(currentYear, currentMonth + 1);
+			} else {
+				showMessage(data.message || 'Ошибка сохранения', 'danger');
+			}
+		})
+		.catch(error => {
+			showMessage('Ошибка сохранения: ' + error, 'danger');
+		});
+	}
+
+
+	function deleteCompetition() {
+		const competitionId = $('#competitionId').val();
+		if (!competitionId) return;
+
+		if (confirm('Вы уверены, что хотите удалить это мероприятие?')) {
+			fetch(`/competitions/delete-competition/${competitionId}`, {
+				method: 'DELETE',
+			})
+			.then(response => response.json())
+			.then(data => {
+				if (data.status === 'success') {
+					showMessage(data.message, 'success');
+					$('#competitionFormModal').modal('hide');
+					loadEventsForMonth(currentYear, currentMonth + 1);
+				} else {
+					showMessage(data.message || 'Ошибка удаления', 'danger');
+				}
+			})
+			.catch(error => {
+				showMessage('Ошибка удаления: ' + error, 'danger');
+			});
+		}
+	}
+
+	// Функции для отправки приглашений
+	function sendInvitations() {
+		const competitionId = $('#competitionId').val();
+		if (!competitionId) {
+			showMessage('Ошибка: мероприятие не найдено', 'danger');
+			return;
+		}
+
+		if (selectedStudents.length === 0) {
+			showMessage('Не выбраны ученики для отправки приглашений', 'warning');
+			return;
+		}
+
+		// Сначала сохраняем мероприятие (если есть изменения)
+		saveCompetitionForInvitations(competitionId);
+	}
+
+	function saveCompetitionForInvitations(competitionId) {
+		const formData = new FormData();
+
+		formData.append('name', $('#competitionName').val());
+		formData.append('address', $('#competitionAddress').val());
+
+		// Используем новое поле даты и здесь
+		const dateValue = $('#competitionDateInput').val();
+		formData.append('date', dateValue);
+
+		selectedStudents.forEach(id => formData.append('student_ids', id));
+		selectedTrainers.forEach(id => formData.append('trainer_ids', id));
+		selectedCertificates.forEach(id => formData.append('certificate_ids', id));
+
+		// Сначала обновляем мероприятие
+		fetch(`/competitions/update-competition/${competitionId}`, {
+			method: 'POST',
+			body: formData
+		})
+		.then(response => response.json())
+		.then(data => {
+			if (data.status === 'success') {
+				// После успешного сохранения отправляем приглашения
+				sendInvitationsToServer(competitionId);
+			} else {
+				showMessage(data.message || 'Ошибка сохранения', 'danger');
+			}
+		})
+		.catch(error => {
+			showMessage('Ошибка сохранения: ' + error, 'danger');
+		});
+	}
+
+	function sendInvitationsToServer(competitionId) {
+		// Показываем индикатор загрузки
+		const sendBtn = $('#sendInvitationsBtn');
+		const originalText = sendBtn.html();
+		sendBtn.html('<i class="fas fa-spinner fa-spin me-1"></i> Отправка...');
+		sendBtn.prop('disabled', true);
+
+		fetch(`/competitions/send-invitations/${competitionId}`, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			}
+		})
+		.then(response => response.json())
+		.then(data => {
+			// Восстанавливаем кнопку
+			sendBtn.html(originalText);
+			sendBtn.prop('disabled', false);
+
+			if (data.status === 'success') {
+				showMessage(data.message, 'success');
+				console.log('✅ Приглашения успешно отправлены:', data.details);
+
+				// Перезагружаем статусы учеников
+				loadStudentStatuses(competitionId);
+				// Обновляем текст кнопки
+				updateSendButtonText(competitionId);
+
+			} else if (data.status === 'warning') {
+				showMessage(data.message, 'warning');
+			} else {
+				showMessage(data.message || 'Ошибка отправки приглашений', 'danger');
+			}
+		})
+		.catch(error => {
+			// Восстанавливаем кнопку
+			sendBtn.html(originalText);
+			sendBtn.prop('disabled', false);
+
+			showMessage('Ошибка отправки: ' + error, 'danger');
+			console.error('❌ Ошибка отправки приглашений:', error);
+		});
+	}
 </script>

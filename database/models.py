@@ -356,7 +356,7 @@ class MedCertificat_received(Base):
     """
     Факт получения справки (разрешалки)
     """
-    __tablename__ = 'medcertificat_received'  # Измените на нижний регистр
+    __tablename__ = 'medcertificat_received'
     __table_args__ = {'schema': schema}
     id = Column(Integer(), primary_key=True, autoincrement=True)
     student_id = Column(Integer())
