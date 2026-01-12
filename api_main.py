@@ -13,10 +13,13 @@ from config import settings
 from api.students import router as students_router
 from api.schedule import router as schedule_router
 from api.trainers import router as trainers_router
+from api.admin_panel import router as admin_router
 from api.visits import router as visits_router
 from api.competitions import router as competitions_router
 from config import templates
 from logger_config import logger
+
+
 
 app = FastAPI(title="Student Management System")
 
@@ -35,6 +38,7 @@ app.include_router(students_router, tags=["students"])
 app.include_router(trainers_router, tags=["trainers"])
 app.include_router(visits_router, tags=["visits"])
 app.include_router(competitions_router, tags=["competitions"])
+app.include_router(admin_router, tags=["admin"])
 
 
 @app.get("/health")

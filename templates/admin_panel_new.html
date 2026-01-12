@@ -1,0 +1,530 @@
+<!-- templates/admin_panel_new.html -->
+{% extends "base.html" %}
+
+{% block title %}Админ-панель регистраций{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1>
+                    <i class="fas fa-user-shield"></i>
+                    Админ-панель регистраций
+                </h1>
+                <p class="text-muted">Управление заявками на регистрацию в Telegram боте</p>
+            </div>
+            <button class="btn btn-outline-primary" onclick="refreshData()">
+                <i class="fas fa-sync-alt"></i> Обновить
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Статистика -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-users text-primary"></i> Всего пользователей
+                </h5>
+            </div>
+            <div class="card-body text-center">
+                <h2 class="text-primary">{{ total_users }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-clock text-warning"></i> Ожидают подтверждения
+                </h5>
+            </div>
+            <div class="card-body text-center">
+                <h2 class="text-warning">{{ total_pending }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-check-circle text-success"></i> Подтверждены
+                </h5>
+            </div>
+            <div class="card-body text-center">
+                <h2 class="text-success">{{ total_approved }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-calendar-week text-info"></i> Новые (7 дней)
+                </h5>
+            </div>
+            <div class="card-body text-center">
+                <h2 class="text-info">{{ recent_registrations }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Основное содержание -->
+<div class="row">
+    <div class="col-md-8">
+        <!-- Заявки на подтверждение -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-clock text-warning"></i>
+                    Заявки на подтверждение
+                    <span class="badge bg-warning float-end">{{ total_pending }}</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if pending_users %}
+                <div id="pendingUsersList">
+                    {% for user in pending_users %}
+                    <div class="schedule-item pending-user-card" id="user-{{ user.id }}">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">
+                                    {{ user.full_name or 'Без имени' }}
+                                    {% if user.telegram_username %}
+                                    <small class="text-muted">@{{ user.telegram_username }}</small>
+                                    {% endif %}
+                                </h6>
+                                <p class="text-muted small mb-2">
+                                    <i class="fas fa-id-card"></i> ID: {{ user.telegram_id }} |
+                                    <i class="fas fa-calendar-alt"></i> {{ user.date_reg.strftime('%d.%m.%Y %H:%M') }}
+                                    {% if user.phone %}
+                                    | <i class="fas fa-phone"></i> {{ user.phone }}
+                                    {% endif %}
+                                </p>
+
+                                {% if user.students_info %}
+                                <div class="mb-2">
+                                    <strong><i class="fas fa-child"></i> Дети:</strong>
+                                    {% for student in user.students_info %}
+                                    <span class="badge bg-secondary me-1">
+                                            {{ student.name }}
+                                            {% if student.active %}
+                                            <i class="fas fa-check-circle text-success"></i>
+                                            {% else %}
+                                            <i class="fas fa-times-circle text-danger"></i>
+                                            {% endif %}
+                                        </span>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-success approve-btn"
+                                        data-user-id="{{ user.id }}"
+                                        data-user-name="{{ user.full_name }}">
+                                    <i class="fas fa-check"></i> Подтвердить
+                                </button>
+                                <button class="btn btn-sm btn-danger reject-btn"
+                                        data-user-id="{{ user.id }}"
+                                        data-user-name="{{ user.full_name }}">
+                                    <i class="fas fa-times"></i> Отклонить
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-check-circle display-4 text-success mb-3"></i>
+                    <h5 class="text-muted">Все заявки обработаны!</h5>
+                    <p class="text-muted">Нет пользователей, ожидающих подтверждения.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Последние подтвержденные -->
+        {% if approved_users %}
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-check-circle text-success"></i>
+                    Последние подтвержденные пользователи
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for user in approved_users %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    {{ user.full_name or 'Без имени' }}
+                                    {% if user.telegram_username %}
+                                    <small class="text-muted">@{{ user.telegram_username }}</small>
+                                    {% endif %}
+                                </h6>
+                                <p class="card-text small text-muted">
+                                    <i class="fas fa-calendar-alt"></i> {{ user.date_reg.strftime('%d.%m.%Y') }}
+                                    <span class="badge bg-success float-end">Подтвержден</span>
+                                </p>
+                                <div class="notification-controls">
+                                    <small class="text-muted d-block mb-1">Уведомления:</small>
+                                    <div class="btn-group btn-group-sm w-100">
+                                        <button class="btn btn-outline-secondary news-toggle {% if user.get_news %}active{% endif %}"
+                                                data-user-id="{{ user.id }}">
+                                            Новости
+                                        </button>
+                                        <button class="btn btn-outline-secondary pays-toggle {% if user.get_pays_notif %}active{% endif %}"
+                                                data-user-id="{{ user.id }}">
+                                            Оплаты
+                                        </button>
+                                        <button class="btn btn-outline-secondary info-toggle {% if user.get_info_student %}active{% endif %}"
+                                                data-user-id="{{ user.id }}">
+                                            Информация
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Боковая панель -->
+    <div class="col-md-4">
+        <!-- Быстрые действия -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-bolt"></i> Быстрые действия
+                </h5>
+            </div>
+            <div class="card-body">
+                <button class="btn btn-primary w-100 mb-2" onclick="refreshData()">
+                    <i class="fas fa-sync-alt"></i> Обновить данные
+                </button>
+                <button class="btn btn-outline-secondary w-100 mb-2" onclick="showAllApproved()">
+                    <i class="fas fa-list-check"></i> Все подтвержденные
+                </button>
+                <button class="btn btn-outline-info w-100" onclick="searchStudentModal()">
+                    <i class="fas fa-search"></i> Поиск ученика
+                </button>
+            </div>
+        </div>
+
+        <!-- Информация -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle"></i> Информация
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="small">
+                    <strong>Как это работает:</strong>
+                </p>
+                <ol class="small">
+                    <li>Пользователь регистрируется в Telegram боте</li>
+                    <li>Заявка появляется здесь в разделе "Ожидают подтверждения"</li>
+                    <li>Администратор проверяет и подтверждает заявку</li>
+                    <li>Пользователь получает доступ к функциям бота</li>
+                </ol>
+                <hr>
+                <p class="small text-muted">
+                    <i class="fas fa-clock"></i>
+                    Последнее обновление: <span id="lastUpdate">только что</span>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальные окна -->
+<div class="modal fade" id="rejectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Отклонить заявку</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы собираетесь отклонить заявку пользователя <strong id="rejectUserName"></strong>.</p>
+                <div class="mb-3">
+                    <label class="form-label">Причина отклонения (необязательно):</label>
+                    <textarea class="form-control" id="rejectReason" rows="3"
+                              placeholder="Например: Не удалось подтвердить личность или связь с ребенком"></textarea>
+                </div>
+                <input type="hidden" id="rejectUserId">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-danger" id="confirmReject">
+                    <i class="fas fa-times"></i> Отклонить
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="searchStudentModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-search"></i> Поиск ученика
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control" id="studentSearchInput"
+                           placeholder="Введите ФИО ученика...">
+                    <button class="btn btn-primary" onclick="performStudentSearch()">
+                        <i class="fas fa-search"></i> Поиск
+                    </button>
+                </div>
+                <div id="searchResults" class="mt-3">
+                    <!-- Результаты поиска появятся здесь -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let lastUpdateTime = new Date();
+
+    // Обновить время последнего обновления
+    function updateLastUpdateTime() {
+        const now = new Date();
+        const diff = Math.floor((now - lastUpdateTime) / 1000);
+
+        if (diff < 60) {
+            document.getElementById('lastUpdate').textContent = 'только что';
+        } else if (diff < 3600) {
+            document.getElementById('lastUpdate').textContent = `${Math.floor(diff / 60)} мин назад`;
+        } else {
+            document.getElementById('lastUpdate').textContent = now.toLocaleTimeString();
+        }
+    }
+
+    // Обновить данные
+    function refreshData() {
+        location.reload();
+    }
+
+    // Показать всех подтвержденных пользователей
+    function showAllApproved() {
+        window.location.href = '/api/admin/users/approved?limit=100';
+    }
+
+    // Подтверждение пользователя
+    document.addEventListener('DOMContentLoaded', function() {
+        // Обработчики для кнопок подтверждения
+        document.querySelectorAll('.approve-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const userId = this.dataset.userId;
+                const userName = this.dataset.userName || 'пользователя';
+
+                if (confirm(`Подтвердить пользователя "${userName}"?`)) {
+                    approveUser(userId);
+                }
+            });
+        });
+
+        // Обработчики для кнопок отклонения
+        document.querySelectorAll('.reject-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const userId = this.dataset.userId;
+                const userName = this.dataset.userName || 'пользователя';
+
+                document.getElementById('rejectUserId').value = userId;
+                document.getElementById('rejectUserName').textContent = userName;
+
+                const modal = new bootstrap.Modal(document.getElementById('rejectModal'));
+                modal.show();
+            });
+        });
+
+        // Обработчики для переключателей уведомлений
+        document.querySelectorAll('.news-toggle').forEach(btn => {
+            btn.addEventListener('click', function() {
+                toggleNotification(this.dataset.userId, 'news', this);
+            });
+        });
+
+        document.querySelectorAll('.pays-toggle').forEach(btn => {
+            btn.addEventListener('click', function() {
+                toggleNotification(this.dataset.userId, 'pays', this);
+            });
+        });
+
+        document.querySelectorAll('.info-toggle').forEach(btn => {
+            btn.addEventListener('click', function() {
+                toggleNotification(this.dataset.userId, 'info', this);
+            });
+        });
+
+        // Обновляем время при загрузке
+        updateLastUpdateTime();
+        setInterval(updateLastUpdateTime, 60000);
+    });
+
+    // Подтвердить пользователя
+    async function approveUser(userId) {
+        try {
+            const response = await fetch(`/api/admin/users/${userId}/approve`, {
+                method: 'POST'
+            });
+
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                alert(result.message);
+                // Удаляем карточку пользователя
+                const userCard = document.getElementById(`user-${userId}`);
+                if (userCard) {
+                    userCard.remove();
+                }
+                // Обновляем счетчики
+                location.reload();
+            } else {
+                alert('Ошибка: ' + (result.message || 'Неизвестная ошибка'));
+            }
+        } catch (error) {
+            alert('Ошибка сети: ' + error);
+        }
+    }
+
+    // Подтвердить отклонение
+    document.getElementById('confirmReject').addEventListener('click', async function() {
+        const userId = document.getElementById('rejectUserId').value;
+        const reason = document.getElementById('rejectReason').value;
+
+        try {
+            const url = `/api/admin/users/${userId}/reject${reason ? '?reason=' + encodeURIComponent(reason) : ''}`;
+            const response = await fetch(url, {
+                method: 'POST'
+            });
+
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                alert(result.message);
+                // Удаляем карточку пользователя
+                const userCard = document.getElementById(`user-${userId}`);
+                if (userCard) {
+                    userCard.remove();
+                }
+                // Закрываем модальное окно
+                const modal = bootstrap.Modal.getInstance(document.getElementById('rejectModal'));
+                modal.hide();
+                // Обновляем счетчики
+                location.reload();
+            } else {
+                alert('Ошибка: ' + (result.message || 'Неизвестная ошибка'));
+            }
+        } catch (error) {
+            alert('Ошибка сети: ' + error);
+        }
+    });
+
+    // Переключить уведомления
+    async function toggleNotification(userId, type, button) {
+        try {
+            const response = await fetch(`/api/admin/users/${userId}/toggle-notifications?notification_type=${type}`, {
+                method: 'POST'
+            });
+
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                // Переключаем класс active у кнопки
+                button.classList.toggle('active');
+
+                // Меняем стиль кнопки
+                if (button.classList.contains('active')) {
+                    button.classList.remove('btn-outline-secondary');
+                    button.classList.add('btn-success');
+                } else {
+                    button.classList.remove('btn-success');
+                    button.classList.add('btn-outline-secondary');
+                }
+            } else {
+                alert('Ошибка: ' + (result.message || 'Неизвестная ошибка'));
+            }
+        } catch (error) {
+            alert('Ошибка сети: ' + error);
+        }
+    }
+
+    // Показать модальное окно поиска ученика
+    function searchStudentModal() {
+        const modal = new bootstrap.Modal(document.getElementById('searchStudentModal'));
+        modal.show();
+    }
+
+    // Выполнить поиск ученика
+    async function performStudentSearch() {
+        const searchInput = document.getElementById('studentSearchInput').value;
+
+        if (searchInput.length < 2) {
+            alert('Введите хотя бы 2 символа для поиска');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/admin/search/student?name=${encodeURIComponent(searchInput)}`);
+            const students = await response.json();
+
+            const resultsDiv = document.getElementById('searchResults');
+
+            if (students.length === 0) {
+                resultsDiv.innerHTML = `
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> Ученики не найдены
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '<div class="list-group">';
+            students.forEach(student => {
+                const activeBadge = student.active
+                    ? '<span class="badge bg-success">Активен</span>'
+                    : '<span class="badge bg-danger">Неактивен</span>';
+
+                html += `
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">${student.name}</h6>
+                            ${activeBadge}
+                        </div>
+                        <small class="text-muted">
+                            ID: ${student.id}
+                            ${student.birthday ? '| Дата рождения: ' + student.birthday : ''}
+                        </small>
+                    </div>
+                `;
+            });
+            html += '</div>';
+
+            resultsDiv.innerHTML = html;
+        } catch (error) {
+            alert('Ошибка поиска: ' + error);
+        }
+    }
+</script>
+{% endblock %}

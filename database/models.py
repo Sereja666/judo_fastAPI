@@ -329,6 +329,17 @@ class Сompetition_trainer(Base):
     trainer_id = Column(Integer())
 
 
+class Сompetition_referee(Base):
+    """
+    Ответственный за соревнование судья
+    """
+    __tablename__ = 'competition_referee'
+    __table_args__ = {'schema': schema}
+    id = Column(Integer(), primary_key=True, autoincrement=True)
+    competition_id = Column(Integer())
+    student_id = Column(Integer()) # приглашённый ученик в качестве тренера
+
+
 class Сompetition_MedCertificat(Base):
     """
     Справки для соревнования

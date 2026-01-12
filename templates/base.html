@@ -364,77 +364,86 @@
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark">
-        <div class="container">
-            <a class="navbar-brand" href="/">
-                <i class="fas fa-dumbbell"></i>
-                Первый Легион
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="https://superset.srm-1legion.ru/">
-                            <i class="fas fa-chart-bar"></i>
-                            Superset
-                        </a>
-                    </li>
+<nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container">
+        <a class="navbar-brand" href="/">
+            <i class="fas fa-dumbbell"></i>
+            Первый Легион
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="https://superset.srm-1legion.ru/">
+                        <i class="fas fa-chart-bar"></i>
+                        Superset
+                    </a>
+                </li>
 
-                   <li class="nav-item">
-                        <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="/">
-                            <i class="fas fa-home"></i>
-                            Главная
-                        </a>
-                   </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="/">
+                        <i class="fas fa-home"></i>
+                        Главная
+                    </a>
+                </li>
 
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.path == '/schedule/' %}active{% endif %}" href="/schedule/">
-                            <i class="fas fa-calendar-alt"></i>
-                            Расписание
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.path == '/edit-students' %}active{% endif %}" href="/edit-students">
-                            <i class="fas fa-users"></i>
-                            Ученики
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.path == '/edit-trainers' %}active{% endif %}" href="/edit-trainers">
-                            <i class="fas fa-user-tie"></i>
-                            Тренеры
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.path == '/visits/' %}active{% endif %}" href="/visits/">
-                            <i class="fas fa-clipboard-check"></i>
-                            Посещения
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.path == '/competitions/' %}active{% endif %}" href="/competitions/">
-                            <i class="fas fa-trophy"></i>
-                            Мероприятия
-                        </a>
-                    </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.path == '/schedule/' %}active{% endif %}" href="/schedule/">
+                        <i class="fas fa-calendar-alt"></i>
+                        Расписание
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.path == '/edit-students' %}active{% endif %}"
+                       href="/edit-students">
+                        <i class="fas fa-users"></i>
+                        Ученики
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.path == '/edit-trainers' %}active{% endif %}"
+                       href="/edit-trainers">
+                        <i class="fas fa-user-tie"></i>
+                        Тренеры
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.path == '/visits/' %}active{% endif %}" href="/visits/">
+                        <i class="fas fa-clipboard-check"></i>
+                        Посещения
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.path == '/competitions/' %}active{% endif %}"
+                       href="/competitions/">
+                        <i class="fas fa-trophy"></i>
+                        Мероприятия
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.path.startswith('/admin/') %}active{% endif %}"
+                       href="/admin/registrations">
+                        <i class="fas fa-user-shield"></i>
+                        Родители в ТГ
+                    </a>
+                </li>
 
 
-
-                </ul>
-            </div>
+            </ul>
         </div>
-    </nav>
-
-    <div class="container mt-4">
-        {% block content %}{% endblock %}
     </div>
+</nav>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/ru.js"></script>
-    {% block scripts %}{% endblock %}
+<div class="container mt-4">
+    {% block content %}{% endblock %}
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/i18n/ru.js"></script>
+{% block scripts %}{% endblock %}
 </body>
 </html>
