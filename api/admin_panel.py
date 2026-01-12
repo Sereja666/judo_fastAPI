@@ -112,7 +112,7 @@ async def admin_panel(request: Request, db: Session = Depends(get_db)):
     )
 
 
-@router.get("/api/users/pending")
+@router.get("/users/pending")
 async def get_pending_users_api(db: Session = Depends(get_db)):
     """API для получения пользователей, ожидающих подтверждения"""
     users = db.query(Tg_notif_user).filter(
@@ -125,7 +125,7 @@ async def get_pending_users_api(db: Session = Depends(get_db)):
     return users
 
 
-@router.get("/api/users/approved")
+@router.get("/users/approved")
 async def get_approved_users_api(limit: int = 50, db: Session = Depends(get_db)):
     """API для получения подтвержденных пользователей"""
     users = db.query(Tg_notif_user).filter(
@@ -138,7 +138,7 @@ async def get_approved_users_api(limit: int = 50, db: Session = Depends(get_db))
     return users
 
 
-@router.post("/api/users/{user_id}/approve")
+@router.post("/users/{user_id}/approve")
 async def approve_user(user_id: int, db: Session = Depends(get_db)):
     """API для подтверждения пользователя"""
     user = db.query(Tg_notif_user).filter(Tg_notif_user.id == user_id).first()
@@ -155,7 +155,7 @@ async def approve_user(user_id: int, db: Session = Depends(get_db)):
     return {"status": "success", "message": f"Пользователь {user.full_name} подтвержден"}
 
 
-@router.post("/api/users/{user_id}/reject")
+@router.post("/users/{user_id}/reject")
 async def reject_user(user_id: int, reason: str = "", db: Session = Depends(get_db)):
     """API для отклонения пользователя"""
     user = db.query(Tg_notif_user).filter(Tg_notif_user.id == user_id).first()
@@ -172,7 +172,7 @@ async def reject_user(user_id: int, reason: str = "", db: Session = Depends(get_
     return {"status": "success", "message": f"Пользователь {user.full_name} отклонен"}
 
 
-@router.post("/api/users/{user_id}/toggle-notifications")
+@router.post("/users/{user_id}/toggle-notifications")
 async def toggle_notifications(
         user_id: int,
         notification_type: str,
@@ -199,7 +199,7 @@ async def toggle_notifications(
     return {"status": "success", "message": "Настройки обновлены"}
 
 
-@router.get("/api/stats")
+@router.get("/stats")
 async def get_stats(db: Session = Depends(get_db)):
     """API для получения статистики"""
     total_users = db.query(Tg_notif_user).count()
