@@ -327,7 +327,7 @@
 
     // Показать всех подтвержденных пользователей
     function showAllApproved() {
-        window.location.href = '/api/admin/users/approved?limit=100';
+        window.location.href = '/admin/users/approved?limit=100';
     }
 
     // Подтверждение пользователя
@@ -385,7 +385,7 @@
     // Подтвердить пользователя
     async function approveUser(userId) {
         try {
-            const response = await fetch(`/api/admin/users/${userId}/approve`, {
+            const response = await fetch(`/admin/users/${userId}/approve`, {
                 method: 'POST'
             });
 
@@ -414,7 +414,7 @@
         const reason = document.getElementById('rejectReason').value;
 
         try {
-            const url = `/api/admin/users/${userId}/reject${reason ? '?reason=' + encodeURIComponent(reason) : ''}`;
+            const url = `/admin/users/${userId}/reject${reason ? '?reason=' + encodeURIComponent(reason) : ''}`;
             const response = await fetch(url, {
                 method: 'POST'
             });
@@ -444,7 +444,7 @@
     // Переключить уведомления
     async function toggleNotification(userId, type, button) {
         try {
-            const response = await fetch(`/api/admin/users/${userId}/toggle-notifications?notification_type=${type}`, {
+            const response = await fetch(`/admin/users/${userId}/toggle-notifications?notification_type=${type}`, {
                 method: 'POST'
             });
 
