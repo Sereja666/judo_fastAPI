@@ -11,7 +11,7 @@ from config import templates
 router = APIRouter(prefix="/admin", tags=["admin"])
 
 
-# ==================== Вспомогательные функции ====================
+# ====================  Вспомогательные функции ====================
 
 def get_user_students(db: Session, user_id: int):
     """Получить информацию о детях пользователя"""
