@@ -23,7 +23,7 @@ function refreshData() {
 
 // Показать всех подтвержденных пользователей
 function showAllApproved() {
-    window.location.href = '/admin/users/approved?limit=100';
+    window.location.href = '/admin/users/approved-page';
 }
 
 // Подтверждение пользователя

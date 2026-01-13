@@ -251,3 +251,83 @@ async def search_student(name: str, db: Session = Depends(get_db)):
         })
 
     return result
+
+#
+@router.get("/users/approved-page", response_class=HTMLResponse)
+async def approved_users_page(request: Request, db: Session = Depends(get_db)):
+    """Страница со всеми подтвержденными пользователями"""
+    user_info = getattr(request.state, 'user', None)
+
+    if not user_info or not user_info.get("authenticated"):
+        return RedirectResponse(url="/")
+
+    # Получаем всех подтвержденных пользователей
+    approved_users = db.query(Tg_notif_user).filter(
+        Tg_notif_user.is_active == True
+    ).order_by(Tg_notif_user.full_name).all()
+
+    # Для каждого пользователя получаем информацию о детях
+    users_with_students = []
+    for user in approved_users:
+        students_info = get_user_students(db, user.id)
+
+        # Если нет детей, все равно включаем пользователя
+        if not students_info:
+            users_with_students.append({
+                "user": user,
+                "students": []
+            })
+        else:
+            for student in students_info:
+                users_with_students.append({
+                    "user": user,
+                    "student": student
+                })
+
+    return templates.TemplateResponse(
+        "tg_membership_approved.html",
+        {
+            "request": request,
+            "users_with_students": users_with_students,
+            "user_authenticated": user_info.get("authenticated", False),
+            "username": user_info.get("username")
+        }
+    )
+
+
+@router.delete("/users/{user_id}/student/{student_id}")
+async def remove_student_from_user(
+        user_id: int,
+        student_id: int,
+        db: Session = Depends(get_db)
+):
+    """Удалить связь между пользователем и учеником"""
+    # Находим связь
+    relation = db.query(Students_parents).filter(
+        Students_parents.parents == user_id,
+        Students_parents.student == student_id
+    ).first()
+
+    if not relation:
+        raise HTTPException(status_code=404, detail="Связь не найдена")
+
+    # Удаляем связь
+    db.delete(relation)
+    db.commit()
+
+    # Проверяем, есть ли у пользователя другие дети
+    remaining_children = db.query(Students_parents).filter(
+        Students_parents.parents == user_id
+    ).count()
+
+    # Если детей нет, можно предложить удалить пользователя
+    user_info = db.query(Tg_notif_user).filter(
+        Tg_notif_user.id == user_id
+    ).first()
+
+    return {
+        "status": "success",
+        "message": f"Связь удалена",
+        "remaining_children": remaining_children,
+        "user_name": user_info.full_name if user_info else "Пользователь"
+    }

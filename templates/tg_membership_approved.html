@@ -1,0 +1,364 @@
+<!-- templates/tg_membership_approved.html -->
+{% extends "base.html" %}
+
+{% block title %}Подтвержденные пользователи{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1>
+                    <i class="fas fa-check-circle text-success"></i>
+                    Подтвержденные пользователи
+                </h1>
+                <p class="text-muted">Родители и их дети. Управление связями</p>
+            </div>
+            <div>
+                <button class="btn btn-outline-secondary" onclick="window.history.back()">
+                    <i class="fas fa-arrow-left"></i> Назад
+                </button>
+                <button class="btn btn-outline-primary ms-2" onclick="refreshData()">
+                    <i class="fas fa-sync-alt"></i> Обновить
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-list-check"></i> Все связи
+            <span class="badge bg-primary float-end">{{ users_with_students|length }}</span>
+        </h5>
+    </div>
+    <div class="card-body">
+        {% if users_with_students %}
+        <div class="table-responsive">
+            <table class="table table-hover" id="approvedUsersTable">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Родитель</th>
+                        <th>Telegram</th>
+                        <th>Телефон</th>
+                        <th>Дата регистрации</th>
+                        <th>Ученик</th>
+                        <th>Статус ученика</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in users_with_students %}
+                    <tr id="row-{{ item.user.id }}-{% if item.student %}{{ item.student.id }}{% endif %}">
+                        <td>{{ loop.index }}</td>
+                        <td>
+                            <strong>{{ item.user.full_name or 'Без имени' }}</strong>
+                            <br>
+                            <small class="text-muted">ID: {{ item.user.id }}</small>
+                        </td>
+                        <td>
+                            {% if item.user.telegram_username %}
+                            <span class="badge bg-info">
+                                @{{ item.user.telegram_username }}
+                            </span>
+                            {% else %}
+                            <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.user.phone %}
+                            <code>{{ item.user.phone }}</code>
+                            {% else %}
+                            <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small>{{ item.user.date_reg.strftime('%d.%m.%Y') }}</small>
+                        </td>
+                        <td>
+                            {% if item.student %}
+                            <strong>{{ item.student.name }}</strong>
+                            <br>
+                            <small class="text-muted">ID: {{ item.student.id }}</small>
+                            {% else %}
+                            <span class="text-danger">Нет привязанных детей</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.student %}
+                                {% if item.student.active %}
+                                <span class="badge bg-success">Активен</span>
+                                {% else %}
+                                <span class="badge bg-danger">Неактивен</span>
+                                {% endif %}
+                            {% else %}
+                            <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.student %}
+                            <button class="btn btn-sm btn-danger delete-relation-btn"
+                                    data-user-id="{{ item.user.id }}"
+                                    data-student-id="{{ item.student.id }}"
+                                    data-user-name="{{ item.user.full_name }}"
+                                    data-student-name="{{ item.student.name }}">
+                                <i class="fas fa-unlink"></i> Удалить связь
+                            </button>
+                            {% else %}
+                            <button class="btn btn-sm btn-outline-secondary" disabled>
+                                Нет связи
+                            </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Статистика -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Статистика:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>Всего записей: <strong>{{ users_with_students|length }}</strong></li>
+                        <li>Пользователей с детьми: <strong id="usersWithChildren">0</strong></li>
+                        <li>Пользователей без детей: <strong id="usersWithoutChildren">0</strong></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Внимание:</strong>
+                    <p class="mb-0 mt-2 small">
+                        Удаление связи только отвязывает ученика от родителя в Telegram боте.
+                        Это не удаляет ученика из системы.
+                    </p>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-users-slash display-4 text-muted mb-3"></i>
+            <h4 class="text-muted">Нет подтвержденных пользователей</h4>
+            <p class="text-muted">Все пользователи ожидают подтверждения или еще не зарегистрировались</p>
+            <a href="/admin/registrations" class="btn btn-primary">
+                <i class="fas fa-arrow-left"></i> Вернуться к заявкам
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Модальное окно подтверждения удаления -->
+<div class="modal fade" id="deleteRelationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger">
+                    <i class="fas fa-exclamation-triangle"></i> Удаление связи
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы уверены, что хотите удалить связь между:</p>
+                <div class="alert alert-warning">
+                    <strong>Родитель:</strong> <span id="deleteUserName"></span><br>
+                    <strong>Ученик:</strong> <span id="deleteStudentName"></span>
+                </div>
+                <p class="text-muted small">
+                    <i class="fas fa-info-circle"></i>
+                    Родитель больше не будет получать уведомления об этом ученике в Telegram боте.
+                </p>
+                <input type="hidden" id="deleteUserId">
+                <input type="hidden" id="deleteStudentId">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteRelation">
+                    <i class="fas fa-trash"></i> Удалить связь
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Функция для расчета статистики
+function calculateStatistics() {
+    const rows = document.querySelectorAll('#approvedUsersTable tbody tr');
+    let withChildren = 0;
+    let withoutChildren = 0;
+
+    rows.forEach(row => {
+        const studentCell = row.cells[5]; // Столбец с учеником
+        const studentText = studentCell.textContent.trim();
+
+        if (studentText.includes('Нет привязанных детей')) {
+            withoutChildren++;
+        } else {
+            withChildren++;
+        }
+    });
+
+    document.getElementById('usersWithChildren').textContent = withChildren;
+    document.getElementById('usersWithoutChildren').textContent = withoutChildren;
+}
+
+// Обновить данные
+function refreshData() {
+    location.reload();
+}
+
+// Удалить связь
+async function deleteRelation(userId, studentId) {
+    try {
+        const response = await fetch(`/admin/users/${userId}/student/${studentId}`, {
+            method: 'DELETE'
+        });
+
+        const result = await response.json();
+
+        if (result.status === 'success') {
+            // Удаляем строку из таблицы
+            const row = document.getElementById(`row-${userId}-${studentId}`);
+            if (row) {
+                row.remove();
+            }
+
+            // Показываем уведомление
+            alert(`✅ ${result.message}`);
+
+            // Обновляем статистику
+            calculateStatistics();
+
+            // Если у пользователя не осталось детей, показываем предупреждение
+            if (result.remaining_children === 0) {
+                if (confirm(`У пользователя "${result.user_name}" не осталось привязанных детей.\n\nУдалить пользователя из системы?`)) {
+                    // Здесь можно добавить удаление пользователя
+                    // await fetch(`/admin/users/${userId}/delete`, { method: 'DELETE' });
+                    alert('Функция удаления пользователя будет добавлена позже');
+                }
+            }
+        } else {
+            alert('❌ Ошибка: ' + (result.message || 'Неизвестная ошибка'));
+        }
+    } catch (error) {
+        alert('❌ Ошибка сети: ' + error);
+    }
+}
+
+// Инициализация при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    // Рассчитать статистику
+    calculateStatistics();
+
+    // Обработчики для кнопок удаления связи
+    document.querySelectorAll('.delete-relation-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const userId = this.dataset.userId;
+            const studentId = this.dataset.studentId;
+            const userName = this.dataset.userName;
+            const studentName = this.dataset.studentName;
+
+            // Заполняем модальное окно
+            document.getElementById('deleteUserId').value = userId;
+            document.getElementById('deleteStudentId').value = studentId;
+            document.getElementById('deleteUserName').textContent = userName;
+            document.getElementById('deleteStudentName').textContent = studentName;
+
+            // Показываем модальное окно
+            const modal = new bootstrap.Modal(document.getElementById('deleteRelationModal'));
+            modal.show();
+        });
+    });
+
+    // Обработчик подтверждения удаления
+    document.getElementById('confirmDeleteRelation').addEventListener('click', function() {
+        const userId = document.getElementById('deleteUserId').value;
+        const studentId = document.getElementById('deleteStudentId').value;
+
+        // Закрываем модальное окно
+        const modal = bootstrap.Modal.getInstance(document.getElementById('deleteRelationModal'));
+        modal.hide();
+
+        // Удаляем связь
+        deleteRelation(userId, studentId);
+    });
+
+    // Добавляем поиск по таблице (опционально)
+    addTableSearch();
+});
+
+// Функция для добавления поиска по таблице
+function addTableSearch() {
+    const table = document.getElementById('approvedUsersTable');
+    if (!table) return;
+
+    // Создаем поле поиска
+    const searchDiv = document.createElement('div');
+    searchDiv.className = 'input-group mb-3';
+    searchDiv.innerHTML = `
+        <input type="text" class="form-control" id="tableSearchInput"
+               placeholder="Поиск по родителям, ученикам или Telegram...">
+        <button class="btn btn-outline-secondary" type="button" id="clearSearch">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+
+    table.parentNode.insertBefore(searchDiv, table);
+
+    const searchInput = document.getElementById('tableSearchInput');
+    const clearBtn = document.getElementById('clearSearch');
+
+    searchInput.addEventListener('keyup', function() {
+        const filter = this.value.toLowerCase();
+        const rows = table.getElementsByTagName('tr');
+
+        for (let i = 1; i < rows.length; i++) { // Пропускаем заголовок
+            const row = rows[i];
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(filter) ? '' : 'none';
+        }
+    });
+
+    clearBtn.addEventListener('click', function() {
+        searchInput.value = '';
+        searchInput.dispatchEvent(new Event('keyup'));
+        searchInput.focus();
+    });
+}
+</script>
+
+<style>
+/* Стили для таблицы */
+#approvedUsersTable th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    border-top: none;
+}
+
+#approvedUsersTable tr:hover {
+    background-color: #f8fdff;
+}
+
+/* Адаптивность для мобильных */
+@media (max-width: 768px) {
+    .table-responsive {
+        font-size: 0.9rem;
+    }
+
+    .delete-relation-btn {
+        font-size: 0.8rem;
+        padding: 0.25rem 0.5rem;
+    }
+}
+</style>
+{% endblock %}
