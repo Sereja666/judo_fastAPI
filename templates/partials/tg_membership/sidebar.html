@@ -1,0 +1,47 @@
+<!-- Боковая панель -->
+<div class="col-md-4">
+    <!-- Быстрые действия -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-bolt"></i> Быстрые действия
+            </h5>
+        </div>
+        <div class="card-body">
+            <button class="btn btn-primary w-100 mb-2" onclick="refreshData()">
+                <i class="fas fa-sync-alt"></i> Обновить данные
+            </button>
+            <button class="btn btn-outline-secondary w-100 mb-2" onclick="showAllApproved()">
+                <i class="fas fa-list-check"></i> Все подтвержденные
+            </button>
+            <button class="btn btn-outline-info w-100" onclick="searchStudentModal()">
+                <i class="fas fa-search"></i> Поиск ученика
+            </button>
+        </div>
+    </div>
+
+    <!-- Информация -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-info-circle"></i> Информация
+            </h5>
+        </div>
+        <div class="card-body">
+            <p class="small">
+                <strong>Как это работает:</strong>
+            </p>
+            <ol class="small">
+                <li>Пользователь регистрируется в Telegram боте</li>
+                <li>Заявка появляется здесь в разделе "Ожидают подтверждения"</li>
+                <li>Администратор проверяет и подтверждает заявку</li>
+                <li>Пользователь получает доступ к функциям бота</li>
+            </ol>
+            <hr>
+            <p class="small text-muted">
+                <i class="fas fa-clock"></i>
+                Последнее обновление: <span id="lastUpdate">только что</span>
+            </p>
+        </div>
+    </div>
+</div>

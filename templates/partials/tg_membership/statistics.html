@@ -1,0 +1,51 @@
+<!-- Статистика -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-users text-primary"></i> Всего пользователей
+                </h5>
+            </div>
+            <div class="card-body text-center">
+                <h2 class="text-primary">{{ total_users }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-clock text-warning"></i> Ожидают подтверждения
+                </h5>
+            </div>
+            <div class="card-body text-center">
+                <h2 class="text-warning">{{ total_pending }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-check-circle text-success"></i> Подтверждены
+                </h5>
+            </div>
+            <div class="card-body text-center">
+                <h2 class="text-success">{{ total_approved }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-calendar-week text-info"></i> Новые (7 дней)
+                </h5>
+            </div>
+            <div class="card-body text-center">
+                <h2 class="text-info">{{ recent_registrations }}</h2>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,50 @@
+<!-- Последние подтвержденные -->
+{% if approved_users %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-check-circle text-success"></i>
+            Последние подтвержденные пользователи
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            {% for user in approved_users %}
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title">
+                            {{ user.full_name or 'Без имени' }}
+                            {% if user.telegram_username %}
+                            <small class="text-muted">@{{ user.telegram_username }}</small>
+                            {% endif %}
+                        </h6>
+                        <p class="card-text small text-muted">
+                            <i class="fas fa-calendar-alt"></i> {{ user.date_reg.strftime('%d.%m.%Y') }}
+                            <span class="badge bg-success float-end">Подтвержден</span>
+                        </p>
+                        <div class="notification-controls">
+                            <small class="text-muted d-block mb-1">Уведомления:</small>
+                            <div class="btn-group btn-group-sm w-100">
+                                <button class="btn btn-outline-secondary news-toggle {% if user.get_news %}active{% endif %}"
+                                        data-user-id="{{ user.id }}">
+                                    Новости
+                                </button>
+                                <button class="btn btn-outline-secondary pays-toggle {% if user.get_pays_notif %}active{% endif %}"
+                                        data-user-id="{{ user.id }}">
+                                    Оплаты
+                                </button>
+                                <button class="btn btn-outline-secondary info-toggle {% if user.get_info_student %}active{% endif %}"
+                                        data-user-id="{{ user.id }}">
+                                    Информация
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}

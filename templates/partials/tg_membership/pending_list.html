@@ -1,0 +1,71 @@
+<!-- Заявки на подтверждение -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-clock text-warning"></i>
+            Заявки на подтверждение
+            <span class="badge bg-warning float-end">{{ total_pending }}</span>
+        </h5>
+    </div>
+    <div class="card-body">
+        {% if pending_users %}
+        <div id="pendingUsersList">
+            {% for user in pending_users %}
+            <div class="schedule-item pending-user-card" id="user-{{ user.id }}">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="mb-1">
+                            {{ user.full_name or 'Без имени' }}
+                            {% if user.telegram_username %}
+                            <small class="text-muted">@{{ user.telegram_username }}</small>
+                            {% endif %}
+                        </h6>
+                        <p class="text-muted small mb-2">
+                            <i class="fas fa-id-card"></i> ID: {{ user.telegram_id }} |
+                            <i class="fas fa-calendar-alt"></i> {{ user.date_reg.strftime('%d.%m.%Y %H:%M') }}
+                            {% if user.phone %}
+                            | <i class="fas fa-phone"></i> {{ user.phone }}
+                            {% endif %}
+                        </p>
+
+                        {% if user.students_info %}
+                        <div class="mb-2">
+                            <strong><i class="fas fa-child"></i> Дети:</strong>
+                            {% for student in user.students_info %}
+                            <span class="badge bg-secondary me-1">
+                                {{ student.name }}
+                                {% if student.active %}
+                                <i class="fas fa-check-circle text-success"></i>
+                                {% else %}
+                                <i class="fas fa-times-circle text-danger"></i>
+                                {% endif %}
+                            </span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-success approve-btn"
+                                data-user-id="{{ user.id }}"
+                                data-user-name="{{ user.full_name }}">
+                            <i class="fas fa-check"></i> Подтвердить
+                        </button>
+                        <button class="btn btn-sm btn-danger reject-btn"
+                                data-user-id="{{ user.id }}"
+                                data-user-name="{{ user.full_name }}">
+                            <i class="fas fa-times"></i> Отклонить
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-4">
+            <i class="fas fa-check-circle display-4 text-success mb-3"></i>
+            <h5 class="text-muted">Все заявки обработаны!</h5>
+            <p class="text-muted">Нет пользователей, ожидающих подтверждения.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
