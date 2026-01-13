@@ -4,10 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ee547eef-2e63-46d4-8d9a-feffb711966c" name="Changes" comment="мероприятия - проверка на справки">
+    <list default="true" id="ee547eef-2e63-46d4-8d9a-feffb711966c" name="Changes" comment="логи Родитель-ученик">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/competitions.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/competitions.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/partials/competitions/scripts/form.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/partials/competitions/scripts/form.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/keyboards/kbs.py" beforeDir="false" afterPath="$PROJECT_DIR$/keyboards/kbs.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -49,86 +48,64 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "DefaultHtmlFileTemplate": "HTML File",
-    "Python.aiogram_run.executor": "Run",
-    "Python.aiogram_tg_notif.executor": "Run",
-    "Python.api_Students_shedule.executor": "Run",
-    "Python.api_main.executor": "Run",
-    "Python.backup_judo.executor": "Run",
-    "Python.backup_sql.executor": "Run",
-    "Python.check_syntax.executor": "Run",
-    "Python.chenge_permis.executor": "Run",
-    "Python.config.executor": "Run",
-    "Python.daily_attendance.executor": "Run",
-    "Python.eqweqw.executor": "Run",
-    "Python.fff.executor": "Run",
-    "Python.kill_dublicates (1).executor": "Run",
-    "Python.kill_dublicates.executor": "Run",
-    "Python.main.executor": "Run",
-    "Python.qqq.executor": "Run",
-    "Python.qqqq.executor": "Run",
-    "Python.qwe.executor": "Run",
-    "Python.run.executor": "Run",
-    "Python.run_bot.executor": "Run",
-    "Python.run_notif_admin (1).executor": "Run",
-    "Python.sekret_key_generator.executor": "Run",
-    "Python.simple_set_password (1).executor": "Run",
-    "Python.simple_set_password_fixed (1).executor": "Run",
-    "Python.telegram_user_update (1).executor": "Run",
-    "Python.test_local_superset_https.executor": "Run",
-    "Python.test_redis.executor": "Run",
-    "Python.tools.executor": "Run",
-    "Python.trainer_salary.executor": "Run",
-    "Python.update_pasw (1).executor": "Run",
-    "Python.update_pasw.executor": "Run",
-    "Python.фвыф.executor": "Run",
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "master",
-    "last_opened_file_path": "C:/Python_projects/Judo_aiogram_superset",
-    "settings.editor.selected.configurable": "preferences.sourceCode.XML"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;DefaultHtmlFileTemplate&quot;: &quot;HTML File&quot;,
+    &quot;Python.aiogram_run.executor&quot;: &quot;Run&quot;,
+    &quot;Python.aiogram_tg_notif.executor&quot;: &quot;Run&quot;,
+    &quot;Python.api_Students_shedule.executor&quot;: &quot;Run&quot;,
+    &quot;Python.api_main.executor&quot;: &quot;Run&quot;,
+    &quot;Python.backup_judo.executor&quot;: &quot;Run&quot;,
+    &quot;Python.backup_sql.executor&quot;: &quot;Run&quot;,
+    &quot;Python.check_syntax.executor&quot;: &quot;Run&quot;,
+    &quot;Python.chenge_permis.executor&quot;: &quot;Run&quot;,
+    &quot;Python.config.executor&quot;: &quot;Run&quot;,
+    &quot;Python.daily_attendance.executor&quot;: &quot;Run&quot;,
+    &quot;Python.eqweqw.executor&quot;: &quot;Run&quot;,
+    &quot;Python.fff.executor&quot;: &quot;Run&quot;,
+    &quot;Python.kill_dublicates (1).executor&quot;: &quot;Run&quot;,
+    &quot;Python.kill_dublicates.executor&quot;: &quot;Run&quot;,
+    &quot;Python.main.executor&quot;: &quot;Run&quot;,
+    &quot;Python.qqq.executor&quot;: &quot;Run&quot;,
+    &quot;Python.qqqq.executor&quot;: &quot;Run&quot;,
+    &quot;Python.qwe.executor&quot;: &quot;Run&quot;,
+    &quot;Python.run.executor&quot;: &quot;Run&quot;,
+    &quot;Python.run_bot.executor&quot;: &quot;Run&quot;,
+    &quot;Python.run_notif_admin (1).executor&quot;: &quot;Run&quot;,
+    &quot;Python.sekret_key_generator.executor&quot;: &quot;Run&quot;,
+    &quot;Python.simple_set_password (1).executor&quot;: &quot;Run&quot;,
+    &quot;Python.simple_set_password_fixed (1).executor&quot;: &quot;Run&quot;,
+    &quot;Python.telegram_user_update (1).executor&quot;: &quot;Run&quot;,
+    &quot;Python.test_local_superset_https.executor&quot;: &quot;Run&quot;,
+    &quot;Python.test_redis.executor&quot;: &quot;Run&quot;,
+    &quot;Python.tools.executor&quot;: &quot;Run&quot;,
+    &quot;Python.trainer_salary.executor&quot;: &quot;Run&quot;,
+    &quot;Python.update_pasw (1).executor&quot;: &quot;Run&quot;,
+    &quot;Python.update_pasw.executor&quot;: &quot;Run&quot;,
+    &quot;Python.фвыф.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Python_projects/Judo_aiogram_superset&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.sourceCode.XML&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Python\Judo_aiogram_superset\handlers" />
       <recent name="C:\Python\Judo_aiogram_superset" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Python_projects\Judo_aiogram_superset\static" />
       <recent name="C:\Python_projects\Judo_aiogram_superset\tg_bot_notif" />
       <recent name="C:\Python_projects\Judo_aiogram_superset" />
       <recent name="C:\Python_projects\Judo_aiogram_superset\templates\partials\modals" />
       <recent name="C:\Python\Judo_aiogram_superset" />
-      <recent name="C:\Python\Judo_aiogram_superset\regulatory_tasks" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.run_notif_admin (1)">
-    <configuration name="aiogram_tg_notif" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="Judo_aiogram_superset" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/aiogram_tg_notif.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
+  <component name="RunManager" selected="Python.chenge_permis">
     <configuration name="api_main" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="Judo_aiogram_superset" />
       <option name="ENV_FILES" value="" />
@@ -165,6 +142,28 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/regulatory_tasks/backup_judo.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="chenge_permis" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="Judo_aiogram_superset" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/chenge_permis.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -219,11 +218,11 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.chenge_permis" />
         <item itemvalue="Python.run_notif_admin (1)" />
         <item itemvalue="Python.qqq" />
         <item itemvalue="Python.backup_judo" />
         <item itemvalue="Python.api_main" />
-        <item itemvalue="Python.aiogram_tg_notif" />
       </list>
     </recent_temporary>
   </component>
@@ -242,94 +241,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1741959141895</updated>
-    </task>
-    <task id="LOCAL-00111" summary="мидлваре для авторизации">
-      <option name="closed" value="true" />
-      <created>1764526736549</created>
-      <option name="number" value="00111" />
-      <option name="presentableId" value="LOCAL-00111" />
-      <option name="project" value="LOCAL" />
-      <updated>1764526736549</updated>
-    </task>
-    <task id="LOCAL-00112" summary="мидлваре для авторизации">
-      <option name="closed" value="true" />
-      <created>1764527026025</created>
-      <option name="number" value="00112" />
-      <option name="presentableId" value="LOCAL-00112" />
-      <option name="project" value="LOCAL" />
-      <updated>1764527026025</updated>
-    </task>
-    <task id="LOCAL-00113" summary="мидлваре для авторизации">
-      <option name="closed" value="true" />
-      <created>1764527281949</created>
-      <option name="number" value="00113" />
-      <option name="presentableId" value="LOCAL-00113" />
-      <option name="project" value="LOCAL" />
-      <updated>1764527281949</updated>
-    </task>
-    <task id="LOCAL-00114" summary="мидлваре для авторизации">
-      <option name="closed" value="true" />
-      <created>1764527860286</created>
-      <option name="number" value="00114" />
-      <option name="presentableId" value="LOCAL-00114" />
-      <option name="project" value="LOCAL" />
-      <updated>1764527860286</updated>
-    </task>
-    <task id="LOCAL-00115" summary="мидлваре для авторизации">
-      <option name="closed" value="true" />
-      <created>1764528040300</created>
-      <option name="number" value="00115" />
-      <option name="presentableId" value="LOCAL-00115" />
-      <option name="project" value="LOCAL" />
-      <updated>1764528040300</updated>
-    </task>
-    <task id="LOCAL-00116" summary="мидлваре для авторизации">
-      <option name="closed" value="true" />
-      <created>1764541043598</created>
-      <option name="number" value="00116" />
-      <option name="presentableId" value="LOCAL-00116" />
-      <option name="project" value="LOCAL" />
-      <updated>1764541043598</updated>
-    </task>
-    <task id="LOCAL-00117" summary="мидлваре для авторизации">
-      <option name="closed" value="true" />
-      <created>1764541219489</created>
-      <option name="number" value="00117" />
-      <option name="presentableId" value="LOCAL-00117" />
-      <option name="project" value="LOCAL" />
-      <updated>1764541219490</updated>
-    </task>
-    <task id="LOCAL-00118" summary="убираю лишнее">
-      <option name="closed" value="true" />
-      <created>1764572735076</created>
-      <option name="number" value="00118" />
-      <option name="presentableId" value="LOCAL-00118" />
-      <option name="project" value="LOCAL" />
-      <updated>1764572735076</updated>
-    </task>
-    <task id="LOCAL-00119" summary="обновил Base">
-      <option name="closed" value="true" />
-      <created>1764573241626</created>
-      <option name="number" value="00119" />
-      <option name="presentableId" value="LOCAL-00119" />
-      <option name="project" value="LOCAL" />
-      <updated>1764573241626</updated>
-    </task>
-    <task id="LOCAL-00120" summary="обновил Base">
-      <option name="closed" value="true" />
-      <created>1764573437717</created>
-      <option name="number" value="00120" />
-      <option name="presentableId" value="LOCAL-00120" />
-      <option name="project" value="LOCAL" />
-      <updated>1764573437717</updated>
-    </task>
-    <task id="LOCAL-00121" summary="Добавляю в анкету ученика НАГРАДЫ">
-      <option name="closed" value="true" />
-      <created>1764658700662</created>
-      <option name="number" value="00121" />
-      <option name="presentableId" value="LOCAL-00121" />
-      <option name="project" value="LOCAL" />
-      <updated>1764658700663</updated>
     </task>
     <task id="LOCAL-00122" summary="Добавляю в анкету ученика НАГРАДЫ">
       <option name="closed" value="true" />
@@ -635,7 +546,95 @@
       <option name="project" value="LOCAL" />
       <updated>1767524896074</updated>
     </task>
-    <option name="localTasksCounter" value="160" />
+    <task id="LOCAL-00160" summary="мероприятия - проверка на справки">
+      <option name="closed" value="true" />
+      <created>1767525829693</created>
+      <option name="number" value="00160" />
+      <option name="presentableId" value="LOCAL-00160" />
+      <option name="project" value="LOCAL" />
+      <updated>1767525829693</updated>
+    </task>
+    <task id="LOCAL-00161" summary="переношу панель &quot;РОдители_ТГ&quot;">
+      <option name="closed" value="true" />
+      <created>1768216307931</created>
+      <option name="number" value="00161" />
+      <option name="presentableId" value="LOCAL-00161" />
+      <option name="project" value="LOCAL" />
+      <updated>1768216307931</updated>
+    </task>
+    <task id="LOCAL-00162" summary="переношу панель &quot;РОдители_ТГ&quot;">
+      <option name="closed" value="true" />
+      <created>1768242153724</created>
+      <option name="number" value="00162" />
+      <option name="presentableId" value="LOCAL-00162" />
+      <option name="project" value="LOCAL" />
+      <updated>1768242153724</updated>
+    </task>
+    <task id="LOCAL-00163" summary="переношу панель &quot;РОдители_ТГ&quot;">
+      <option name="closed" value="true" />
+      <created>1768242305467</created>
+      <option name="number" value="00163" />
+      <option name="presentableId" value="LOCAL-00163" />
+      <option name="project" value="LOCAL" />
+      <updated>1768242305467</updated>
+    </task>
+    <task id="LOCAL-00164" summary="переношу панель &quot;РОдители_ТГ&quot;">
+      <option name="closed" value="true" />
+      <created>1768242657328</created>
+      <option name="number" value="00164" />
+      <option name="presentableId" value="LOCAL-00164" />
+      <option name="project" value="LOCAL" />
+      <updated>1768242657328</updated>
+    </task>
+    <task id="LOCAL-00165" summary="переношу панель &quot;РОдители_ТГ&quot;">
+      <option name="closed" value="true" />
+      <created>1768290165525</created>
+      <option name="number" value="00165" />
+      <option name="presentableId" value="LOCAL-00165" />
+      <option name="project" value="LOCAL" />
+      <updated>1768290165525</updated>
+    </task>
+    <task id="LOCAL-00166" summary="заменил названия файлов">
+      <option name="closed" value="true" />
+      <created>1768291280515</created>
+      <option name="number" value="00166" />
+      <option name="presentableId" value="LOCAL-00166" />
+      <option name="project" value="LOCAL" />
+      <updated>1768291280515</updated>
+    </task>
+    <task id="LOCAL-00167" summary="Разбил tg_membership на части">
+      <option name="closed" value="true" />
+      <created>1768292006964</created>
+      <option name="number" value="00167" />
+      <option name="presentableId" value="LOCAL-00167" />
+      <option name="project" value="LOCAL" />
+      <updated>1768292006964</updated>
+    </task>
+    <task id="LOCAL-00168" summary="Разбил tg_membership на части">
+      <option name="closed" value="true" />
+      <created>1768295329185</created>
+      <option name="number" value="00168" />
+      <option name="presentableId" value="LOCAL-00168" />
+      <option name="project" value="LOCAL" />
+      <updated>1768295329185</updated>
+    </task>
+    <task id="LOCAL-00169" summary="делаю страницу Родитель-ученик">
+      <option name="closed" value="true" />
+      <created>1768295891259</created>
+      <option name="number" value="00169" />
+      <option name="presentableId" value="LOCAL-00169" />
+      <option name="project" value="LOCAL" />
+      <updated>1768295891259</updated>
+    </task>
+    <task id="LOCAL-00170" summary="логи Родитель-ученик">
+      <option name="closed" value="true" />
+      <created>1768296739919</created>
+      <option name="number" value="00170" />
+      <option name="presentableId" value="LOCAL-00170" />
+      <option name="project" value="LOCAL" />
+      <updated>1768296739920</updated>
+    </task>
+    <option name="localTasksCounter" value="171" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -650,11 +649,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="переделал логи для ежедненого списания" />
-    <MESSAGE value="фиксы списаний и логов" />
-    <MESSAGE value="добавил разрады и ранги" />
-    <MESSAGE value="обновляю пояса" />
-    <MESSAGE value="сохранялка" />
     <MESSAGE value="разделил judo_fastapi на модули" />
     <MESSAGE value="Добавляю в анкету справки" />
     <MESSAGE value="Добавляю в анкету справки 1" />
@@ -675,6 +669,11 @@
     <MESSAGE value="фикс отправки заявлений" />
     <MESSAGE value="добавляю в анкету ученика родителей" />
     <MESSAGE value="мероприятия - проверка на справки" />
-    <option name="LAST_COMMIT_MESSAGE" value="мероприятия - проверка на справки" />
+    <MESSAGE value="переношу панель &quot;РОдители_ТГ&quot;" />
+    <MESSAGE value="заменил названия файлов" />
+    <MESSAGE value="Разбил tg_membership на части" />
+    <MESSAGE value="делаю страницу Родитель-ученик" />
+    <MESSAGE value="логи Родитель-ученик" />
+    <option name="LAST_COMMIT_MESSAGE" value="логи Родитель-ученик" />
   </component>
 </project>
