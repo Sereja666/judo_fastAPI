@@ -7,7 +7,7 @@ import os
 from app_notif.database import get_db
 from database.models import Students_parents, Students, Tg_notif_user
 from config import templates
-
+from logger_config import logger
 router = APIRouter(prefix="/admin", tags=["telegram-registrations"])
 
 
@@ -34,23 +34,23 @@ def get_user_students(db: Session, user_id: int):
     return students_info
 
 
-def log_action(action: str, user_id: int, user_name: str, reason: str = ""):
-    """Логировать действия администратора"""
-    log_file = "admin_actions.log"
-    log_dir = "logs"
-
-    if not os.path.exists(log_dir):
-        os.makedirs(log_dir)
-
-    log_path = os.path.join(log_dir, log_file)
-
-    with open(log_path, "a", encoding="utf-8") as f:
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        log_entry = f"{timestamp} | {action.upper()} | UserID: {user_id} | Name: {user_name}"
-        if reason:
-            log_entry += f" | Reason: {reason}"
-        log_entry += "\n"
-        f.write(log_entry)
+# def log_action(action: str, user_id: int, user_name: str, reason: str = ""):
+#     """Логировать действия администратора"""
+#     log_file = "admin_actions.log"
+#     log_dir = "logs"
+#
+#     if not os.path.exists(log_dir):
+#         os.makedirs(log_dir)
+#
+#     log_path = os.path.join(log_dir, log_file)
+#
+#     with open(log_path, "a", encoding="utf-8") as f:
+#         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+#         log_entry = f"{timestamp} | {action.upper()} | UserID: {user_id} | Name: {user_name}"
+#         if reason:
+#             log_entry += f" | Reason: {reason}"
+#         log_entry += "\n"
+#         f.write(log_entry)
 
 
 # ==================== Роуты ====================
@@ -150,7 +150,7 @@ async def approve_user(user_id: int, db: Session = Depends(get_db)):
     db.refresh(user)
 
     # Логируем действие
-    log_action("approve", user_id, user.full_name)
+    logger.info(f"Пользователь {user.full_name} подтвержден")
 
     return {"status": "success", "message": f"Пользователь {user.full_name} подтвержден"}
 
@@ -167,7 +167,7 @@ async def reject_user(user_id: int, reason: str = "", db: Session = Depends(get_
     db.refresh(user)
 
     # Логируем действие
-    log_action("reject", user_id, user.full_name, reason)
+    logger.info(f"Пользователь {user.full_name} отклонен")
 
     return {"status": "success", "message": f"Пользователь {user.full_name} отклонен"}
 
@@ -195,7 +195,7 @@ async def toggle_notifications(
 
     db.commit()
     db.refresh(user)
-
+    logger.info(f"Настройки уведомлений для {user.full_name}  обновлены")
     return {"status": "success", "message": "Настройки обновлены"}
 
 
@@ -324,7 +324,7 @@ async def remove_student_from_user(
     user_info = db.query(Tg_notif_user).filter(
         Tg_notif_user.id == user_id
     ).first()
-
+    logger.info(f"Связь удалена для  {Students_parents.parents} {Students_parents.student} -  обновлены")
     return {
         "status": "success",
         "message": f"Связь удалена",
