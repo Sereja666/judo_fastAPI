@@ -13,7 +13,7 @@ from config import settings
 from api.students import router as students_router
 from api.schedule import router as schedule_router
 from api.trainers import router as trainers_router
-from api.admin_panel import router as admin_router
+from api.tg_membership import router as admin_router
 from api.visits import router as visits_router
 from api.competitions import router as competitions_router
 from config import templates

@@ -8,7 +8,7 @@ from app_notif.database import get_db
 from database.models import Students_parents, Students, Tg_notif_user
 from config import templates
 
-router = APIRouter(prefix="/admin", tags=["admin"])
+router = APIRouter(prefix="/admin", tags=["telegram-registrations"])
 
 
 # ====================  Вспомогательные функции ====================
@@ -97,7 +97,7 @@ async def admin_panel(request: Request, db: Session = Depends(get_db)):
     ).count()
 
     return templates.TemplateResponse(
-        "admin_panel_new.html",
+        "tg_membership.html",
         {
             "request": request,
             "pending_users": pending_users,
