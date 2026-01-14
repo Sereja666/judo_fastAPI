@@ -28,11 +28,11 @@ class DualAuthMiddleware(BaseHTTPMiddleware):
             "/health",
             "/auth/callback",
             "/logout",
-            "/choose-login",  # ✅ Страница выбора входа
-            "/local-login",  # ✅ Страница локального входа
-            "/api/auth/login",  # ✅ API для входа (POST)
+            "/choose-login",
+            "/local-login",
+            "/api/auth/login",  # ✅ API для входа
             "/api/auth/register",  # ✅ API для регистрации
-            "/api/auth/check-phone",  # ✅ API для проверки телефона
+            "/api/auth/me",  # ✅ API для проверки пользователя
             "/debug/"
         ]
         self.check_urls = [
