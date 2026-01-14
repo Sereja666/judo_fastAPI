@@ -54,6 +54,27 @@
 
 <script>
 $(document).ready(function() {
+    // Проверяем, есть ли уже токен
+    const token = localStorage.getItem('access_token');
+    if (token) {
+        $.ajaxSetup({
+            headers: {
+                'Authorization': 'Bearer ' + token
+            }
+        });
+
+        // Если уже авторизован, перенаправляем на главную
+        $.ajax({
+            url: '/api/auth/me',
+            method: 'GET',
+            success: function(response) {
+                if (response.authenticated) {
+                    window.location.href = '/';
+                }
+            }
+        });
+    }
+
     $('#loginForm').on('submit', function(e) {
         e.preventDefault();
 
@@ -68,7 +89,7 @@ $(document).ready(function() {
 
         // Отправляем запрос на сервер
         $.ajax({
-            url: '/api/auth/login',
+            url: '/api/auth/login',  // Обратите внимание на префикс /api
             method: 'POST',
             contentType: 'application/x-www-form-urlencoded',
             data: {
@@ -98,16 +119,6 @@ $(document).ready(function() {
             }
         });
     });
-
-    // Проверяем, есть ли уже токен
-    const token = localStorage.getItem('access_token');
-    if (token) {
-        $.ajaxSetup({
-            headers: {
-                'Authorization': 'Bearer ' + token
-            }
-        });
-    }
 });
 </script>
 {% endblock %}

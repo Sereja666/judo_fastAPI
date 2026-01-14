@@ -5,9 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 import httpx
 
-
 # Импортируем упрощенный middleware
-from database.middleware import  DualAuthMiddleware
+from database.middleware import DualAuthMiddleware
 from config import settings
 
 # Импортируем роутеры
@@ -21,8 +20,6 @@ from api.auth import router as auth_router
 from config import templates
 from logger_config import logger
 
-
-
 app = FastAPI(title="Student Management System")
 
 # Монтируем статические файлы
@@ -32,12 +29,11 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 SUPERSET_BASE_URL = settings.superset_conf.base_url
 
 
-@app.get("/choose-login")
-async def choose_login(request: Request):
-    """Корневая страница выбора способа входа"""
-    from config import settings
-
-    superset_base_url = settings.superset_conf.base_url.rstrip('/')
+# СОЗДАЕМ ПУБЛИЧНЫЕ МАРШРУТЫ ДО ПОДКЛЮЧЕНИЯ MIDDLEWARE
+@app.get("/choose-login", include_in_schema=False)
+async def choose_login_page(request: Request):
+    """Страница выбора способа входа"""
+    superset_base_url = SUPERSET_BASE_URL.rstrip('/')
     callback_url = f"{request.base_url}auth/callback?return_url={request.base_url}"
     superset_login_url = f"{superset_base_url}/login/?next={callback_url}"
 
@@ -47,14 +43,16 @@ async def choose_login(request: Request):
     })
 
 
-@app.get("/login")
-async def login_page_redirect(request: Request):
-    """Перенаправление на страницу входа"""
-    # Перенаправляем на выбор способа входа
-    return RedirectResponse(url="/choose-login")
+@app.get("/local-login", include_in_schema=False)
+async def local_login_page(request: Request):
+    """Страница локального входа"""
+    return templates.TemplateResponse("login.html", {
+        "request": request,
+        "superset_url": SUPERSET_BASE_URL
+    })
 
 
-# Подключаем упрощенный middleware
+# Только после этого подключаем middleware
 app.add_middleware(DualAuthMiddleware, superset_base_url=SUPERSET_BASE_URL)
 
 # Подключаем роутеры
@@ -64,14 +62,14 @@ app.include_router(trainers_router, tags=["trainers"])
 app.include_router(visits_router, tags=["visits"])
 app.include_router(competitions_router, tags=["competitions"])
 app.include_router(admin_router, tags=["admin"])
-app.include_router(auth_router, prefix="/auth", tags=["auth"])  # Изменено на /auth
+app.include_router(auth_router, prefix="/api/auth", tags=["auth"])  # Оставляем /api/auth для API
+
 
 
 @app.get("/health")
 async def health_check():
     """Эндпоинт для проверки здоровья приложения"""
     return {"status": "healthy", "service": "Student Management System"}
-
 
 @app.get("/auth/callback")
 async def auth_callback(request: Request, return_url: str = "/"):
@@ -82,9 +80,9 @@ async def auth_callback(request: Request, return_url: str = "/"):
 
     if session_cookie:
         # Проверяем, что сессия действительно валидна
-        from database.middleware import SimpleSupersetAuthMiddleware
-        checker = SimpleSupersetAuthMiddleware(app=None, superset_base_url=SUPERSET_BASE_URL)
-        user_info = await checker._check_superset_auth(session_cookie)
+        from database.middleware import DualAuthMiddleware
+        checker = DualAuthMiddleware(app=None, superset_base_url=SUPERSET_BASE_URL)
+        user_info = await checker._authenticate_superset(session_cookie)
 
         if user_info and user_info.get("authenticated"):
             safe_return_url = return_url.replace('http://', 'https://')
@@ -104,6 +102,7 @@ async def auth_callback(request: Request, return_url: str = "/"):
     logger.warning("⚠️ Неудачная аутентификация в callback")
     safe_login_url = f"{SUPERSET_BASE_URL}/login/"
     return RedirectResponse(url=safe_login_url)
+
 
 
 @app.get("/logout")

@@ -1,4 +1,3 @@
-# middleware.py
 from fastapi import Request, HTTPException
 from fastapi.responses import RedirectResponse
 import httpx
@@ -29,10 +28,10 @@ class DualAuthMiddleware(BaseHTTPMiddleware):
             "/health",
             "/auth/callback",
             "/logout",
-            "/api/auth/choose-login",  # Исправлено
-            "/api/auth/login-page",  # Исправлено
-            "/api/auth/login",  # Исправлено
-            "/api/auth/register",  # Исправлено
+            "/choose-login",        # Добавляем
+            "/local-login",         # Добавляем
+            "/api/auth/login",      # API для входа
+            "/api/auth/register",   # API для регистрации
             "/debug/"
         ]
         self.check_urls = [
@@ -46,10 +45,6 @@ class DualAuthMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         logger.info(f"🔐 Проверка авторизации для: {request.url.path}")
-
-        # Если это страница выбора входа или локального входа - пропускаем
-        if request.url.path in ["/auth/choose-login", "/auth/login-page"]:
-            return await call_next(request)
 
         # Пробуем оба способа авторизации
         user_info = None
@@ -70,7 +65,7 @@ class DualAuthMiddleware(BaseHTTPMiddleware):
         if not user_info:
             logger.warning("❌ Пользователь не авторизован")
             # Перенаправляем на страницу выбора способа входа
-            return RedirectResponse(url="/auth/choose-login")
+            return RedirectResponse(url="/choose-login")
 
         # Сохраняем информацию о пользователе в state
         request.state.user = user_info
@@ -162,23 +157,5 @@ class DualAuthMiddleware(BaseHTTPMiddleware):
         return False
 
     def _create_login_redirect(self, request: Request) -> RedirectResponse:
-        """Редирект на страницу входа"""
-        # Определяем, куда редиректить - на Superset или на нашу страницу входа
-        # Можно добавить параметр для выбора или использовать по умолчанию Superset для обратной совместимости
-
-        base_url = str(request.base_url)
-        return_url = str(request.url)
-
-        if "api.srm-1legion.ru" in base_url:
-            base_url = base_url.replace('http://', 'https://')
-            return_url = return_url.replace('http://', 'https://')
-
-        # По умолчанию используем Superset для обратной совместимости
-        login_url = f"{self.public_url}/login/"
-        callback_url = f"{base_url}auth/callback?return_url={return_url}"
-
-        params = {"next": callback_url}
-        redirect_url = f"{login_url}?{urlencode(params)}"
-
-        logger.info(f"🔀 Редирект на публичный Superset: {redirect_url}")
-        return RedirectResponse(url=redirect_url, status_code=307)
+        """Редирект на страницу выбора входа"""
+        return RedirectResponse(url="/choose-login")
