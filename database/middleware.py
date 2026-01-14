@@ -28,10 +28,11 @@ class DualAuthMiddleware(BaseHTTPMiddleware):
             "/health",
             "/auth/callback",
             "/logout",
-            "/choose-login",        # Добавляем
-            "/local-login",         # Добавляем
-            "/api/auth/login",      # API для входа
-            "/api/auth/register",   # API для регистрации
+            "/choose-login",  # ✅ Страница выбора входа
+            "/local-login",  # ✅ Страница локального входа
+            "/api/auth/login",  # ✅ API для входа (POST)
+            "/api/auth/register",  # ✅ API для регистрации
+            "/api/auth/check-phone",  # ✅ API для проверки телефона
             "/debug/"
         ]
         self.check_urls = [
@@ -40,6 +41,16 @@ class DualAuthMiddleware(BaseHTTPMiddleware):
         ]
 
     async def dispatch(self, request: Request, call_next):
+        logger.debug(f"🔍 Полный URL: {request.url}")
+        logger.debug(f"🔍 Путь: {request.url.path}")
+        logger.debug(f"🔍 Исключенные пути: {self.excluded_paths}")
+
+        # Пропускаем исключенные пути
+        if self._should_exclude_path(request.url.path):
+            logger.debug(f"✅ Путь {request.url.path} исключен из проверки")
+            return await call_next(request)
+
+        logger.info(f"🔐 Проверка авторизации для: {request.url.path}")
         # Пропускаем исключенные пути
         if self._should_exclude_path(request.url.path):
             return await call_next(request)
