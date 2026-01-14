@@ -15,7 +15,7 @@ from config import templates
 import jwt
 from config import settings
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+router = APIRouter( tags=["auth"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 
