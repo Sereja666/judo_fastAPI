@@ -1,138 +1,49 @@
-<!-- templates/login.html - ОБНОВЛЕННЫЙ -->
+<!-- templates/login.html -->
 {% extends "base.html" %}
 
-{% block title %}Вход в систему - Первый Легион{% endblock %}
+{% block title %}Вход в систему{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-md-8 col-lg-6">
-            <div class="card">
-                <div class="card-header text-center bg-primary text-white">
-                    <h3 class="mb-0">
-                        <i class="fas fa-sign-in-alt me-2"></i>Вход в систему
-                    </h3>
-                </div>
-                <div class="card-body">
-                    <!-- Заголовок -->
-                    <div class="text-center mb-4">
-                        <div class="mb-3">
-                            <i class="fas fa-dumbbell fa-4x text-primary"></i>
-                        </div>
-                        <h2 class="fw-bold">Первый Легион</h2>
-                        <p class="text-muted">Система управления спортивной школой</p>
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6 col-lg-5">
+        <div class="card">
+            <div class="card-header text-center">
+                <h3 class="mb-0"><i class="fas fa-sign-in-alt me-2"></i>Вход в систему</h3>
+            </div>
+            <div class="card-body">
+                <form id="loginForm">
+                    <div class="mb-3">
+                        <label for="phone" class="form-label">Телефон</label>
+                        <input type="text" class="form-control" id="phone"
+                               placeholder="Введите номер телефона" required>
                     </div>
 
-                    <!-- Способ 1: Superset -->
-                    <div class="auth-method mb-4">
-                        <div class="card border-primary border-2">
-                            <div class="card-body text-center p-4">
-                                <div class="mb-3">
-                                    <i class="fas fa-chart-bar fa-3x text-primary"></i>
-                                </div>
-                                <h4 class="card-title fw-bold">Войти через Apache Superset</h4>
-                                <p class="card-text text-muted mb-3">
-                                    Используйте существующий аккаунт Superset для доступа к системе
-                                </p>
-                                <a href="{{ superset_login_url }}" class="btn btn-primary btn-lg px-4">
-                                    <i class="fas fa-external-link-alt me-2"></i>Войти через Superset
-                                </a>
-                            </div>
-                        </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Пароль</label>
+                        <input type="password" class="form-control" id="password"
+                               placeholder="Введите пароль" required>
                     </div>
 
-                    <!-- Способ 2: Локальный вход -->
-                    <div class="auth-method">
-                        <div class="card border-success border-2">
-                            <div class="card-body p-4">
-                                <div class="text-center mb-4">
-                                    <div class="mb-3">
-                                        <i class="fas fa-user-lock fa-3x text-success"></i>
-                                    </div>
-                                    <h4 class="card-title fw-bold">Локальный вход</h4>
-                                    <p class="card-text text-muted">
-                                        Введите номер телефона и пароль для доступа к системе
-                                    </p>
-                                    <div class="alert alert-info small">
-                                        <i class="fas fa-info-circle me-2"></i>
-                                        Доступ имеют только пользователи с правами: <strong>Разработчик, Администратор или Тренер</strong>
-                                    </div>
-                                </div>
-
-                                <form id="localLoginForm">
-                                    <div class="mb-3">
-                                        <label for="phone" class="form-label fw-bold">
-                                            <i class="fas fa-phone me-1"></i>Номер телефона
-                                        </label>
-                                        <input type="tel"
-                                               class="form-control form-control-lg"
-                                               id="phone"
-                                               name="phone"
-                                               placeholder="+7 (XXX) XXX-XX-XX"
-                                               pattern="^\+?[78][-\(]?\d{3}\)?-?\d{3}-?\d{2}-?\d{2}$"
-                                               required>
-                                        <div class="form-text">
-                                            Формат: +7XXXXXXXXXX или 8XXXXXXXXXX
-                                        </div>
-                                    </div>
-
-                                    <div class="mb-4">
-                                        <label for="password" class="form-label fw-bold">
-                                            <i class="fas fa-lock me-1"></i>Пароль
-                                        </label>
-                                        <input type="password"
-                                               class="form-control form-control-lg"
-                                               id="password"
-                                               name="password"
-                                               placeholder="Введите ваш пароль"
-                                               required>
-                                    </div>
-
-                                    <button type="submit" class="btn btn-success btn-lg w-100 py-3">
-                                        <i class="fas fa-sign-in-alt me-2"></i>
-                                        <span class="fw-bold">Войти в систему</span>
-                                    </button>
-                                </form>
-
-                                <!-- Отладочные ссылки -->
-                                <div class="mt-4 text-center">
-                                    <div class="d-flex justify-content-center gap-2">
-                                        <a href="/debug/auth-status" class="btn btn-sm btn-outline-info">
-                                            <i class="fas fa-info-circle"></i> Статус
-                                        </a>
-                                        <a href="/api/auth/local/permission-levels" class="btn btn-sm btn-outline-secondary" target="_blank">
-                                            <i class="fas fa-user-shield"></i> Уровни прав
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg" id="loginBtn">
+                            <i class="fas fa-sign-in-alt me-2"></i>Войти
+                        </button>
                     </div>
+                </form>
 
-                    <!-- Разделитель -->
-                    <div class="text-center my-4">
-                        <hr class="my-4">
-                        <span class="px-3 text-muted bg-white small">или</span>
-                    </div>
-
-                    <!-- Информация -->
+                <div class="mt-4 text-center">
                     <div class="alert alert-info">
-                        <div class="d-flex">
-                            <i class="fas fa-info-circle fa-2x me-3 mt-1"></i>
-                            <div>
-                                <h6 class="alert-heading fw-bold mb-2">Какой способ выбрать?</h6>
-                                <p class="mb-0 small">
-                                    <strong class="text-primary">Superset:</strong> Если у вас уже есть аккаунт в Apache Superset<br>
-                                    <strong class="text-success">Локальный вход:</strong> Для разработчиков, администраторов и тренеров системы
-                                </p>
-                            </div>
-                        </div>
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Альтернативный способ входа:</strong><br>
+                        Вы также можете войти через
+                        <a href="{{ superset_url }}" class="alert-link">
+                            Apache Superset
+                        </a>
                     </div>
 
-                    <!-- Ссылка на главную -->
-                    <div class="text-center mt-4">
-                        <a href="/" class="btn btn-outline-secondary">
-                            <i class="fas fa-arrow-left me-2"></i>Вернуться на главную
+                    <div class="mt-3">
+                        <a href="#" class="text-decoration-none" id="forgotPassword">
+                            <i class="fas fa-key me-1"></i>Забыли пароль?
                         </a>
                     </div>
                 </div>
@@ -141,165 +52,62 @@
     </div>
 </div>
 
-<!-- Скрипт для обработки формы -->
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Маска для телефона
-    const phoneInput = document.getElementById('phone');
-    if (phoneInput) {
-        phoneInput.addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\D/g, '');
+$(document).ready(function() {
+    $('#loginForm').on('submit', function(e) {
+        e.preventDefault();
 
-            if (value.startsWith('7') || value.startsWith('8')) {
-                value = value.substring(1);
-            }
+        const phone = $('#phone').val();
+        const password = $('#password').val();
 
-            if (value.length > 0) {
-                value = '+7 (' + value.substring(0, 3) + ') ' + value.substring(3, 6) + '-' + value.substring(6, 8) + '-' + value.substring(8, 10);
-            }
+        // Показываем индикатор загрузки
+        const loginBtn = $('#loginBtn');
+        const originalText = loginBtn.html();
+        loginBtn.html('<i class="fas fa-spinner fa-spin me-2"></i>Вход...');
+        loginBtn.prop('disabled', true);
 
-            e.target.value = value;
-        });
-    }
+        // Отправляем запрос на сервер
+        $.ajax({
+            url: '/api/auth/login',
+            method: 'POST',
+            contentType: 'application/x-www-form-urlencoded',
+            data: {
+                username: phone,
+                password: password,
+                grant_type: 'password'
+            },
+            success: function(response) {
+                // Сохраняем токен в localStorage
+                localStorage.setItem('access_token', response.access_token);
+                localStorage.setItem('user', JSON.stringify(response.user));
 
-    // Обработка локального входа
-    const localLoginForm = document.getElementById('localLoginForm');
-
-    if (localLoginForm) {
-        localLoginForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
-
-            // Очищаем номер телефона
-            let phone = document.getElementById('phone').value;
-            phone = phone.replace(/\D/g, '');
-
-            // Если номер начинается с 7 или 8, убираем первую цифру
-            if (phone.startsWith('7') || phone.startsWith('8')) {
-                phone = phone.substring(1);
-            }
-
-            // Добавляем код страны
-            phone = '7' + phone;
-
-            const password = document.getElementById('password').value;
-
-            // Валидация
-            if (phone.length !== 11) {
-                showError('Номер телефона должен содержать 11 цифр');
-                return;
-            }
-
-            if (password.length < 6) {
-                showError('Пароль должен содержать минимум 6 символов');
-                return;
-            }
-
-            // Показываем индикатор загрузки
-            const submitBtn = this.querySelector('button[type="submit"]');
-            const originalText = submitBtn.innerHTML;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Выполняется вход...';
-            submitBtn.disabled = true;
-
-            // Скрываем предыдущие сообщения
-            const oldAlerts = document.querySelectorAll('.alert-dismissible');
-            oldAlerts.forEach(alert => alert.remove());
-
-            try {
-                const response = await fetch('/api/auth/local/login', {
-                    method: 'POST',
+                // Устанавливаем заголовок Authorization для будущих запросов
+                $.ajaxSetup({
                     headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: new URLSearchParams({
-                        'username': phone,
-                        'password': password,
-                        'grant_type': 'password'
-                    })
+                        'Authorization': 'Bearer ' + response.access_token
+                    }
                 });
 
-                const data = await response.json();
-
-                if (response.ok) {
-                    // Показываем успешное сообщение
-                    const alertHtml = `
-                        <div class="alert alert-success alert-dismissible fade show" role="alert">
-                            <i class="fas fa-check-circle me-2"></i>
-                            <strong>Успешный вход!</strong> Добро пожаловать, ${data.user?.full_name || data.user?.phone || 'пользователь'}!
-                            <div class="mt-2 small">
-                                Ваш уровень прав: <strong>${data.user?.permission_name || 'Тренер'}</strong><br>
-                                Перенаправление на главную страницу...
-                            </div>
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    `;
-
-                    localLoginForm.insertAdjacentHTML('beforebegin', alertHtml);
-
-                    // Перенаправляем на главную через 2 секунды
-                    setTimeout(() => {
-                        window.location.href = '/';
-                    }, 2000);
-
-                } else {
-                    showError('Ошибка входа: ' + (data.detail || 'Неверный номер телефона или пароль'));
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                showError('Ошибка соединения с сервером. Проверьте подключение.');
-            } finally {
-                // Восстанавливаем кнопку
-                submitBtn.innerHTML = originalText;
-                submitBtn.disabled = false;
+                // Перенаправляем на главную страницу
+                window.location.href = '/';
+            },
+            error: function(xhr) {
+                alert('Ошибка входа: ' + (xhr.responseJSON?.detail || 'Неверные данные'));
+                loginBtn.html(originalText);
+                loginBtn.prop('disabled', false);
             }
         });
-    }
+    });
 
-    function showError(message) {
-        const errorHtml = `
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        `;
-
-        const localLoginForm = document.getElementById('localLoginForm');
-        if (localLoginForm) {
-            localLoginForm.insertAdjacentHTML('beforebegin', errorHtml);
-        }
+    // Проверяем, есть ли уже токен
+    const token = localStorage.getItem('access_token');
+    if (token) {
+        $.ajaxSetup({
+            headers: {
+                'Authorization': 'Bearer ' + token
+            }
+        });
     }
 });
 </script>
-
-<style>
-.auth-method .card {
-    transition: all 0.3s ease;
-    border-radius: 12px;
-}
-
-.auth-method .card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-}
-
-.form-control-lg {
-    border-radius: 10px;
-    border: 2px solid #e0e0e0;
-}
-
-.form-control-lg:focus {
-    border-color: var(--superset-primary);
-    box-shadow: 0 0 0 0.25rem rgba(32, 167, 201, 0.25);
-}
-
-.btn-lg {
-    border-radius: 10px;
-    font-weight: 600;
-}
-
-.alert {
-    border-radius: 10px;
-    border: none;
-}
-</style>
 {% endblock %}

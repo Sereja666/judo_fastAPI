@@ -73,7 +73,7 @@ async def get_user_permissions(user_telegram_id: int) -> int:
     """
     try:
         result = await execute_raw_sql(
-            f"SELECT permissions FROM public.telegram_user WHERE telegram_id = $1;",
+            f"SELECT permissions FROM {schema}.telegram_user WHERE telegram_id = $1;",
             user_telegram_id
         )
         if result:
@@ -119,7 +119,7 @@ async def save_selection(schedule_id: int, student_ids: list, trainer_id: int, p
 
         # Получаем данные о расписании (дату и время)
         schedule_data = await execute_raw_sql(
-            f"SELECT date, time_start FROM public.schedule WHERE id = {schedule_id};"
+            f"SELECT date, time_start FROM {schema}.schedule WHERE id = {schedule_id};"
         )
 
         if not schedule_data:
@@ -130,7 +130,7 @@ async def save_selection(schedule_id: int, student_ids: list, trainer_id: int, p
 
         # Проверяем существование студентов
         existing_students = await execute_raw_sql(
-            f"SELECT id FROM public.student WHERE id IN ({','.join(map(str, student_ids))});"
+            f"SELECT id FROM {schema}.student WHERE id IN ({','.join(map(str, student_ids))});"
         )
         existing_ids = [s['id'] for s in existing_students]
         missing_ids = set(student_ids) - set(existing_ids)
@@ -143,7 +143,7 @@ async def save_selection(schedule_id: int, student_ids: list, trainer_id: int, p
             try:
                 # Проверяем, не записан ли уже студент на это занятие
                 existing_visit = await execute_raw_sql(
-                    f"SELECT id FROM public.visit "
+                    f"SELECT id FROM {schema}.visit "
                     f"WHERE shedule = {schedule_id} AND student = {student_id};"
                 )
 

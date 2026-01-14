@@ -1,143 +1,97 @@
-# database/middleware.py - ПОЛНОСТЬЮ ПЕРЕПИСАННЫЙ
-from fastapi import Request
+# middleware.py
+from fastapi import Request, HTTPException
 from fastapi.responses import RedirectResponse
 import httpx
 from urllib.parse import urlencode
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 from logger_config import logger
-from dependencies.auth import verify_token
+from typing import Optional, Dict, Any
+
+# Импортируем функции для обычной авторизации
+from database.auth import get_current_user_from_token
+from database.models import get_db_async
+import jwt
 
 
-class SafeSupersetAuthMiddleware(BaseHTTPMiddleware):
+class DualAuthMiddleware(BaseHTTPMiddleware):
     """
-    Умный middleware для двойной аутентификации:
-    1. Superset сессия (кука "session")
-    2. Локальная JWT аутентификация (кука "local_session" или Authorization header)
+    Middleware для двойной авторизации:
+    1. Через Superset (старый способ)
+    2. Через JWT токен (новый способ)
     """
 
     def __init__(self, app: ASGIApp, superset_base_url: str):
         super().__init__(app)
-        self.superset_url = superset_base_url.rstrip('/')
-
-        # Публичные пути (не требуют аутентификации)
-        self.public_paths = [
+        self.public_url = superset_base_url.rstrip('/')
+        self.excluded_paths = [
             "/static",
             "/health",
-            "/login",
             "/auth/callback",
             "/logout",
-            "/api/auth/local/login",
-            "/api/auth/local/register",
-            "/api/auth/local/test-auth",
-            "/docs",
-            "/redoc",
-            "/openapi.json",
-            "/favicon.ico",
+            "/login",  # Добавляем страницу входа
+            "/api/login",  # API для входа
             "/debug/"
         ]
-
-        # URL для проверки Superset (с учетом вашей структуры)
         self.check_urls = [
             "http://localhost:8088",
-            "http://172.17.0.1:8088",
-            self.superset_url
+            "http://172.17.0.1:8088"
         ]
 
     async def dispatch(self, request: Request, call_next):
-        # Проверяем, является ли путь публичным
-        if self._is_public_path(request.url.path):
+        # Пропускаем исключенные пути
+        if self._should_exclude_path(request.url.path):
             return await call_next(request)
 
-        logger.debug(f"🔐 Проверка аутентификации для пути: {request.url.path}")
+        logger.info(f"🔐 Проверка авторизации для: {request.url.path}")
 
-        # Пытаемся получить пользователя любым способом
-        user_info = await self._get_authenticated_user(request)
+        # Пробуем оба способа авторизации
+        user_info = None
 
-        if user_info:
-            # Добавляем информацию о пользователе в request state
-            request.state.user = user_info
-            logger.info(f"✅ Аутентифицирован: {user_info.get('username')} ({user_info.get('auth_method')})")
-            return await call_next(request)
-
-        # Если пользователь не аутентифицирован - редирект на страницу входа
-        logger.warning(f"❌ Неаутентифицированный доступ к {request.url.path}")
-        return RedirectResponse(url="/login")
-
-    async def _get_authenticated_user(self, request: Request):
-        """Проверяет все доступные методы аутентификации"""
-
-        # 1. Проверяем локальную JWT аутентификацию
-        local_user = await self._get_local_user(request)
-        if local_user:
-            return local_user
-
-        # 2. Проверяем Superset аутентификацию
-        superset_user = await self._get_superset_user(request)
-        if superset_user:
-            return superset_user
-
-        return None
-
-    async def _get_local_user(self, request: Request):
-        """Проверка локальной JWT аутентификации"""
-        token = None
-
-        # Проверяем Authorization header
+        # 1. Пробуем авторизацию через JWT токен
         auth_header = request.headers.get("Authorization")
         if auth_header and auth_header.startswith("Bearer "):
-            token = auth_header[7:]
+            token = auth_header.replace("Bearer ", "")
+            user_info = await self._authenticate_jwt(request, token)
 
-        # Проверяем сессионную куку
-        if not token:
-            token = request.cookies.get("local_session")
+        # 2. Если нет JWT, пробуем авторизацию через Superset
+        if not user_info:
+            session_cookie = request.cookies.get("session")
+            if session_cookie:
+                user_info = await self._authenticate_superset(session_cookie)
 
-        if not token:
-            return None
+        # 3. Если ни один способ не сработал
+        if not user_info:
+            logger.warning("❌ Пользователь не авторизован")
+            return self._create_login_redirect(request)
 
-        # Проверяем JWT токен
-        payload = verify_token(token)
-        if payload:
-            logger.debug(f"🔐 Найден локальный JWT токен для пользователя: {payload.get('sub')}")
-            return {
-                "authenticated": True,
-                "auth_method": "local",
-                "username": payload.get("sub"),
-                "user_id": payload.get("user_id"),
-                "email": payload.get("email"),
-                "full_name": payload.get("full_name"),
-                "is_superuser": payload.get("is_superuser", False),
-                "token_payload": payload
-            }
+        # Сохраняем информацию о пользователе в state
+        request.state.user = user_info
+        logger.info(f"✅ Пользователь авторизован: {user_info.get('username', 'Unknown')}")
 
-        return None
+        return await call_next(request)
 
-    async def _get_superset_user(self, request: Request):
-        """Проверка Superset аутентификации"""
-        session_cookie = request.cookies.get("session")
-
-        if not session_cookie:
-            return None
-
-        # Проверяем аутентификацию в Superset
-        is_authenticated = await self._check_superset_auth(session_cookie)
-
-        if is_authenticated:
-            username = await self._get_superset_username(session_cookie)
-            logger.debug(f"🔐 Найдена Superset сессия для пользователя: {username}")
-            return {
-                "authenticated": True,
-                "auth_method": "superset",
-                "username": username,
-                "email": f"{username}@superset.local",  # Заглушка
-                "full_name": username,
-                "is_superuser": False  # Superset пользователи не админы в локальной системе
-            }
+    async def _authenticate_jwt(self, request: Request, token: str) -> Optional[Dict[str, Any]]:
+        """Аутентификация через JWT токен"""
+        try:
+            async with get_db_async() as db:
+                user = await get_current_user_from_token(db, token)
+                if user:
+                    return {
+                        "authenticated": True,
+                        "username": user.full_name or user.phone,
+                        "user_id": user.telegram_id,
+                        "phone": user.phone,
+                        "email": user.email,
+                        "auth_type": "jwt"
+                    }
+        except Exception as e:
+            logger.debug(f"🔹 Ошибка JWT аутентификации: {e}")
 
         return None
 
-    async def _check_superset_auth(self, session_cookie: str) -> bool:
-        """Проверка валидности Superset сессии"""
+    async def _authenticate_superset(self, session_cookie: str) -> Optional[Dict[str, Any]]:
+        """Аутентификация через Superset (старый способ)"""
         for base_url in self.check_urls:
             try:
                 async with httpx.AsyncClient() as client:
@@ -149,23 +103,28 @@ class SafeSupersetAuthMiddleware(BaseHTTPMiddleware):
                     )
 
                     final_url = str(response.url)
-                    logger.debug(f"🔹 Superset check {base_url}: {final_url}, status {response.status_code}")
+                    logger.debug(f"🔹 {base_url}: final URL = {final_url}, status = {response.status_code}")
 
-                    # Если не редирект на логин и статус 200/403 - сессия валидна
                     if '/login/' not in final_url and response.status_code in [200, 403]:
-                        return True
+                        # Пытаемся получить имя пользователя
+                        username = await self._get_superset_username(session_cookie)
+                        return {
+                            "authenticated": True,
+                            "username": username,
+                            "auth_type": "superset"
+                        }
 
                     if '/login/' in final_url:
-                        return False
+                        return None
 
             except Exception as e:
-                logger.debug(f"🔹 Ошибка проверки Superset {base_url}: {e}")
+                logger.debug(f"🔹 {base_url}: ошибка - {e}")
                 continue
 
-        return False
+        return None
 
     async def _get_superset_username(self, session_cookie: str) -> str:
-        """Получение имени пользователя из Superset"""
+        """Безопасное получение имени пользователя из Superset"""
         for base_url in self.check_urls:
             try:
                 async with httpx.AsyncClient() as client:
@@ -180,46 +139,39 @@ class SafeSupersetAuthMiddleware(BaseHTTPMiddleware):
                         user_data = response.json()
                         username = user_data.get('username')
                         if username:
-                            logger.debug(f"🔹 Получено имя пользователя Superset: {username}")
+                            logger.debug(f"🔹 Получено имя пользователя: {username}")
                             return username
 
             except Exception as e:
-                logger.debug(f"🔹 Ошибка получения имени из Superset: {e}")
+                logger.debug(f"🔹 Ошибка получения имени пользователя: {e}")
                 continue
 
-        # Запасное значение
-        return "Superset User"
+        return "Пользователь (Superset)"
 
-    def _is_public_path(self, path: str) -> bool:
-        """Проверка, является ли путь публичным"""
-        # Полный путь
-        if path in self.public_paths:
-            return True
-
-        # Путь начинается с публичного префикса
-        for public_path in self.public_paths:
-            if path.startswith(public_path + "/"):
+    def _should_exclude_path(self, path: str) -> bool:
+        for excluded in self.excluded_paths:
+            if path.startswith(excluded + "/") or path == excluded:
                 return True
-
         return False
 
-    def _create_superset_redirect(self, request: Request, return_url: str = None) -> RedirectResponse:
-        """Создание редиректа на Superset для аутентификации"""
-        if not return_url:
-            return_url = str(request.url)
+    def _create_login_redirect(self, request: Request) -> RedirectResponse:
+        """Редирект на страницу входа"""
+        # Определяем, куда редиректить - на Superset или на нашу страницу входа
+        # Можно добавить параметр для выбора или использовать по умолчанию Superset для обратной совместимости
 
         base_url = str(request.base_url)
+        return_url = str(request.url)
 
-        # Корректируем URL для продакшена
         if "api.srm-1legion.ru" in base_url:
             base_url = base_url.replace('http://', 'https://')
             return_url = return_url.replace('http://', 'https://')
 
-        login_url = f"{self.superset_url}/login/"
-        callback_url = f"{base_url.rstrip('/')}/auth/callback?return_url={return_url}"
+        # По умолчанию используем Superset для обратной совместимости
+        login_url = f"{self.public_url}/login/"
+        callback_url = f"{base_url}auth/callback?return_url={return_url}"
 
         params = {"next": callback_url}
         redirect_url = f"{login_url}?{urlencode(params)}"
 
-        logger.info(f"🔀 Редирект на Superset: {redirect_url}")
+        logger.info(f"🔀 Редирект на публичный Superset: {redirect_url}")
         return RedirectResponse(url=redirect_url, status_code=307)

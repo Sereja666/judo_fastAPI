@@ -333,88 +333,34 @@
                 padding: 1rem;
             }
         }
-        /* Исправление выравнивания для кнопки создания ученика */
-        .d-flex.align-items-center {
-            align-items: center !important;
-        }
+/* Исправление выравнивания для кнопки создания ученика */
+.d-flex.align-items-center {
+    align-items: center !important;
+}
 
-        /* Убедимся, что кнопка имеет правильные отступы */
-        .btn-create-student {
-            background: linear-gradient(135deg, var(--superset-success) 0%, #34A853 100%);
-            border: none;
-            border-radius: 8px;
-            padding: 0.75rem 1.5rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 8px rgba(60, 179, 113, 0.3);
-            color: white;
-            white-space: nowrap; /* предотвращает перенос текста */
-        }
+/* Убедимся, что кнопка имеет правильные отступы */
+.btn-create-student {
+    background: linear-gradient(135deg, var(--superset-success) 0%, #34A853 100%);
+    border: none;
+    border-radius: 8px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(60, 179, 113, 0.3);
+    color: white;
+    white-space: nowrap; /* предотвращает перенос текста */
+}
 
-        .btn-create-student:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(60, 179, 113, 0.4);
-            color: white;
-        }
+.btn-create-student:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(60, 179, 113, 0.4);
+    color: white;
+}
 
-        /* Выравнивание иконки в кнопке */
-        .btn-create-student i {
-            margin-right: 0.5rem;
-        }
-
-        /* Стили для блока аутентификации */
-        .auth-info-block {
-            background: linear-gradient(135deg, #f0f9ff 0%, #e1f5fe 100%);
-            border-bottom: 1px solid #dee2e6;
-            padding: 0.5rem 0;
-        }
-
-        .auth-info-content {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .auth-user-info {
-            display: flex;
-            align-items: center;
-        }
-
-        .auth-icon {
-            margin-right: 0.75rem;
-        }
-
-        .auth-details {
-            line-height: 1.4;
-        }
-
-        .auth-username {
-            font-weight: 600;
-            color: var(--superset-primary);
-        }
-
-        .auth-method {
-            font-size: 0.85rem;
-            color: #6c757d;
-        }
-
-        .auth-actions {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        @media (max-width: 768px) {
-            .auth-info-content {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 0.5rem;
-            }
-
-            .auth-actions {
-                width: 100%;
-                justify-content: flex-end;
-            }
-        }
+/* Выравнивание иконки в кнопке */
+.btn-create-student i {
+    margin-right: 0.5rem;
+}
     </style>
 </head>
 <body>
@@ -429,142 +375,78 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto">
-                <!-- Кнопка входа/профиля в навигации -->
-                {% if user_authenticated %}
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
-                        <i class="fas fa-user-circle me-2"></i>
-                        <span class="d-none d-md-inline">{{ username }}</span>
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li>
-                            <h6 class="dropdown-header">
-                                <i class="fas fa-user me-2"></i>{{ username }}
-                            </h6>
-                        </li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li>
-                            <a class="dropdown-item" href="/debug/auth-status">
-                                <i class="fas fa-info-circle me-2"></i>Статус аутентификации
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item" href="/logout">
-                                <i class="fas fa-sign-out-alt me-2"></i>Выйти
-                            </a>
-                        </li>
-                    </ul>
-                </li>
-                {% else %}
                 <li class="nav-item">
-                    <a class="nav-link" href="/login">
+                    <a class="nav-link {% if request.path == '/auth/login-page' %}active{% endif %}"
+                       href="/auth/login-page">
                         <i class="fas fa-sign-in-alt"></i>
-                        <span class="d-none d-md-inline">Войти</span>
+                        Вход
                     </a>
                 </li>
+                <!-- И в нужном месте добавьте отображение типа авторизации -->
+                {% if user_authenticated and auth_type %}
+                    <small class="text-muted">({{ auth_type }})</small>
                 {% endif %}
-
                 <li class="nav-item">
-                    <a class="nav-link" href="https://superset.srm-1legion.ru/" target="_blank">
+                    <a class="nav-link" href="https://superset.srm-1legion.ru/">
                         <i class="fas fa-chart-bar"></i>
                         Superset
                     </a>
                 </li>
 
                 <li class="nav-item">
-                    <a class="nav-link {% if request.url.path == '/' %}active{% endif %}" href="/">
+                    <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="/">
                         <i class="fas fa-home"></i>
                         Главная
                     </a>
                 </li>
 
                 <li class="nav-item">
-                    <a class="nav-link {% if request.url.path == '/schedule/' %}active{% endif %}" href="/schedule/">
+                    <a class="nav-link {% if request.path == '/schedule/' %}active{% endif %}" href="/schedule/">
                         <i class="fas fa-calendar-alt"></i>
                         Расписание
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {% if request.url.path == '/edit-students' %}active{% endif %}"
+                    <a class="nav-link {% if request.path == '/edit-students' %}active{% endif %}"
                        href="/edit-students">
                         <i class="fas fa-users"></i>
                         Ученики
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {% if request.url.path == '/edit-trainers' %}active{% endif %}"
+                    <a class="nav-link {% if request.path == '/edit-trainers' %}active{% endif %}"
                        href="/edit-trainers">
                         <i class="fas fa-user-tie"></i>
                         Тренеры
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {% if request.url.path == '/visits/' %}active{% endif %}" href="/visits/">
+                    <a class="nav-link {% if request.path == '/visits/' %}active{% endif %}" href="/visits/">
                         <i class="fas fa-clipboard-check"></i>
                         Посещения
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {% if request.url.path == '/competitions/' %}active{% endif %}"
+                    <a class="nav-link {% if request.path == '/competitions/' %}active{% endif %}"
                        href="/competitions/">
                         <i class="fas fa-trophy"></i>
                         Мероприятия
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {% if request.url.path.startswith('/admin/') %}active{% endif %}"
+                    <a class="nav-link {% if request.path.startswith('/admin/') %}active{% endif %}"
                        href="/admin/registrations">
                         <i class="fas fa-user-shield"></i>
                         Заявки ТГ
                     </a>
                 </li>
+
+
             </ul>
         </div>
     </div>
 </nav>
 
-<!-- Блок информации об аутентификации (под навигацией) -->
-{% if user_authenticated %}
-<div class="auth-info-block">
-    <div class="container">
-        <div class="auth-info-content">
-            <div class="auth-user-info">
-                <div class="auth-icon">
-                    {% if auth_method == 'superset' %}
-                        <i class="fas fa-chart-bar fa-lg text-primary"></i>
-                    {% else %}
-                        <i class="fas fa-user-circle fa-lg text-success"></i>
-                    {% endif %}
-                </div>
-                <div class="auth-details">
-                    <div class="auth-username">
-                        Вы вошли как: {{ username }}
-                    </div>
-                    <div class="auth-method">
-                        {% if auth_method == 'superset' %}
-                            <i class="fas fa-chart-bar me-1"></i>Аутентификация через Superset
-                        {% else %}
-                            <i class="fas fa-lock me-1"></i>Локальная аутентификация
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            <div class="auth-actions">
-                <a href="/debug/auth-status" class="btn btn-sm btn-outline-primary" title="Статус аутентификации">
-                    <i class="fas fa-info-circle"></i>
-                    <span class="d-none d-sm-inline">Статус</span>
-                </a>
-                <a href="/logout" class="btn btn-sm btn-outline-danger" title="Выйти из системы">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span class="d-none d-sm-inline">Выйти</span>
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
-{% endif %}
-
-<!-- Основной контент -->
 <div class="container mt-4">
     {% block content %}{% endblock %}
 </div>
