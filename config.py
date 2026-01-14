@@ -6,15 +6,15 @@ import os
 from typing import Dict, Any
 from fastapi.templating import Jinja2Templates
 
-# BASE_DIR = Path(__file__).parent
-
-config = configparser.ConfigParser()
-config.sections()
-config.read('config.ini', encoding='utf-8')
-
+# Загружаем переменные окружения
 load_dotenv()
 
-SECRET = os.environ.get("SECRET")
+# Читаем конфигурационный файл
+config = configparser.ConfigParser()
+config.read('config.ini', encoding='utf-8')
+
+# Получаем секретный ключ из переменных окружения
+SECRET = os.environ.get("SECRET_KEY")
 
 PG_LINK = {
     "user": config['db']['user'],
@@ -57,10 +57,19 @@ class Tg(BaseSettings):
 
 
 class JWTConfig(BaseSettings):
-    # Генерируем или получаем секретный ключ
-    secret_key: str = os.environ.get("JWT_SECRET_KEY")
+    """Конфигурация JWT для локальной авторизации"""
+    secret_key: str = SECRET or "fallback-secret-key-change-me-in-production"  # Устанавливаем дефолтное значение
     algorithm: str = "HS256"
-    access_token_expire_minutes: int = 24 * 60  # 24 часа
+    access_token_expire_minutes: int = 30
+    refresh_token_expire_days: int = 7
+
+
+class AuthConfig(BaseSettings):
+    """Конфигурация авторизации"""
+    enable_local_auth: bool = True  # Включить локальную аутентификацию
+    enable_superset_auth: bool = True  # Включить Superset аутентификацию
+    default_auth_method: str = "superset"  # superset или local
+
 
 class Settings(BaseSettings):
     db: DB = DB()
@@ -68,8 +77,10 @@ class Settings(BaseSettings):
     redis_conf: Redis_conf = Redis_conf()
     superset_conf: Superset_conf = Superset_conf()
     jwt: JWTConfig = JWTConfig()
+    auth: AuthConfig = AuthConfig()
 
-    enable_local_auth: bool = True    # Включить локальную аутентификацию
+    # Дополнительные настройки
+    debug: bool = os.environ.get("DEBUG", "False").lower() == "true"
 
 
 settings = Settings()
