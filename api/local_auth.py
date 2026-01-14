@@ -1,8 +1,10 @@
 # api/local_auth.py
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
-from datetime import timedelta
+from datetime import timedelta, datetime
 from dependencies.auth import create_access_token, verify_password, hash_password
 from config import settings
 
