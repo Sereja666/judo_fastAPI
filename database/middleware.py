@@ -29,8 +29,10 @@ class DualAuthMiddleware(BaseHTTPMiddleware):
             "/health",
             "/auth/callback",
             "/logout",
-            "/login",  # Добавляем страницу входа
-            "/api/login",  # API для входа
+            "/auth/choose-login",  # Добавляем
+            "/auth/login-page",     # Добавляем
+            "/api/auth/login",      # Добавляем
+            "/api/auth/register",   # Добавляем
             "/debug/"
         ]
         self.check_urls = [
@@ -44,6 +46,10 @@ class DualAuthMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         logger.info(f"🔐 Проверка авторизации для: {request.url.path}")
+
+        # Если это страница выбора входа или локального входа - пропускаем
+        if request.url.path in ["/auth/choose-login", "/auth/login-page"]:
+            return await call_next(request)
 
         # Пробуем оба способа авторизации
         user_info = None
@@ -63,7 +69,8 @@ class DualAuthMiddleware(BaseHTTPMiddleware):
         # 3. Если ни один способ не сработал
         if not user_info:
             logger.warning("❌ Пользователь не авторизован")
-            return self._create_login_redirect(request)
+            # Перенаправляем на страницу выбора способа входа
+            return RedirectResponse(url="/auth/choose-login")
 
         # Сохраняем информацию о пользователе в state
         request.state.user = user_info

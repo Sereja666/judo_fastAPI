@@ -142,3 +142,28 @@ async def get_current_user_info(request: Request):
             "authenticated": False,
             "message": "Не авторизован"
         }
+
+
+@router.get("/choose-login")
+async def choose_login_page(request: Request):
+    """Страница выбора способа входа"""
+    from config import settings
+
+    # Генерируем URL для входа через Superset
+    superset_base_url = settings.superset_conf.base_url.rstrip('/')
+    callback_url = f"{request.base_url}auth/callback?return_url={request.base_url}"
+    superset_login_url = f"{superset_base_url}/login/?next={callback_url}"
+
+    return templates.TemplateResponse("choose_login.html", {
+        "request": request,
+        "superset_login_url": superset_login_url
+    })
+
+
+@router.get("/login-page")
+async def login_page(request: Request):
+    """Страница локального входа"""
+    return templates.TemplateResponse("login.html", {
+        "request": request,
+        "superset_url": settings.superset_conf.base_url
+    })

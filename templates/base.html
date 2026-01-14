@@ -445,6 +445,24 @@
             </ul>
         </div>
     </div>
+
+
+        <!-- В navbar после других ссылок -->
+    {% if not request.state.user or not request.state.user.authenticated %}
+    <li class="nav-item">
+        <a class="nav-link" href="/auth/choose-login">
+            <i class="fas fa-sign-in-alt"></i>
+            Войти
+        </a>
+    </li>
+    {% else %}
+    <li class="nav-item">
+        <a class="nav-link" href="/logout">
+            <i class="fas fa-sign-out-alt"></i>
+            Выйти ({{ request.state.user.username }})
+        </a>
+    </li>
+    {% endif %}
 </nav>
 
 <div class="container mt-4">
