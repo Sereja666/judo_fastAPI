@@ -9,7 +9,7 @@ from config import settings
 # Импортируем модель Telegram_user из ваших моделей
 from database.models import Telegram_user
 
-SECRET_KEY = settings.SECRET  # Используйте свой секретный ключ
+SECRET_KEY = settings.jwt.secret_key  # Используйте свой секретный ключ
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 

@@ -4,9 +4,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ee547eef-2e63-46d4-8d9a-feffb711966c" name="Changes" comment="логи Родитель-ученик">
+    <list default="true" id="ee547eef-2e63-46d4-8d9a-feffb711966c" name="Changes" comment="пробую отдельную авторизацию1">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/keyboards/kbs.py" beforeDir="false" afterPath="$PROJECT_DIR$/keyboards/kbs.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/auth.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/auth.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/config.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/database/auth.py" beforeDir="false" afterPath="$PROJECT_DIR$/database/auth.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -24,6 +26,7 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
     <option name="RESET_MODE" value="HARD" />
+    <option name="UPDATE_TYPE" value="REBASE" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
   &quot;lastFilter&quot;: {
@@ -105,29 +108,7 @@
       <recent name="C:\Python\Judo_aiogram_superset" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.chenge_permis">
-    <configuration name="api_main" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="Judo_aiogram_superset" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/api_main.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
+  <component name="RunManager" selected="Python.sekret_key_generator">
     <configuration name="backup_judo" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="Judo_aiogram_superset" />
       <option name="ENV_FILES" value="" />
@@ -216,13 +197,35 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <configuration name="sekret_key_generator" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="Judo_aiogram_superset" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/utils" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/utils/sekret_key_generator.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.sekret_key_generator" />
         <item itemvalue="Python.chenge_permis" />
         <item itemvalue="Python.run_notif_admin (1)" />
         <item itemvalue="Python.qqq" />
         <item itemvalue="Python.backup_judo" />
-        <item itemvalue="Python.api_main" />
       </list>
     </recent_temporary>
   </component>
@@ -241,14 +244,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1741959141895</updated>
-    </task>
-    <task id="LOCAL-00122" summary="Добавляю в анкету ученика НАГРАДЫ">
-      <option name="closed" value="true" />
-      <created>1764661711888</created>
-      <option name="number" value="00122" />
-      <option name="presentableId" value="LOCAL-00122" />
-      <option name="project" value="LOCAL" />
-      <updated>1764661711888</updated>
     </task>
     <task id="LOCAL-00123" summary=" добаивл таблицы родители и связи">
       <option name="closed" value="true" />
@@ -634,7 +629,15 @@
       <option name="project" value="LOCAL" />
       <updated>1768296739920</updated>
     </task>
-    <option name="localTasksCounter" value="171" />
+    <task id="LOCAL-00171" summary="пробую отдельную авторизацию1">
+      <option name="closed" value="true" />
+      <created>1768400295833</created>
+      <option name="number" value="00171" />
+      <option name="presentableId" value="LOCAL-00171" />
+      <option name="project" value="LOCAL" />
+      <updated>1768400295833</updated>
+    </task>
+    <option name="localTasksCounter" value="172" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -649,7 +652,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="разделил judo_fastapi на модули" />
     <MESSAGE value="Добавляю в анкету справки" />
     <MESSAGE value="Добавляю в анкету справки 1" />
     <MESSAGE value="Добавляю в анкету справки 2" />
@@ -674,6 +676,7 @@
     <MESSAGE value="Разбил tg_membership на части" />
     <MESSAGE value="делаю страницу Родитель-ученик" />
     <MESSAGE value="логи Родитель-ученик" />
-    <option name="LAST_COMMIT_MESSAGE" value="логи Родитель-ученик" />
+    <MESSAGE value="пробую отдельную авторизацию1" />
+    <option name="LAST_COMMIT_MESSAGE" value="пробую отдельную авторизацию1" />
   </component>
 </project>

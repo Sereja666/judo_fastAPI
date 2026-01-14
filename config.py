@@ -58,10 +58,7 @@ class Tg(BaseSettings):
 
 class JWTConfig(BaseSettings):
     # Генерируем или получаем секретный ключ
-    secret_key: str = os.environ.get(
-        "JWT_SECRET_KEY",
-        "ваш-секретный-ключ-измените-в-продакшене-" + os.urandom(16).hex()
-    )
+    secret_key: str = os.environ.get("JWT_SECRET_KEY")
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 24 * 60  # 24 часа
 
