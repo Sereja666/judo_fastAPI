@@ -41,16 +41,6 @@ class DualAuthMiddleware(BaseHTTPMiddleware):
         ]
 
     async def dispatch(self, request: Request, call_next):
-        logger.debug(f"🔍 Полный URL: {request.url}")
-        logger.debug(f"🔍 Путь: {request.url.path}")
-        logger.debug(f"🔍 Исключенные пути: {self.excluded_paths}")
-
-        # Пропускаем исключенные пути
-        if self._should_exclude_path(request.url.path):
-            logger.debug(f"✅ Путь {request.url.path} исключен из проверки")
-            return await call_next(request)
-
-        logger.info(f"🔐 Проверка авторизации для: {request.url.path}")
         # Пропускаем исключенные пути
         if self._should_exclude_path(request.url.path):
             return await call_next(request)
@@ -60,19 +50,25 @@ class DualAuthMiddleware(BaseHTTPMiddleware):
         # Пробуем оба способа авторизации
         user_info = None
 
-        # 1. Пробуем авторизацию через JWT токен
+        # 1. Пробуем авторизацию через JWT токен из заголовка
         auth_header = request.headers.get("Authorization")
         if auth_header and auth_header.startswith("Bearer "):
             token = auth_header.replace("Bearer ", "")
             user_info = await self._authenticate_jwt(request, token)
 
-        # 2. Если нет JWT, пробуем авторизацию через Superset
+        # 2. Пробуем авторизацию через JWT токен из cookie (ВАЖНО!)
+        if not user_info:
+            jwt_cookie = request.cookies.get("access_token")  # <-- ТАКОЙ ЖЕ КЛЮЧ
+            if jwt_cookie:
+                user_info = await self._authenticate_jwt(request, jwt_cookie)
+
+        # 3. Если нет JWT, пробуем авторизацию через Superset
         if not user_info:
             session_cookie = request.cookies.get("session")
             if session_cookie:
                 user_info = await self._authenticate_superset(session_cookie)
 
-        # 3. Если ни один способ не сработал
+        # 4. Если ни один способ не сработал
         if not user_info:
             logger.warning("❌ Пользователь не авторизован")
             # Перенаправляем на страницу выбора способа входа
