@@ -1,0 +1,285 @@
+<!-- templates/login.html -->
+{% extends "base.html" %}
+
+{% block title %}Вход в систему - Первый Легион{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card">
+                <div class="card-header text-center bg-primary text-white">
+                    <h3 class="mb-0">
+                        <i class="fas fa-sign-in-alt me-2"></i>Вход в систему
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <!-- Заголовок -->
+                    <div class="text-center mb-4">
+                        <div class="mb-3">
+                            <i class="fas fa-dumbbell fa-4x text-primary"></i>
+                        </div>
+                        <h2 class="fw-bold">Первый Легион</h2>
+                        <p class="text-muted">Система управления спортивной школой</p>
+                    </div>
+
+                    <!-- Способ 1: Superset -->
+                    <div class="auth-method mb-4">
+                        <div class="card border-primary border-2">
+                            <div class="card-body text-center p-4">
+                                <div class="mb-3">
+                                    <i class="fas fa-chart-bar fa-3x text-primary"></i>
+                                </div>
+                                <h4 class="card-title fw-bold">Войти через Apache Superset</h4>
+                                <p class="card-text text-muted mb-3">
+                                    Используйте существующий аккаунт Superset для доступа к системе
+                                </p>
+                                <a href="{{ superset_login_url }}" class="btn btn-primary btn-lg px-4">
+                                    <i class="fas fa-external-link-alt me-2"></i>Войти через Superset
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Способ 2: Локальный вход -->
+                    <div class="auth-method">
+                        <div class="card border-success border-2">
+                            <div class="card-body p-4">
+                                <div class="text-center mb-4">
+                                    <div class="mb-3">
+                                        <i class="fas fa-user-lock fa-3x text-success"></i>
+                                    </div>
+                                    <h4 class="card-title fw-bold">Локальный вход</h4>
+                                    <p class="card-text text-muted">
+                                        Введите логин и пароль для доступа к системе
+                                    </p>
+                                </div>
+
+                                <form id="localLoginForm">
+                                    <div class="mb-3">
+                                        <label for="username" class="form-label fw-bold">
+                                            <i class="fas fa-user me-1"></i>Логин
+                                        </label>
+                                        <input type="text"
+                                               class="form-control form-control-lg"
+                                               id="username"
+                                               name="username"
+                                               placeholder="Введите логин"
+                                               required>
+                                        <div class="form-text">
+                                            Для теста: <code>admin</code>, <code>trainer</code> или <code>user</code>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <label for="password" class="form-label fw-bold">
+                                            <i class="fas fa-lock me-1"></i>Пароль
+                                        </label>
+                                        <input type="password"
+                                               class="form-control form-control-lg"
+                                               id="password"
+                                               name="password"
+                                               placeholder="Введите пароль"
+                                               required>
+                                        <div class="form-text">
+                                            Для теста: <code>admin123</code>, <code>trainer123</code> или <code>user123</code>
+                                        </div>
+                                    </div>
+
+                                    <button type="submit" class="btn btn-success btn-lg w-100 py-3">
+                                        <i class="fas fa-sign-in-alt me-2"></i>
+                                        <span class="fw-bold">Войти в систему</span>
+                                    </button>
+                                </form>
+
+                                <!-- Отладочные ссылки -->
+                                <div class="mt-4 text-center">
+                                    <div class="d-flex justify-content-center gap-2">
+                                        <a href="/debug/auth-status" class="btn btn-sm btn-outline-info">
+                                            <i class="fas fa-info-circle"></i> Статус
+                                        </a>
+                                        <a href="/debug/test-local-auth" class="btn btn-sm btn-outline-secondary">
+                                            <i class="fas fa-vial"></i> Тест аутентификации
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Разделитель -->
+                    <div class="text-center my-4">
+                        <hr class="my-4">
+                        <span class="px-3 text-muted bg-white small">или</span>
+                    </div>
+
+                    <!-- Информация -->
+                    <div class="alert alert-info">
+                        <div class="d-flex">
+                            <i class="fas fa-info-circle fa-2x me-3 mt-1"></i>
+                            <div>
+                                <h6 class="alert-heading fw-bold mb-2">Какой способ выбрать?</h6>
+                                <p class="mb-0 small">
+                                    <strong class="text-primary">Superset:</strong> Если у вас уже есть аккаунт в Apache Superset<br>
+                                    <strong class="text-success">Локальный вход:</strong> Если вы новый пользователь или предпочитаете отдельный аккаунт
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ссылка на главную -->
+                    <div class="text-center mt-4">
+                        <a href="/" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Вернуться на главную
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Скрипт для обработки формы -->
+<script>
+$(document).ready(function() {
+    // Обработка локального входа
+    $('#localLoginForm').on('submit', async function(e) {
+        e.preventDefault();
+
+        const form = e.target;
+        const username = $('#username').val();
+        const password = $('#password').val();
+
+        // Показываем индикатор загрузки
+        const submitBtn = $(form).find('button[type="submit"]');
+        const originalText = submitBtn.html();
+        submitBtn.html('<i class="fas fa-spinner fa-spin me-2"></i>Выполняется вход...');
+        submitBtn.prop('disabled', true);
+
+        // Скрываем предыдущие сообщения
+        $('.alert-dismissible').remove();
+
+        try {
+            const response = await fetch('/api/auth/local/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                    'username': username,
+                    'password': password,
+                    'grant_type': 'password'
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                // Показываем успешное сообщение
+                const alertHtml = `
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="fas fa-check-circle me-2"></i>
+                        <strong>Успешный вход!</strong> Добро пожаловать, ${data.full_name || data.username}!
+                        <div class="mt-2 small">
+                            Перенаправление на главную страницу...
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `;
+
+                $(form).before(alertHtml);
+
+                // Перенаправляем на главную через 2 секунды
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 2000);
+
+            } else {
+                showError('Ошибка входа: ' + (data.detail || 'Неверный логин или пароль'));
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showError('Ошибка соединения с сервером. Проверьте подключение.');
+        } finally {
+            // Восстанавливаем кнопку
+            submitBtn.html(originalText);
+            submitBtn.prop('disabled', false);
+        }
+    });
+
+    function showError(message) {
+        const errorHtml = `
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+
+        $('#localLoginForm').before(errorHtml);
+
+        // Анимация для привлечения внимания
+        $('.alert-danger').css('animation', 'shake 0.5s');
+        setTimeout(() => {
+            $('.alert-danger').css('animation', '');
+        }, 500);
+    }
+
+    // Автозаполнение для теста
+    $('#username').on('focus', function() {
+        if (!$(this).val()) {
+            $(this).attr('placeholder', 'admin / trainer / user');
+        }
+    });
+
+    $('#password').on('focus', function() {
+        if (!$(this).val()) {
+            $(this).attr('placeholder', 'admin123 / trainer123 / user123');
+        }
+    });
+});
+
+// Анимация встряски для ошибок
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+        20%, 40%, 60%, 80% { transform: translateX(5px); }
+    }
+`;
+document.head.appendChild(style);
+</script>
+
+<style>
+.auth-method .card {
+    transition: all 0.3s ease;
+    border-radius: 12px;
+}
+
+.auth-method .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+.form-control-lg {
+    border-radius: 10px;
+    border: 2px solid #e0e0e0;
+}
+
+.form-control-lg:focus {
+    border-color: var(--superset-primary);
+    box-shadow: 0 0 0 0.25rem rgba(32, 167, 201, 0.25);
+}
+
+.btn-lg {
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+.alert {
+    border-radius: 10px;
+    border: none;
+}
+</style>
+{% endblock %}

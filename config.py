@@ -56,11 +56,23 @@ class Tg(BaseSettings):
     root_pass: str = config['tg']["ROOT_PASS"]
 
 
+class JWTConfig(BaseSettings):
+    # Генерируем или получаем секретный ключ
+    secret_key: str = os.environ.get(
+        "JWT_SECRET_KEY",
+        "ваш-секретный-ключ-измените-в-продакшене-" + os.urandom(16).hex()
+    )
+    algorithm: str = "HS256"
+    access_token_expire_minutes: int = 24 * 60  # 24 часа
+
 class Settings(BaseSettings):
     db: DB = DB()
     tg: Tg = Tg()
     redis_conf: Redis_conf = Redis_conf()
     superset_conf: Superset_conf = Superset_conf()
+    jwt: JWTConfig = JWTConfig()
+
+    enable_local_auth: bool = True    # Включить локальную аутентификацию
 
 
 settings = Settings()

@@ -16,13 +16,67 @@
                     <h1 class="display-4 fw-bold text-dark">Привет, пользователь!</h1>
                 </div>
                 <!-- home.html -->
-                {% if user_authenticated %}
-                    <div class="user-info mb-4">
-                        <div class="badge bg-primary fs-6 p-3">
-                            Вы вошли как: <strong>{{ username }}</strong>
+                                   <!-- templates/home.html - ОБНОВИТЬ ПРИВЕТСТВЕННЫЙ БЛОК -->
+                    <!-- Заменить существующий блок с class="user-info" -->
+
+                    <div class="row justify-content-center mb-4">
+                        <div class="col-md-10">
+                            {% if user_authenticated %}
+                            <div class="alert alert-success" role="alert">
+                                <div class="d-flex align-items-center">
+                                    <div class="me-3">
+                                        {% if auth_method == 'superset' %}
+                                            <i class="fas fa-chart-bar fa-2x"></i>
+                                        {% else %}
+                                            <i class="fas fa-check-circle fa-2x"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        <h5 class="alert-heading mb-1">
+                                            Вы успешно авторизованы в системе!
+                                        </h5>
+                                        <p class="mb-0">
+                                            <strong>Пользователь:</strong> {{ username }}
+                                            <span class="badge ms-2 {% if auth_method == 'superset' %}bg-primary{% else %}bg-success{% endif %}">
+                                                {% if auth_method == 'superset' %}
+                                                    <i class="fas fa-chart-bar me-1"></i>Superset
+                                                {% else %}
+                                                    <i class="fas fa-lock me-1"></i>Локально
+                                                {% endif %}
+                                            </span>
+                                        </p>
+                                        {% if auth_method == 'superset' %}
+                                        <small class="text-muted d-block mt-1">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            Вы вошли через единую систему авторизации Apache Superset
+                                        </small>
+                                        {% else %}
+                                        <small class="text-muted d-block mt-1">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            Вы вошли с помощью локальной аутентификации
+                                        </small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="alert alert-warning" role="alert">
+                                <div class="d-flex align-items-center">
+                                    <div class="me-3">
+                                        <i class="fas fa-exclamation-triangle fa-2x"></i>
+                                    </div>
+                                    <div>
+                                        <h5 class="alert-heading mb-1">Вы не авторизованы</h5>
+                                        <p class="mb-2">Для полного доступа к функциям системы необходимо войти</p>
+                                        <a href="/login" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-sign-in-alt me-1"></i>Войти в систему
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
-                {% endif %}
 
                 <p class="lead text-muted mb-5">
                     Добро пожаловать в систему управления спортивной школой "Первый Легион"
