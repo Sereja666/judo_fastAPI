@@ -11,11 +11,27 @@
                 <h3 class="mb-0"><i class="fas fa-sign-in-alt me-2"></i>Вход в систему</h3>
             </div>
             <div class="card-body">
+                <!-- Сообщения об ошибках -->
+                <div id="errorAlert" class="alert alert-danger d-none" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <span id="errorMessage"></span>
+                </div>
+
+                <!-- Сообщения об успехе -->
+                <div id="successAlert" class="alert alert-success d-none" role="alert">
+                    <i class="fas fa-check-circle me-2"></i>
+                    <span id="successMessage"></span>
+                </div>
+
                 <form id="loginForm">
                     <div class="mb-3">
                         <label for="phone" class="form-label">Телефон</label>
                         <input type="text" class="form-control" id="phone"
-                               placeholder="Введите номер телефона" required>
+                               placeholder="+79184508448 или 89184508448"
+                               required>
+                        <small class="form-text text-muted">
+                            Введите телефон в любом формате
+                        </small>
                     </div>
 
                     <div class="mb-3">
@@ -42,8 +58,8 @@
                     </div>
 
                     <div class="mt-3">
-                        <a href="#" class="text-decoration-none" id="forgotPassword">
-                            <i class="fas fa-key me-1"></i>Забыли пароль?
+                        <a href="/choose-login" class="text-decoration-none">
+                            <i class="fas fa-arrow-left me-1"></i>Вернуться к выбору входа
                         </a>
                     </div>
                 </div>
@@ -52,34 +68,71 @@
     </div>
 </div>
 
+{% block scripts %}
 <script>
 $(document).ready(function() {
-    // Проверяем, есть ли уже токен
-    const token = localStorage.getItem('access_token');
-    if (token) {
-        $.ajaxSetup({
-            headers: {
-                'Authorization': 'Bearer ' + token
-            }
-        });
+    console.log("jQuery loaded successfully");
 
-        // Если уже авторизован, перенаправляем на главную
-        $.ajax({
-            url: '/api/auth/me',
-            method: 'GET',
-            success: function(response) {
-                if (response.authenticated) {
-                    window.location.href = '/';
-                }
-            }
-        });
+    // Функция для показа сообщений
+    function showError(message) {
+        $('#errorMessage').text(message);
+        $('#errorAlert').removeClass('d-none');
+        $('#successAlert').addClass('d-none');
     }
 
+    function showSuccess(message) {
+        $('#successMessage').text(message);
+        $('#successAlert').removeClass('d-none');
+        $('#errorAlert').addClass('d-none');
+    }
+
+    function hideAlerts() {
+        $('#errorAlert').addClass('d-none');
+        $('#successAlert').addClass('d-none');
+    }
+
+    // Проверяем, есть ли уже токен
+    function checkExistingAuth() {
+        const token = localStorage.getItem('access_token');
+        if (token) {
+            // Проверяем валидность токена
+            $.ajax({
+                url: '/api/auth/me',
+                method: 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                },
+                success: function(response) {
+                    if (response.authenticated) {
+                        // Уже авторизован - перенаправляем
+                        window.location.href = '/';
+                    }
+                },
+                error: function() {
+                    // Токен невалидный - удаляем
+                    localStorage.removeItem('access_token');
+                    localStorage.removeItem('user');
+                }
+            });
+        }
+    }
+
+    // Проверяем при загрузке
+    checkExistingAuth();
+
+    // Обработка отправки формы
     $('#loginForm').on('submit', function(e) {
         e.preventDefault();
 
-        const phone = $('#phone').val();
+        hideAlerts();
+
+        const phone = $('#phone').val().trim();
         const password = $('#password').val();
+
+        if (!phone || !password) {
+            showError('Пожалуйста, заполните все поля');
+            return;
+        }
 
         // Показываем индикатор загрузки
         const loginBtn = $('#loginBtn');
@@ -87,9 +140,11 @@ $(document).ready(function() {
         loginBtn.html('<i class="fas fa-spinner fa-spin me-2"></i>Вход...');
         loginBtn.prop('disabled', true);
 
+        console.log('Отправка данных:', { phone: phone });
+
         // Отправляем запрос на сервер
         $.ajax({
-            url: '/api/auth/login',  // Обратите внимание на префикс /api
+            url: '/api/auth/login',
             method: 'POST',
             contentType: 'application/x-www-form-urlencoded',
             data: {
@@ -98,6 +153,8 @@ $(document).ready(function() {
                 grant_type: 'password'
             },
             success: function(response) {
+                console.log('Успешный ответ:', response);
+
                 // Сохраняем токен в localStorage
                 localStorage.setItem('access_token', response.access_token);
                 localStorage.setItem('user', JSON.stringify(response.user));
@@ -109,16 +166,58 @@ $(document).ready(function() {
                     }
                 });
 
-                // Перенаправляем на главную страницу
-                window.location.href = '/';
+                showSuccess('Успешный вход! Перенаправление...');
+
+                // Небольшая задержка для показа сообщения
+                setTimeout(function() {
+                    window.location.href = '/';
+                }, 1000);
             },
-            error: function(xhr) {
-                alert('Ошибка входа: ' + (xhr.responseJSON?.detail || 'Неверные данные'));
+            error: function(xhr, status, error) {
+                console.error('Ошибка входа:', xhr.responseJSON);
+
+                // Восстанавливаем кнопку
                 loginBtn.html(originalText);
                 loginBtn.prop('disabled', false);
+
+                // Показываем ошибку
+                if (xhr.status === 401) {
+                    showError('Неверный телефон или пароль');
+                } else if (xhr.status === 422) {
+                    showError('Ошибка валидации данных');
+                } else if (xhr.responseJSON && xhr.responseJSON.detail) {
+                    showError('Ошибка: ' + xhr.responseJSON.detail);
+                } else {
+                    showError('Ошибка сервера. Попробуйте позже');
+                }
             }
         });
     });
+
+    // Простая маска для телефона (опционально)
+    $('#phone').on('input', function() {
+        let value = $(this).val().replace(/\D/g, '');
+
+        if (value.length > 0) {
+            // Форматируем как +7 (XXX) XXX-XX-XX
+            let formatted = '+7';
+            if (value.length > 1) {
+                formatted += ' (' + value.substring(1, 4);
+            }
+            if (value.length > 4) {
+                formatted += ') ' + value.substring(4, 7);
+            }
+            if (value.length > 7) {
+                formatted += '-' + value.substring(7, 9);
+            }
+            if (value.length > 9) {
+                formatted += '-' + value.substring(9, 11);
+            }
+
+            $(this).val(formatted);
+        }
+    });
 });
 </script>
+{% endblock %}
 {% endblock %}
