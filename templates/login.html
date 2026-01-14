@@ -1,4 +1,4 @@
-<!-- templates/login.html -->
+<!-- templates/login.html - ОБНОВЛЕННЫЙ -->
 {% extends "base.html" %}
 
 {% block title %}Вход в систему - Первый Легион{% endblock %}
@@ -51,23 +51,28 @@
                                     </div>
                                     <h4 class="card-title fw-bold">Локальный вход</h4>
                                     <p class="card-text text-muted">
-                                        Введите логин и пароль для доступа к системе
+                                        Введите номер телефона и пароль для доступа к системе
                                     </p>
+                                    <div class="alert alert-info small">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        Доступ имеют только пользователи с правами: <strong>Разработчик, Администратор или Тренер</strong>
+                                    </div>
                                 </div>
 
                                 <form id="localLoginForm">
                                     <div class="mb-3">
-                                        <label for="username" class="form-label fw-bold">
-                                            <i class="fas fa-user me-1"></i>Логин
+                                        <label for="phone" class="form-label fw-bold">
+                                            <i class="fas fa-phone me-1"></i>Номер телефона
                                         </label>
-                                        <input type="text"
+                                        <input type="tel"
                                                class="form-control form-control-lg"
-                                               id="username"
-                                               name="username"
-                                               placeholder="Введите логин"
+                                               id="phone"
+                                               name="phone"
+                                               placeholder="+7 (XXX) XXX-XX-XX"
+                                               pattern="^\+?[78][-\(]?\d{3}\)?-?\d{3}-?\d{2}-?\d{2}$"
                                                required>
                                         <div class="form-text">
-                                            Для теста: <code>admin</code>, <code>trainer</code> или <code>user</code>
+                                            Формат: +7XXXXXXXXXX или 8XXXXXXXXXX
                                         </div>
                                     </div>
 
@@ -79,11 +84,8 @@
                                                class="form-control form-control-lg"
                                                id="password"
                                                name="password"
-                                               placeholder="Введите пароль"
+                                               placeholder="Введите ваш пароль"
                                                required>
-                                        <div class="form-text">
-                                            Для теста: <code>admin123</code>, <code>trainer123</code> или <code>user123</code>
-                                        </div>
                                     </div>
 
                                     <button type="submit" class="btn btn-success btn-lg w-100 py-3">
@@ -98,8 +100,8 @@
                                         <a href="/debug/auth-status" class="btn btn-sm btn-outline-info">
                                             <i class="fas fa-info-circle"></i> Статус
                                         </a>
-                                        <a href="/debug/test-local-auth" class="btn btn-sm btn-outline-secondary">
-                                            <i class="fas fa-vial"></i> Тест аутентификации
+                                        <a href="/api/auth/local/permission-levels" class="btn btn-sm btn-outline-secondary" target="_blank">
+                                            <i class="fas fa-user-shield"></i> Уровни прав
                                         </a>
                                     </div>
                                 </div>
@@ -121,7 +123,7 @@
                                 <h6 class="alert-heading fw-bold mb-2">Какой способ выбрать?</h6>
                                 <p class="mb-0 small">
                                     <strong class="text-primary">Superset:</strong> Если у вас уже есть аккаунт в Apache Superset<br>
-                                    <strong class="text-success">Локальный вход:</strong> Если вы новый пользователь или предпочитаете отдельный аккаунт
+                                    <strong class="text-success">Локальный вход:</strong> Для разработчиков, администраторов и тренеров системы
                                 </p>
                             </div>
                         </div>
@@ -141,71 +143,116 @@
 
 <!-- Скрипт для обработки формы -->
 <script>
-$(document).ready(function() {
-    // Обработка локального входа
-    $('#localLoginForm').on('submit', async function(e) {
-        e.preventDefault();
+document.addEventListener('DOMContentLoaded', function() {
+    // Маска для телефона
+    const phoneInput = document.getElementById('phone');
+    if (phoneInput) {
+        phoneInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
 
-        const form = e.target;
-        const username = $('#username').val();
-        const password = $('#password').val();
-
-        // Показываем индикатор загрузки
-        const submitBtn = $(form).find('button[type="submit"]');
-        const originalText = submitBtn.html();
-        submitBtn.html('<i class="fas fa-spinner fa-spin me-2"></i>Выполняется вход...');
-        submitBtn.prop('disabled', true);
-
-        // Скрываем предыдущие сообщения
-        $('.alert-dismissible').remove();
-
-        try {
-            const response = await fetch('/api/auth/local/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: new URLSearchParams({
-                    'username': username,
-                    'password': password,
-                    'grant_type': 'password'
-                })
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                // Показываем успешное сообщение
-                const alertHtml = `
-                    <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        <i class="fas fa-check-circle me-2"></i>
-                        <strong>Успешный вход!</strong> Добро пожаловать, ${data.full_name || data.username}!
-                        <div class="mt-2 small">
-                            Перенаправление на главную страницу...
-                        </div>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                `;
-
-                $(form).before(alertHtml);
-
-                // Перенаправляем на главную через 2 секунды
-                setTimeout(() => {
-                    window.location.href = '/';
-                }, 2000);
-
-            } else {
-                showError('Ошибка входа: ' + (data.detail || 'Неверный логин или пароль'));
+            if (value.startsWith('7') || value.startsWith('8')) {
+                value = value.substring(1);
             }
-        } catch (error) {
-            console.error('Error:', error);
-            showError('Ошибка соединения с сервером. Проверьте подключение.');
-        } finally {
-            // Восстанавливаем кнопку
-            submitBtn.html(originalText);
-            submitBtn.prop('disabled', false);
-        }
-    });
+
+            if (value.length > 0) {
+                value = '+7 (' + value.substring(0, 3) + ') ' + value.substring(3, 6) + '-' + value.substring(6, 8) + '-' + value.substring(8, 10);
+            }
+
+            e.target.value = value;
+        });
+    }
+
+    // Обработка локального входа
+    const localLoginForm = document.getElementById('localLoginForm');
+
+    if (localLoginForm) {
+        localLoginForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            // Очищаем номер телефона
+            let phone = document.getElementById('phone').value;
+            phone = phone.replace(/\D/g, '');
+
+            // Если номер начинается с 7 или 8, убираем первую цифру
+            if (phone.startsWith('7') || phone.startsWith('8')) {
+                phone = phone.substring(1);
+            }
+
+            // Добавляем код страны
+            phone = '7' + phone;
+
+            const password = document.getElementById('password').value;
+
+            // Валидация
+            if (phone.length !== 11) {
+                showError('Номер телефона должен содержать 11 цифр');
+                return;
+            }
+
+            if (password.length < 6) {
+                showError('Пароль должен содержать минимум 6 символов');
+                return;
+            }
+
+            // Показываем индикатор загрузки
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Выполняется вход...';
+            submitBtn.disabled = true;
+
+            // Скрываем предыдущие сообщения
+            const oldAlerts = document.querySelectorAll('.alert-dismissible');
+            oldAlerts.forEach(alert => alert.remove());
+
+            try {
+                const response = await fetch('/api/auth/local/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        'username': phone,
+                        'password': password,
+                        'grant_type': 'password'
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Показываем успешное сообщение
+                    const alertHtml = `
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <strong>Успешный вход!</strong> Добро пожаловать, ${data.user?.full_name || data.user?.phone || 'пользователь'}!
+                            <div class="mt-2 small">
+                                Ваш уровень прав: <strong>${data.user?.permission_name || 'Тренер'}</strong><br>
+                                Перенаправление на главную страницу...
+                            </div>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    `;
+
+                    localLoginForm.insertAdjacentHTML('beforebegin', alertHtml);
+
+                    // Перенаправляем на главную через 2 секунды
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 2000);
+
+                } else {
+                    showError('Ошибка входа: ' + (data.detail || 'Неверный номер телефона или пароль'));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Ошибка соединения с сервером. Проверьте подключение.');
+            } finally {
+                // Восстанавливаем кнопку
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+    }
 
     function showError(message) {
         const errorHtml = `
@@ -216,39 +263,12 @@ $(document).ready(function() {
             </div>
         `;
 
-        $('#localLoginForm').before(errorHtml);
-
-        // Анимация для привлечения внимания
-        $('.alert-danger').css('animation', 'shake 0.5s');
-        setTimeout(() => {
-            $('.alert-danger').css('animation', '');
-        }, 500);
+        const localLoginForm = document.getElementById('localLoginForm');
+        if (localLoginForm) {
+            localLoginForm.insertAdjacentHTML('beforebegin', errorHtml);
+        }
     }
-
-    // Автозаполнение для теста
-    $('#username').on('focus', function() {
-        if (!$(this).val()) {
-            $(this).attr('placeholder', 'admin / trainer / user');
-        }
-    });
-
-    $('#password').on('focus', function() {
-        if (!$(this).val()) {
-            $(this).attr('placeholder', 'admin123 / trainer123 / user123');
-        }
-    });
 });
-
-// Анимация встряски для ошибок
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes shake {
-        0%, 100% { transform: translateX(0); }
-        10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-        20%, 40%, 60%, 80% { transform: translateX(5px); }
-    }
-`;
-document.head.appendChild(style);
 </script>
 
 <style>
