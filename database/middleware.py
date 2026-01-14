@@ -29,10 +29,10 @@ class DualAuthMiddleware(BaseHTTPMiddleware):
             "/health",
             "/auth/callback",
             "/logout",
-            "/auth/choose-login",  # Добавляем
-            "/auth/login-page",     # Добавляем
-            "/api/auth/login",      # Добавляем
-            "/api/auth/register",   # Добавляем
+            "/api/auth/choose-login",  # Исправлено
+            "/api/auth/login-page",  # Исправлено
+            "/api/auth/login",  # Исправлено
+            "/api/auth/register",  # Исправлено
             "/debug/"
         ]
         self.check_urls = [

@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 import httpx
 
+
 # Импортируем упрощенный middleware
 from database.middleware import  DualAuthMiddleware
 from config import settings
@@ -30,17 +31,40 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # URL вашего Superset
 SUPERSET_BASE_URL = settings.superset_conf.base_url
 
+
+@app.get("/choose-login")
+async def choose_login(request: Request):
+    """Корневая страница выбора способа входа"""
+    from config import settings
+
+    superset_base_url = settings.superset_conf.base_url.rstrip('/')
+    callback_url = f"{request.base_url}auth/callback?return_url={request.base_url}"
+    superset_login_url = f"{superset_base_url}/login/?next={callback_url}"
+
+    return templates.TemplateResponse("choose_login.html", {
+        "request": request,
+        "superset_login_url": superset_login_url
+    })
+
+
+@app.get("/login")
+async def login_page_redirect(request: Request):
+    """Перенаправление на страницу входа"""
+    # Перенаправляем на выбор способа входа
+    return RedirectResponse(url="/choose-login")
+
+
 # Подключаем упрощенный middleware
 app.add_middleware(DualAuthMiddleware, superset_base_url=SUPERSET_BASE_URL)
 
 # Подключаем роутеры
-app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
 app.include_router(schedule_router, prefix="/schedule", tags=["schedule"])
 app.include_router(students_router, tags=["students"])
 app.include_router(trainers_router, tags=["trainers"])
 app.include_router(visits_router, tags=["visits"])
 app.include_router(competitions_router, tags=["competitions"])
 app.include_router(admin_router, tags=["admin"])
+app.include_router(auth_router, prefix="/auth", tags=["auth"])  # Изменено на /auth
 
 
 @app.get("/health")
