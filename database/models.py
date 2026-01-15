@@ -116,7 +116,7 @@ class Students_schedule(Base):
     schedule = Column(Integer())
 
 
-# Связь ученики-расписание
+# Связь ученики-родители
 class Students_parents(Base):
     __tablename__ = 'students_parents'
     __table_args__ = {'schema': schema}

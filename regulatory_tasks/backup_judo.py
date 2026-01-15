@@ -16,13 +16,14 @@ def create_docker_superset_backup():
 
     # Конфигурация
     DOCKER_CONTAINER = "big_db"  # Имя контейнера
-    DB_CONFIG = {
-        "host": settings.db.host,  # Внутри контейнера
-        "port": '5432',
-        "dbname": settings.db.db,
-        "user": settings.db.db,
-        "password": settings.db.password
-    }
+    DB_CONFIG = settings.PG_LINK
+    # DB_CONFIG = {
+    #     "host": settings.db.host,  # Внутри контейнера
+    #     "port": '5432',
+    #     "dbname": settings.db.db,
+    #     "user": settings.db.db,
+    #     "password": settings.db.password
+    # }
     print(DB_CONFIG)
     BACKUP_PATH = r"/mnt/backup_judo"
 

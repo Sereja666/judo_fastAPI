@@ -125,8 +125,24 @@ async def logout_jwt():
 
 @router.get("/me")
 async def get_current_user_info(request: Request):
-    """Получение информации о текущем пользователе"""
+    """Получение информации о текущем пользователе - ДЕБАГ ВЕРСИЯ"""
+    # Проверяем все возможные способы получения пользователя
     user_info = getattr(request.state, 'user', None)
+
+    # Отладочная информация
+    import json
+    debug_info = {
+        "request_state_user": user_info,
+        "cookies": dict(request.cookies),
+        "headers": {k: v for k, v in request.headers.items() if k.lower() in ['authorization', 'cookie']},
+        "url": str(request.url),
+        "method": request.method
+    }
+
+    print("=" * 80)
+    print("🔍 ДЕБАГ /api/auth/me:")
+    print(json.dumps(debug_info, indent=2, default=str))
+    print("=" * 80)
 
     if user_info and user_info.get("authenticated"):
         return {
@@ -135,14 +151,42 @@ async def get_current_user_info(request: Request):
             "user_id": user_info.get("user_id"),
             "phone": user_info.get("phone"),
             "email": user_info.get("email"),
-            "auth_type": user_info.get("auth_type", "unknown")
+            "auth_type": user_info.get("auth_type", "unknown"),
+            "debug": "✅ User from request.state"
         }
     else:
+        # Попробуем получить токен напрямую из заголовков/cookie
+        auth_header = request.headers.get("Authorization")
+        token = None
+
+        if auth_header and auth_header.startswith("Bearer "):
+            token = auth_header.replace("Bearer ", "")
+            print(f"🔑 Token from Authorization header: {token[:20]}...")
+        else:
+            token = request.cookies.get("access_token")
+            if token:
+                print(f"🔑 Token from cookie: {token[:20]}...")
+
+        if token:
+            # Пробуем декодировать токен напрямую
+            try:
+                import jwt
+                payload = jwt.decode(token, settings.jwt.secret_key, algorithms=[settings.jwt.algorithm])
+                print(f"🔑 Token payload: {payload}")
+                return {
+                    "authenticated": True,
+                    "username": payload.get("sub"),
+                    "debug": "✅ User from direct token decode",
+                    "token_payload": payload
+                }
+            except Exception as e:
+                print(f"❌ Token decode error: {e}")
+
         return {
             "authenticated": False,
-            "message": "Не авторизован"
+            "message": "Не авторизован",
+            "debug_info": debug_info
         }
-
 
 @router.get("/choose-login")
 async def choose_login_page(request: Request):
