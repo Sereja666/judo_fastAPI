@@ -88,8 +88,8 @@
                                     <h6 class="fw-bold">Расписание</h6>
                                     <p class="text-muted small mb-2">Тренировки и занятия</p>
                                 </div>
-                                <a href="/schedule/" class="btn btn-primary btn-sm mt-2"
-                                   style="background: linear-gradient(135deg, #20A7C9 0%, #1A91AD 100%); border: none;">
+                                <a href="/schedule/" class="btn home-btn mt-2"
+                                   style="background: linear-gradient(135deg, #20A7C9 0%, #1A91AD 100%);">
                                     Перейти
                                 </a>
                             </div>
@@ -105,8 +105,8 @@
                                     <h6 class="fw-bold">Ученики</h6>
                                     <p class="text-muted small mb-2">Данные учеников</p>
                                 </div>
-                                <a href="/edit-students" class="btn btn-success btn-sm mt-2"
-                                   style="background: linear-gradient(135deg, #3CB371 0%, #34A853 100%); border: none;">
+                                <a href="/edit-students" class="btn home-btn mt-2"
+                                   style="background: linear-gradient(135deg, #3CB371 0%, #34A853 100%);">
                                     Перейти
                                 </a>
                             </div>
@@ -122,8 +122,8 @@
                                     <h6 class="fw-bold">Тренеры</h6>
                                     <p class="text-muted small mb-2">Данные тренеров</p>
                                 </div>
-                                <a href="/edit-trainers" class="btn btn-sm mt-2"
-                                   style="background: linear-gradient(135deg, #8A2BE2 0%, #7B1FA2 100%); border: none; color: white;">
+                                <a href="/edit-trainers" class="btn home-btn mt-2"
+                                   style="background: linear-gradient(135deg, #8A2BE2 0%, #7B1FA2 100%);">
                                     Перейти
                                 </a>
                             </div>
@@ -139,8 +139,8 @@
                                     <h6 class="fw-bold">Посещения</h6>
                                     <p class="text-muted small mb-2">Учет посещений</p>
                                 </div>
-                                <a href="/visits/" class="btn btn-sm mt-2"
-                                   style="background: linear-gradient(135deg, #FFA726 0%, #F57C00 100%); border: none; color: #212529;">
+                                <a href="/visits/" class="btn home-btn mt-2"
+                                   style="background: linear-gradient(135deg, #FFA726 0%, #F57C00 100%);">
                                     Перейти
                                 </a>
                             </div>
@@ -156,8 +156,8 @@
                                     <h6 class="fw-bold">Мероприятия</h6>
                                     <p class="text-muted small mb-2">Соревнования и события</p>
                                 </div>
-                                <a href="/competitions/" class="btn btn-sm mt-2"
-                                   style="background: linear-gradient(135deg, #FF6B6B 0%, #DA4453 100%); border: none; color: white;">
+                                <a href="/competitions/" class="btn home-btn mt-2"
+                                   style="background: linear-gradient(135deg, #FF6B6B 0%, #DA4453 100%);">
                                     Перейти
                                 </a>
                             </div>
@@ -173,8 +173,8 @@
                                     <h6 class="fw-bold">Superset</h6>
                                     <p class="text-muted small mb-2">Дашборды и отчеты</p>
                                 </div>
-                                <a href="https://superset.srm-1legion.ru/" class="btn btn-sm mt-2"
-                                   style="background: linear-gradient(135deg, #6C757D 0%, #495057 100%); border: none; color: white;"
+                                <a href="https://superset.srm-1legion.ru/" class="btn home-btn mt-2"
+                                   style="background: linear-gradient(135deg, #6C757D 0%, #495057 100%);"
                                    target="_blank">
                                     Перейти
                                 </a>
@@ -191,8 +191,8 @@
                                     <h6 class="fw-bold">ТГ заявки</h6>
                                     <p class="text-muted small mb-2">согласование заявок</p>
                                 </div>
-                                <a href="/admin/registrations/" class="btn btn-sm mt-2"
-                                   style="background: linear-gradient(135deg, #0088cc 0%, #0077b5 100%); border: none; color: white;">
+                                <a href="/admin/registrations/" class="btn home-btn mt-2"
+                                   style="background: linear-gradient(135deg, #0088cc 0%, #0077b5 100%);">
                                     Перейти
                                 </a>
                             </div>
@@ -216,12 +216,12 @@
         box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
     }
 
-    /* Стили для всех кнопок в едином формате */
+    /* Единый стиль для ВСЕХ кнопок на главной */
     .home-btn {
         background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
         border: none;
         border-radius: 8px;
-        padding: 0.5rem 1rem;
+        padding: 0.5rem 1.25rem;
         font-weight: 600;
         font-size: 0.875rem;
         transition: all 0.3s ease;
@@ -229,43 +229,23 @@
         color: white;
         text-decoration: none;
         display: inline-block;
+        min-width: 80px;
     }
 
     .home-btn:hover {
         transform: translateY(-2px);
         box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
         color: white;
+        filter: brightness(110%);
     }
 
-    /* Цвета для иконок и кнопок */
-    .icon-primary { color: #20A7C9; }
-    .icon-success { color: #3CB371; }
-    .icon-purple { color: #8A2BE2; }
-    .icon-warning { color: #FFA726; }
-    .icon-danger { color: #FF6B6B; }
-    .icon-secondary { color: #6C757D; }
-    .icon-telegram { color: #0088cc; }
+    /* Для кнопки Посещений (оранжевой) меняем цвет текста на темный для лучшей читаемости */
+    .home-btn[style*="FFA726"] {
+        color: #212529;
+    }
 
-    .btn-primary-gradient {
-        background: linear-gradient(135deg, #20A7C9 0%, #1A91AD 100%);
-    }
-    .btn-success-gradient {
-        background: linear-gradient(135deg, #3CB371 0%, #34A853 100%);
-    }
-    .btn-purple-gradient {
-        background: linear-gradient(135deg, #8A2BE2 0%, #7B1FA2 100%);
-    }
-    .btn-warning-gradient {
-        background: linear-gradient(135deg, #FFA726 0%, #F57C00 100%);
-    }
-    .btn-danger-gradient {
-        background: linear-gradient(135deg, #FF6B6B 0%, #DA4453 100%);
-    }
-    .btn-secondary-gradient {
-        background: linear-gradient(135deg, #6C757D 0%, #495057 100%);
-    }
-    .btn-telegram-gradient {
-        background: linear-gradient(135deg, #0088cc 0%, #0077b5 100%);
+    .home-btn[style*="FFA726"]:hover {
+        color: #212529;
     }
 
     /* Адаптивность для мобильных устройств */
@@ -303,6 +283,7 @@
         .home-btn {
             padding: 0.35rem 0.75rem;
             font-size: 0.75rem;
+            min-width: 70px;
         }
     }
 
@@ -327,6 +308,12 @@
         .fa-2x {
             font-size: 1.25rem;
             margin-bottom: 0.25rem;
+        }
+
+        .home-btn {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.7rem;
+            min-width: 60px;
         }
     }
 </style>
