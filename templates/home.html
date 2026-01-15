@@ -12,10 +12,8 @@
             </div>
             <div class="card-body text-center py-4">
                 <div class="mb-4">
-                         <img src="/static/images/logo.png" alt="Первый Легион" style="height: 200px;">
-
+                    <img src="/static/images/logo.png" alt="Первый Легион" style="height: 200px;">
                 </div>
-
 
                 <div class="row justify-content-center mb-4">
                     <div class="col-md-10">
@@ -36,12 +34,12 @@
                                     <p class="mb-0">
                                         <strong>Пользователь:</strong> {{ username }}
                                         <span class="badge ms-2 {% if auth_method == 'superset' %}bg-primary{% else %}bg-success{% endif %}">
-                                                {% if auth_method == 'superset' %}
-                                                    <i class="fas fa-chart-bar me-1"></i>Superset
-                                                {% else %}
-                                                    <i class="fas fa-lock me-1"></i>Локально
-                                                {% endif %}
-                                            </span>
+                                            {% if auth_method == 'superset' %}
+                                                <i class="fas fa-chart-bar me-1"></i>Superset
+                                            {% else %}
+                                                <i class="fas fa-lock me-1"></i>Локально
+                                            {% endif %}
+                                        </span>
                                     </p>
                                     {% if auth_method == 'superset' %}
                                     <small class="text-muted d-block mt-1">
@@ -81,30 +79,19 @@
                 </p>
 
                 <div class="row g-4 mt-3">
-                    <!-- Главная -->
-<!--                    <div class="col-6 col-md-4 col-lg-2">-->
-<!--                        <div class="card h-100 border-0 shadow-sm hover-effect">-->
-<!--                            <div class="card-body text-center d-flex flex-column justify-content-between p-3">-->
-<!--                                <div>-->
-<!--                                    <i class="fas fa-home fa-2x text-primary mb-3"></i>-->
-<!--                                    <h6 class="fw-bold">Главная</h6>-->
-<!--                                    <p class="text-muted small mb-2">Основная страница</p>-->
-<!--                                </div>-->
-<!--                                <a href="/" class="btn btn-outline-primary btn-sm mt-2">Перейти</a>-->
-<!--                            </div>-->
-<!--                        </div>-->
-<!--                    </div>-->
-
                     <!-- Расписание -->
                     <div class="col-6 col-md-4 col-lg-2">
                         <div class="card h-100 border-0 shadow-sm hover-effect">
                             <div class="card-body text-center d-flex flex-column justify-content-between p-3">
                                 <div>
-                                    <i class="fas fa-calendar-alt fa-2x text-primary mb-3"></i>
+                                    <i class="fas fa-calendar-alt fa-2x mb-3" style="color: #20A7C9;"></i>
                                     <h6 class="fw-bold">Расписание</h6>
                                     <p class="text-muted small mb-2">Тренировки и занятия</p>
                                 </div>
-                                <a href="/schedule/" class="btn btn-primary btn-sm mt-2">Перейти</a>
+                                <a href="/schedule/" class="btn btn-primary btn-sm mt-2"
+                                   style="background: linear-gradient(135deg, #20A7C9 0%, #1A91AD 100%); border: none;">
+                                    Перейти
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -114,11 +101,14 @@
                         <div class="card h-100 border-0 shadow-sm hover-effect">
                             <div class="card-body text-center d-flex flex-column justify-content-between p-3">
                                 <div>
-                                    <i class="fas fa-users fa-2x text-success mb-3"></i>
+                                    <i class="fas fa-users fa-2x mb-3" style="color: #3CB371;"></i>
                                     <h6 class="fw-bold">Ученики</h6>
                                     <p class="text-muted small mb-2">Данные учеников</p>
                                 </div>
-                                <a href="/edit-students" class="btn btn-success btn-sm mt-2">Перейти</a>
+                                <a href="/edit-students" class="btn btn-success btn-sm mt-2"
+                                   style="background: linear-gradient(135deg, #3CB371 0%, #34A853 100%); border: none;">
+                                    Перейти
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -128,11 +118,14 @@
                         <div class="card h-100 border-0 shadow-sm hover-effect">
                             <div class="card-body text-center d-flex flex-column justify-content-between p-3">
                                 <div>
-                                    <i class="fas fa-user-tie fa-2x text-info mb-3"></i>
+                                    <i class="fas fa-user-tie fa-2x mb-3" style="color: #8A2BE2;"></i>
                                     <h6 class="fw-bold">Тренеры</h6>
                                     <p class="text-muted small mb-2">Данные тренеров</p>
                                 </div>
-                                <a href="/edit-trainers" class="btn btn-info btn-sm mt-2">Перейти</a>
+                                <a href="/edit-trainers" class="btn btn-sm mt-2"
+                                   style="background: linear-gradient(135deg, #8A2BE2 0%, #7B1FA2 100%); border: none; color: white;">
+                                    Перейти
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -142,11 +135,14 @@
                         <div class="card h-100 border-0 shadow-sm hover-effect">
                             <div class="card-body text-center d-flex flex-column justify-content-between p-3">
                                 <div>
-                                    <i class="fas fa-clipboard-check fa-2x text-warning mb-3"></i>
+                                    <i class="fas fa-clipboard-check fa-2x mb-3" style="color: #FFA726;"></i>
                                     <h6 class="fw-bold">Посещения</h6>
                                     <p class="text-muted small mb-2">Учет посещений</p>
                                 </div>
-                                <a href="/visits/" class="btn btn-warning btn-sm mt-2">Перейти</a>
+                                <a href="/visits/" class="btn btn-sm mt-2"
+                                   style="background: linear-gradient(135deg, #FFA726 0%, #F57C00 100%); border: none; color: #212529;">
+                                    Перейти
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -156,11 +152,14 @@
                         <div class="card h-100 border-0 shadow-sm hover-effect">
                             <div class="card-body text-center d-flex flex-column justify-content-between p-3">
                                 <div>
-                                    <i class="fas fa-trophy fa-2x text-danger mb-3"></i>
+                                    <i class="fas fa-trophy fa-2x mb-3" style="color: #FF6B6B;"></i>
                                     <h6 class="fw-bold">Мероприятия</h6>
                                     <p class="text-muted small mb-2">Соревнования и события</p>
                                 </div>
-                                <a href="/competitions/" class="btn btn-danger btn-sm mt-2">Перейти</a>
+                                <a href="/competitions/" class="btn btn-sm mt-2"
+                                   style="background: linear-gradient(135deg, #FF6B6B 0%, #DA4453 100%); border: none; color: white;">
+                                    Перейти
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -170,12 +169,15 @@
                         <div class="card h-100 border-0 shadow-sm hover-effect">
                             <div class="card-body text-center d-flex flex-column justify-content-between p-3">
                                 <div>
-                                    <i class="fas fa-chart-bar fa-2x text-secondary mb-3"></i>
+                                    <i class="fas fa-chart-bar fa-2x mb-3" style="color: #6C757D;"></i>
                                     <h6 class="fw-bold">Superset</h6>
                                     <p class="text-muted small mb-2">Дашборды и отчеты</p>
                                 </div>
-                                <a href="https://superset.srm-1legion.ru/" class="btn btn-secondary btn-sm mt-2"
-                                   target="_blank">Перейти</a>
+                                <a href="https://superset.srm-1legion.ru/" class="btn btn-sm mt-2"
+                                   style="background: linear-gradient(135deg, #6C757D 0%, #495057 100%); border: none; color: white;"
+                                   target="_blank">
+                                    Перейти
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -185,12 +187,14 @@
                         <div class="card h-100 border-0 shadow-sm hover-effect">
                             <div class="card-body text-center d-flex flex-column justify-content-between p-3">
                                 <div>
-                                    <!-- Иконка Telegram -->
-                                    <i class="fab fa-telegram fa-2x text-info mb-3"></i>
+                                    <i class="fab fa-telegram fa-2x mb-3" style="color: #0088cc;"></i>
                                     <h6 class="fw-bold">ТГ заявки</h6>
                                     <p class="text-muted small mb-2">согласование заявок</p>
                                 </div>
-                                <a href="/admin/registrations/" class="btn btn-info btn-sm mt-2">Перейти</a>
+                                <a href="/admin/registrations/" class="btn btn-sm mt-2"
+                                   style="background: linear-gradient(135deg, #0088cc 0%, #0077b5 100%); border: none; color: white;">
+                                    Перейти
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -212,61 +216,56 @@
         box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
     }
 
-    .user-info {
+    /* Стили для всех кнопок в едином формате */
+    .home-btn {
+        background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+        border: none;
+        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        color: white;
+        text-decoration: none;
         display: inline-block;
     }
 
-    .btn-info {
-        background: linear-gradient(135deg, var(--superset-info) 0%, #138496 100%);
-        border: none;
-        box-shadow: 0 2px 8px rgba(23, 162, 184, 0.3);
-    }
-
-    .btn-info:hover {
-        box-shadow: 0 6px 20px rgba(23, 162, 184, 0.4);
-    }
-
-    .btn-warning {
-        background: linear-gradient(135deg, var(--superset-warning) 0%, #F57C00 100%);
-        border: none;
-        box-shadow: 0 2px 8px rgba(255, 167, 38, 0.3);
-        color: #212529;
-    }
-
-    .btn-warning:hover {
-        box-shadow: 0 6px 20px rgba(255, 167, 38, 0.4);
-        color: #212529;
-    }
-
-    .btn-danger {
-        background: linear-gradient(135deg, var(--superset-danger) 0%, #DA4453 100%);
-        border: none;
-        box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
-    }
-
-    .btn-danger:hover {
-        box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
-    }
-
-    .btn-secondary {
-        background: linear-gradient(135deg, var(--superset-secondary) 0%, #495057 100%);
-        border: none;
-        box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
-    }
-
-    .btn-secondary:hover {
-        box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
-    }
-
-    .btn-outline-primary {
-        border: 2px solid var(--superset-primary);
-        color: var(--superset-primary);
-        font-weight: 600;
-    }
-
-    .btn-outline-primary:hover {
-        background-color: var(--superset-primary);
+    .home-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
         color: white;
+    }
+
+    /* Цвета для иконок и кнопок */
+    .icon-primary { color: #20A7C9; }
+    .icon-success { color: #3CB371; }
+    .icon-purple { color: #8A2BE2; }
+    .icon-warning { color: #FFA726; }
+    .icon-danger { color: #FF6B6B; }
+    .icon-secondary { color: #6C757D; }
+    .icon-telegram { color: #0088cc; }
+
+    .btn-primary-gradient {
+        background: linear-gradient(135deg, #20A7C9 0%, #1A91AD 100%);
+    }
+    .btn-success-gradient {
+        background: linear-gradient(135deg, #3CB371 0%, #34A853 100%);
+    }
+    .btn-purple-gradient {
+        background: linear-gradient(135deg, #8A2BE2 0%, #7B1FA2 100%);
+    }
+    .btn-warning-gradient {
+        background: linear-gradient(135deg, #FFA726 0%, #F57C00 100%);
+    }
+    .btn-danger-gradient {
+        background: linear-gradient(135deg, #FF6B6B 0%, #DA4453 100%);
+    }
+    .btn-secondary-gradient {
+        background: linear-gradient(135deg, #6C757D 0%, #495057 100%);
+    }
+    .btn-telegram-gradient {
+        background: linear-gradient(135deg, #0088cc 0%, #0077b5 100%);
     }
 
     /* Адаптивность для мобильных устройств */
@@ -301,9 +300,9 @@
             margin-bottom: 0.5rem;
         }
 
-        .btn-sm {
-            padding: 0.25rem 0.5rem;
-            font-size: 0.8rem;
+        .home-btn {
+            padding: 0.35rem 0.75rem;
+            font-size: 0.75rem;
         }
     }
 
@@ -323,6 +322,11 @@
 
         .display-4 {
             font-size: 1.75rem;
+        }
+
+        .fa-2x {
+            font-size: 1.25rem;
+            margin-bottom: 0.25rem;
         }
     }
 </style>
