@@ -24,16 +24,12 @@
                             <div class="card-body d-flex flex-column justify-content-between p-4">
                                 <div>
                                     <i class="fas fa-user-lock fa-3x text-primary mb-3"></i>
-                                    <h4 class="fw-bold">Локальный вход</h4>
+                                    <h4 class="fw-bold">Вход по номеру телефона</h4>
                                     <p class="text-muted">
-                                        Вход по логину и паролю<br>
-                                        (требуется регистрация в системе)
+                                        Для регистрации обратитесь к администратору
+
                                     </p>
-                                    <ul class="text-start text-muted small mt-3">
-                                        <li>Быстрый доступ</li>
-                                        <li>Не требует Superset</li>
-                                        <li>Для всех пользователей</li>
-                                    </ul>
+
                                 </div>
                                 <a href="/local-login" class="btn btn-primary btn-lg mt-4">
                                     <i class="fas fa-sign-in-alt me-2"></i>Войти
@@ -51,13 +47,8 @@
                                     <h4 class="fw-bold">Superset вход</h4>
                                     <p class="text-muted">
                                         Вход через Apache Superset<br>
-                                        (требуется аккаунт в Superset)
                                     </p>
-                                    <ul class="text-start text-muted small mt-3">
-                                        <li>Единый аккаунт</li>
-                                        <li>Доступ к аналитике</li>
-                                        <li>Для администраторов</li>
-                                    </ul>
+
                                 </div>
                                 <a href="{{ superset_login_url }}" class="btn btn-info btn-lg mt-4">
                                     <i class="fas fa-external-link-alt me-2"></i>Через Superset
@@ -67,23 +58,7 @@
                     </div>
                 </div>
 
-                <div class="mt-5">
-                    <div class="alert alert-light border">
-                        <i class="fas fa-info-circle text-primary me-2"></i>
-                        <strong>Какой способ выбрать?</strong><br>
-                        • <span class="text-primary">Локальный вход</span> - если у вас есть учетная запись в этой системе<br>
-                        • <span class="text-info">Superset вход</span> - если у вас есть аккаунт в Apache Superset
-                    </div>
 
-                    <div class="mt-3">
-                        <p class="text-muted">
-                            Нет учетной записи?
-                            <a href="#" class="text-decoration-none" id="requestAccess">
-                                <i class="fas fa-envelope me-1"></i>Запросить доступ
-                            </a>
-                        </p>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
