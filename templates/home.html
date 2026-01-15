@@ -13,7 +13,7 @@
             <div class="card-body text-center py-4">
                 <div class="mb-4">
                          <img src="/static/images/logo.png" alt="Первый Легион" style="height: 200px;">
-                    <h1 class="display-4 fw-bold text-dark">Привет, пользователь!</h1>
+
                 </div>
 
 
@@ -46,12 +46,12 @@
                                     {% if auth_method == 'superset' %}
                                     <small class="text-muted d-block mt-1">
                                         <i class="fas fa-info-circle me-1"></i>
-                                        Вы вошли через единую систему авторизации Apache Superset
+                                        Вы вошли через Apache Superset
                                     </small>
                                     {% else %}
                                     <small class="text-muted d-block mt-1">
                                         <i class="fas fa-info-circle me-1"></i>
-                                        Вы вошли с помощью локальной аутентификации
+                                        Вы вошли с помощью номера телефона
                                     </small>
                                     {% endif %}
                                 </div>
@@ -82,18 +82,18 @@
 
                 <div class="row g-4 mt-3">
                     <!-- Главная -->
-                    <div class="col-6 col-md-4 col-lg-2">
-                        <div class="card h-100 border-0 shadow-sm hover-effect">
-                            <div class="card-body text-center d-flex flex-column justify-content-between p-3">
-                                <div>
-                                    <i class="fas fa-home fa-2x text-primary mb-3"></i>
-                                    <h6 class="fw-bold">Главная</h6>
-                                    <p class="text-muted small mb-2">Основная страница</p>
-                                </div>
-                                <a href="/" class="btn btn-outline-primary btn-sm mt-2">Перейти</a>
-                            </div>
-                        </div>
-                    </div>
+<!--                    <div class="col-6 col-md-4 col-lg-2">-->
+<!--                        <div class="card h-100 border-0 shadow-sm hover-effect">-->
+<!--                            <div class="card-body text-center d-flex flex-column justify-content-between p-3">-->
+<!--                                <div>-->
+<!--                                    <i class="fas fa-home fa-2x text-primary mb-3"></i>-->
+<!--                                    <h6 class="fw-bold">Главная</h6>-->
+<!--                                    <p class="text-muted small mb-2">Основная страница</p>-->
+<!--                                </div>-->
+<!--                                <a href="/" class="btn btn-outline-primary btn-sm mt-2">Перейти</a>-->
+<!--                            </div>-->
+<!--                        </div>-->
+<!--                    </div>-->
 
                     <!-- Расписание -->
                     <div class="col-6 col-md-4 col-lg-2">
@@ -171,7 +171,7 @@
                             <div class="card-body text-center d-flex flex-column justify-content-between p-3">
                                 <div>
                                     <i class="fas fa-chart-bar fa-2x text-secondary mb-3"></i>
-                                    <h6 class="fw-bold">Аналитика</h6>
+                                    <h6 class="fw-bold">Superset</h6>
                                     <p class="text-muted small mb-2">Дашборды и отчеты</p>
                                 </div>
                                 <a href="https://superset.srm-1legion.ru/" class="btn btn-secondary btn-sm mt-2"
@@ -185,12 +185,12 @@
                         <div class="card h-100 border-0 shadow-sm hover-effect">
                             <div class="card-body text-center d-flex flex-column justify-content-between p-3">
                                 <div>
-                                    <!--                                    <i class="fas fa-chart-bar fa-2x text-secondary mb-3"></i>-->
-                                    <i class="fa fa-telegram  fa-2x text-secondary mb-3" aria-hidden="true"></i>
+                                    <!-- Иконка Telegram -->
+                                    <i class="fab fa-telegram fa-2x text-info mb-3"></i>
                                     <h6 class="fw-bold">ТГ заявки</h6>
                                     <p class="text-muted small mb-2">согласование заявок</p>
                                 </div>
-                                <a href="/admin/registrations/" class="btn btn-danger btn-sm mt-2">Перейти</a>
+                                <a href="/admin/registrations/" class="btn btn-info btn-sm mt-2">Перейти</a>
                             </div>
                         </div>
                     </div>
