@@ -104,12 +104,20 @@ async def auth_callback(request: Request, return_url: str = "/"):
     return RedirectResponse(url=safe_login_url)
 
 
-
 @app.get("/logout")
-async def logout():
-    """Выход из системы"""
-    response = RedirectResponse(url=f"{SUPERSET_BASE_URL}/logout/")
-    response.delete_cookie("session")
+async def logout(request: Request):
+    """Универсальный выход из системы"""
+    # Определяем тип авторизации
+    user_info = getattr(request.state, 'user', None)
+    auth_type = user_info.get("auth_type") if user_info else None
+
+    response = RedirectResponse(url="/choose-login")
+
+    # Удаляем ВСЕ возможные авторизационные cookies
+    response.delete_cookie("session")  # Superset
+    response.delete_cookie("access_token")  # JWT
+
+    # Также можно удалить через JavaScript localStorage
     return response
 
 
