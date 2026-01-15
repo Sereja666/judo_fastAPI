@@ -4,9 +4,13 @@ import subprocess
 import datetime
 import shutil
 
+# Добавляем путь к проекту в PYTHONPATH
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, project_root)
+
 from config import settings
+
+
 
 
 def create_docker_superset_backup():
@@ -16,14 +20,14 @@ def create_docker_superset_backup():
 
     # Конфигурация
     DOCKER_CONTAINER = "big_db"  # Имя контейнера
-    DB_CONFIG = settings.PG_LINK
-    # DB_CONFIG = {
-    #     "host": settings.db.host,  # Внутри контейнера
-    #     "port": '5432',
-    #     "dbname": settings.db.db,
-    #     "user": settings.db.db,
-    #     "password": settings.db.password
-    # }
+    # DB_CONFIG = settings.PG_LINK
+    DB_CONFIG = {
+        "host": settings.db.host,  # Внутри контейнера
+        "port": '5432',
+        "dbname": settings.db.db,
+        "user": settings.db.db,
+        "password": settings.db.password
+    }
     print(DB_CONFIG)
     BACKUP_PATH = r"/mnt/backup_judo"
 

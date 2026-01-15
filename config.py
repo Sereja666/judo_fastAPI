@@ -11,7 +11,25 @@ load_dotenv()
 
 # Читаем конфигурационный файл
 config = configparser.ConfigParser()
-config.read('config.ini', encoding='utf-8')
+# Список возможных путей к config.ini
+possible_paths = [
+    'config.ini',  # Текущая директория
+    os.path.join(os.path.dirname(__file__), 'config.ini'),  # Рядом с config.py
+    os.environ.get('CONFIG_INI_PATH', ''),  # Из переменной окружения
+    os.path.join(Path(__file__).parent.parent, 'config.ini'),  # Корень проекта
+]
+
+config_ini_path = None
+for path in possible_paths:
+    if path and os.path.exists(path):
+        config_ini_path = path
+        break
+
+if config_ini_path:
+    config.read(config_ini_path, encoding='utf-8')
+    print(f"✅ Конфиг загружен из: {config_ini_path}")
+else:
+    raise FileNotFoundError("❌ Не найден файл config.ini")
 
 # Получаем секретный ключ из переменных окружения
 SECRET = os.environ.get("SECRET_KEY")
