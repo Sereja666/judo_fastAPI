@@ -1,3 +1,5 @@
+import traceback
+
 from fastapi import APIRouter, Request, Form, Depends, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.orm import Session
@@ -26,10 +28,12 @@ async def visits_today_page(request: Request):
 async def get_places_today(db: Session = Depends(get_db)):
     """Получение мест тренировок, где есть занятия сегодня"""
     try:
-        # Получаем текущий день недели
-        days_ru = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"]
+        # Получаем текущий день недели (с маленькой буквы как в базе)
+        days_ru_lower = ["понедельник", "вторник", "среда", "четверг", "пятница", "суббота", "воскресенье"]
         today = datetime.now()
-        today_weekday = days_ru[today.weekday()]  # Python: понедельник=0
+        today_weekday = days_ru_lower[today.weekday()]  # Python: понедельник=0
+
+        logger.info(f"📅 Сегодня: {today.strftime('%Y-%m-%d')}, день недели в базе: '{today_weekday}'")
 
         # Получаем места с тренировками сегодня
         places = db.query(Training_place).join(
@@ -38,11 +42,19 @@ async def get_places_today(db: Session = Depends(get_db)):
             Schedule.day_week == today_weekday
         ).distinct().all()
 
+        logger.info(f"🏢 Найдено мест с тренировками сегодня: {len(places)}")
+
+        if places:
+            for place in places:
+                logger.info(f"  - {place.name} (ID: {place.id})")
+
         result = [{"id": place.id, "name": place.name} for place in places]
         return JSONResponse(result)
 
     except Exception as e:
         logger.error(f"❌ Ошибка получения мест тренировок: {str(e)}")
+        import traceback
+        logger.error(f"Подробности ошибки: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Ошибка получения мест: {str(e)}")
 
 
@@ -50,10 +62,12 @@ async def get_places_today(db: Session = Depends(get_db)):
 async def get_trainings_today(place_id: int, db: Session = Depends(get_db)):
     """Получение тренировок на сегодня для выбранного места"""
     try:
-        # Получаем текущий день недели
-        days_ru = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"]
+        # Получаем текущий день недели (с маленькой буквы)
+        days_ru_lower = ["понедельник", "вторник", "среда", "четверг", "пятница", "суббота", "воскресенье"]
         today = datetime.now()
-        today_weekday = days_ru[today.weekday()]
+        today_weekday = days_ru_lower[today.weekday()]
+
+        logger.info(f"🔍 Ищем тренировки для места ID: {place_id}, день: '{today_weekday}'")
 
         # Получаем тренировки на сегодня
         trainings = db.query(
@@ -69,6 +83,8 @@ async def get_trainings_today(place_id: int, db: Session = Depends(get_db)):
                 Schedule.day_week == today_weekday
             )
         ).order_by(Schedule.time_start).all()
+
+        logger.info(f"📋 Найдено тренировок: {len(trainings)}")
 
         result = []
         for training in trainings:
@@ -91,6 +107,17 @@ async def get_trainings_today(place_id: int, db: Session = Depends(get_db)):
 async def get_students_for_training(schedule_id: int, db: Session = Depends(get_db)):
     """Получение студентов, записанных на тренировку"""
     try:
+        logger.info(f"👥 Запрос студентов для расписания ID: {schedule_id}")
+
+        # Получаем информацию о тренировке
+        training_info = db.query(
+            Schedule.time_start,
+            Schedule.day_week
+        ).filter(Schedule.id == schedule_id).first()
+
+        if training_info:
+            logger.info(f"📅 Тренировка: день '{training_info.day_week}', время {training_info.time_start}")
+
         # Получаем студентов, привязанных к расписанию
         students = db.query(
             Students.id,
@@ -105,6 +132,8 @@ async def get_students_for_training(schedule_id: int, db: Session = Depends(get_
                 Students.active == True
             )
         ).order_by(Students.name).all()
+
+        logger.info(f"📊 Найдено студентов в расписании: {len(students)}")
 
         # Получаем эмодзи поясов
         from database.models import Belt_сolor
@@ -121,6 +150,8 @@ async def get_students_for_training(schedule_id: int, db: Session = Depends(get_
         ).all()
         visited_ids = {v.student for v in visited_students}
 
+        logger.info(f"✅ Уже посещено сегодня: {len(visited_ids)} студентов")
+
         result = []
         for student in students:
             # Получаем эмодзи пояса
@@ -129,19 +160,23 @@ async def get_students_for_training(schedule_id: int, db: Session = Depends(get_
             # Год рождения
             birth_year = student.birthday.year if student.birthday else ""
 
+            is_visited = student.id in visited_ids
+
             result.append({
                 "id": student.id,
                 "name": student.name,
                 "birth_year": birth_year,
                 "belt_emoji": belt_emoji,
                 "display_name": f"{belt_emoji} {student.name} {birth_year}",
-                "is_visited": student.id in visited_ids
+                "is_visited": is_visited
             })
 
         return JSONResponse(result)
 
     except Exception as e:
         logger.error(f"❌ Ошибка получения студентов: {str(e)}")
+        import traceback
+        logger.error(f"Подробности ошибки: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Ошибка получения студентов: {str(e)}")
 
 
@@ -203,7 +238,10 @@ async def save_attendance(
         schedule_id = form_data.get("schedule_id")
         student_ids = form_data.get("student_ids", [])
         extra_students = form_data.get("extra_students", [])
-        trainer_id = form_data.get("trainer_id")  # TODO: Получать из сессии
+
+        logger.info(f"💾 Сохранение посещений для расписания: {schedule_id}")
+        logger.info(f"👥 Студентов из расписания: {len(student_ids)}")
+        logger.info(f"➕ Дополнительных студентов: {len(extra_students)}")
 
         if not schedule_id:
             raise HTTPException(status_code=400, detail="Не указано расписание")
@@ -215,6 +253,13 @@ async def save_attendance(
 
         # Создаем дату и время для посещения
         visit_datetime = datetime.combine(date.today(), schedule.time_start)
+
+        # Получаем информацию о тренере (пока заглушка)
+        # TODO: Получать trainer_id из сессии пользователя
+        trainer = db.query(Trainers).filter(Trainers.telegram_id == 1).first()
+        trainer_id = trainer.id if trainer else 1
+
+        logger.info(f"👨‍🏫 Тренер: {trainer_id}, время: {visit_datetime}")
 
         # Сохраняем посещения для студентов из расписания
         saved_count = 0
@@ -236,7 +281,7 @@ async def save_attendance(
                 if not existing:
                     visit = Visits(
                         data=visit_datetime,
-                        trainer=trainer_id or 1,  # TODO: Заменить на реального тренера
+                        trainer=trainer_id,
                         student=student_id,
                         place=schedule.training_place,
                         sport_discipline=schedule.sport_discipline,
@@ -246,12 +291,15 @@ async def save_attendance(
                     saved_count += 1
 
             except Exception as e:
-                errors.append(f"Студент {student_id}: {str(e)}")
+                error_msg = f"Студент {student_id}: {str(e)}"
+                errors.append(error_msg)
+                logger.error(error_msg)
 
         # Обрабатываем дополнительных студентов
         for student_data in extra_students:
             try:
                 student_id = student_data.get("id")
+                student_name = student_data.get("name", "Неизвестный")
 
                 if not student_id:
                     continue
@@ -269,7 +317,7 @@ async def save_attendance(
                 if not existing:
                     visit = Visits(
                         data=visit_datetime,
-                        trainer=trainer_id or 1,  # TODO: Заменить на реального тренера
+                        trainer=trainer_id,
                         student=student_id,
                         place=schedule.training_place,
                         sport_discipline=schedule.sport_discipline,
@@ -279,9 +327,13 @@ async def save_attendance(
                     saved_count += 1
 
             except Exception as e:
-                errors.append(f"Доп. студент {student_data.get('name')}: {str(e)}")
+                error_msg = f"Доп. студент {student_name}: {str(e)}"
+                errors.append(error_msg)
+                logger.error(error_msg)
 
         db.commit()
+
+        logger.info(f"✅ Сохранено посещений: {saved_count}, ошибок: {len(errors)}")
 
         return JSONResponse({
             "status": "success",
@@ -293,6 +345,8 @@ async def save_attendance(
     except Exception as e:
         db.rollback()
         logger.error(f"❌ Ошибка сохранения посещений: {str(e)}")
+        import traceback
+        logger.error(f"Подробности ошибки: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Ошибка сохранения: {str(e)}")
 
 
