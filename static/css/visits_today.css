@@ -299,3 +299,36 @@ body.mobile-device .student-text {
 body.mobile-device .birth-year {
     margin-left: auto !important;
 }
+
+
+/* Таблица гарантирует одну строку на любых устройствах */
+@media (max-width: 767px) {
+    .student-item {
+        display: table !important;
+        width: 100% !important;
+        table-layout: fixed !important;
+    }
+
+    .student-checkbox {
+        display: table-cell !important;
+        width: 30px !important;
+        vertical-align: middle !important;
+        padding-right: 10px !important;
+    }
+
+    .student-info {
+        display: table-cell !important;
+        vertical-align: middle !important;
+        width: auto !important;
+        overflow: hidden !important;
+    }
+
+    /* Заставляем всё быть в одной ячейке */
+    .belt-emoji,
+    .student-text,
+    .birth-year {
+        display: inline !important;
+        vertical-align: middle !important;
+        white-space: nowrap !important;
+    }
+}
