@@ -32,7 +32,7 @@ async def main_kb(user_telegram_id: int):
 def places_kb():
     kb_list = [
         [KeyboardButton(text="🥋 ГМР")],
-        [KeyboardButton(text="🥋 Сормовская"), KeyboardButton(text="🥋 Ставрапольская")],
+        [KeyboardButton(text="🥋 Сормовская"), KeyboardButton(text="🥋 Ставропольская")],
         [KeyboardButton(text="🔙 Назад")]
     ]
 

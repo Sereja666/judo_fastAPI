@@ -185,7 +185,7 @@ async def get_belt_emoji(rang_id: int) -> str:
 
 
 # --- Обработчики ---
-@user_router.message(F.text.in_(['🥋 ГМР', '🥋 Сормовская', '🥋 Ставрапольская']))
+@user_router.message(F.text.in_(['🥋 ГМР', '🥋 Сормовская', '🥋 Ставропольская']))
 async def handle_city_selection(message: Message, state: FSMContext):
     """Обработчик выбора места тренировки"""
     try:
