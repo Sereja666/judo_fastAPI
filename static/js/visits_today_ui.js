@@ -91,22 +91,48 @@ const visitsTodayUI = {
     createStudentItem(student, isSelected = false) {
         const item = document.createElement('div');
         item.className = `student-item ${isSelected ? 'selected' : ''} fade-in`;
+        item.dataset.studentId = student.id;
 
-        // Форматируем имя для мобильных
-        const displayName = this.formatStudentNameForMobile(student);
+        // Форматируем имя
+        const displayName = this.formatStudentName(student.name);
 
         item.innerHTML = `
             <div class="student-checkbox ${isSelected ? 'checked' : ''}">
                 ${isSelected ? '✓' : ''}
             </div>
-            <div class="student-name">
+            <div class="student-info">
                 <span class="belt-emoji">${student.belt_emoji || '⚪️'}</span>
-                <span class="student-text">${displayName}</span>
+                <span class="student-text" title="${student.name}">
+                    ${displayName}
+                </span>
                 ${student.birth_year ? `<span class="birth-year">${student.birth_year}</span>` : ''}
             </div>
         `;
+
         return item;
     },
+
+    formatStudentName(fullName) {
+    if (!fullName) return '';
+
+    // Убираем год рождения если он есть в имени
+    let name = fullName.replace(/\d{4}/g, '').trim();
+
+    // Форматируем для компактного отображения
+    const parts = name.split(/\s+/);
+
+    if (parts.length >= 2) {
+        // Фамилия + инициалы
+        const lastName = parts[0];
+        const initials = parts.slice(1)
+            .map(word => word.charAt(0) + '.')
+            .join('');
+        return `${lastName} ${initials}`;
+    }
+
+    // Если короткое имя
+    return name;
+},
 
     formatStudentNameForMobile(student) {
     if (!student.name) return '';
