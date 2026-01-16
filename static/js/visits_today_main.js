@@ -20,7 +20,6 @@ const visitsToday = {
 
     // Настройка обработчиков событий
     setupEventListeners() {
-        // Поиск студентов при вводе
         const searchInput = document.getElementById('search-student');
         if (searchInput) {
             searchInput.addEventListener('input', (e) => {
@@ -28,13 +27,25 @@ const visitsToday = {
             });
         }
 
-        // Закрытие результатов поиска при клике вне
         document.addEventListener('click', (e) => {
             if (!e.target.closest('#search-results') && !e.target.closest('#search-student')) {
                 this.hideSearchResults();
             }
         });
+
+        // Перерисовываем студентов при изменении размера окна
+        window.addEventListener('resize', () => {
+            this.handleWindowResize();
+        });
     },
+
+
+    handleWindowResize() {
+    // Перерисовываем список студентов если он есть
+    if (this.state.scheduleId) {
+        this.loadStudents(this.state.scheduleId);
+    }
+},
 
     // Загрузка мест тренировок
     async loadPlaces() {

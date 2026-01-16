@@ -88,28 +88,55 @@ const visitsTodayUI = {
     },
 
 
-    createStudentItem(student, isSelected = false) {
+    createStudentItem(student, isSelected = false, isNarrowScreen = false) {
         const item = document.createElement('div');
         item.className = `student-item ${isSelected ? 'selected' : ''} fade-in`;
         item.dataset.studentId = student.id;
 
-        // Форматируем имя
-        const displayName = this.formatStudentName(student.name);
+        // Определяем формат имени в зависимости от ширины экрана
+        let displayName;
+        let showBirthYear = !isNarrowScreen;
+
+        if (isNarrowScreen) {
+            // На узких экранах: только фамилия и первая буква имени
+            displayName = this.formatNameForNarrowScreen(student.name);
+        } else {
+            // На широких экранах: фамилия и инициалы
+            displayName = this.formatStudentName(student.name);
+        }
 
         item.innerHTML = `
             <div class="student-checkbox ${isSelected ? 'checked' : ''}">
                 ${isSelected ? '✓' : ''}
             </div>
-            <div class="student-info">
+            <div class="student-info force-single-line">
                 <span class="belt-emoji">${student.belt_emoji || '⚪️'}</span>
-                <span class="student-text" title="${student.name}">
+                <span class="student-text" title="${student.name}${student.birth_year ? ` (${student.birth_year})` : ''}">
                     ${displayName}
                 </span>
-                ${student.birth_year ? `<span class="birth-year">${student.birth_year}</span>` : ''}
+                ${showBirthYear && student.birth_year ? `<span class="birth-year">${student.birth_year}</span>` : ''}
             </div>
         `;
 
         return item;
+    },
+
+    formatNameForNarrowScreen(fullName) {
+        if (!fullName) return '';
+
+        // Убираем год рождения
+        let name = fullName.replace(/\d{4}/g, '').trim();
+        const parts = name.split(/\s+/);
+
+        if (parts.length >= 2) {
+            // На узких экранах: только фамилия и первая буква имени
+            const lastName = parts[0];
+            const firstNameInitial = parts[1].charAt(0) + '.';
+            return `${lastName} ${firstNameInitial}`;
+        }
+
+        // Если только фамилия
+        return parts[0] || '';
     },
 
     formatStudentName(fullName) {
