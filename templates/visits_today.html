@@ -122,13 +122,23 @@
     </div>
 </div>
 
+<!-- В конце visits_today.html -->
 <script src="/static/js/visits_today_api.js"></script>
 <script src="/static/js/visits_today_ui.js"></script>
 <script src="/static/js/visits_today_main.js"></script>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        visitsToday.init();
+        // Проверяем, что все объекты определены
+        console.log('visitsTodayApi:', typeof visitsTodayApi);
+        console.log('visitsTodayUI:', typeof visitsTodayUI);
+        console.log('visitsToday:', typeof visitsToday);
+
+        if (typeof visitsToday !== 'undefined') {
+            visitsToday.init();
+        } else {
+            console.error('visitsToday не определен');
+        }
     });
 </script>
 {% endblock %}
