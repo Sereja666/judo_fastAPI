@@ -87,17 +87,47 @@ const visitsTodayUI = {
         return button;
     },
 
+
     createStudentItem(student, isSelected = false) {
         const item = document.createElement('div');
         item.className = `student-item ${isSelected ? 'selected' : ''} fade-in`;
+
+        // Форматируем имя для мобильных
+        const displayName = this.formatStudentNameForMobile(student);
+
         item.innerHTML = `
             <div class="student-checkbox ${isSelected ? 'checked' : ''}">
                 ${isSelected ? '✓' : ''}
             </div>
-            <div class="student-name">${student.display_name}</div>
+            <div class="student-name">
+                <span class="belt-emoji">${student.belt_emoji || '⚪️'}</span>
+                <span class="student-text">${displayName}</span>
+                ${student.birth_year ? `<span class="birth-year">${student.birth_year}</span>` : ''}
+            </div>
         `;
         return item;
     },
+
+    formatStudentNameForMobile(student) {
+    if (!student.name) return '';
+
+    // Вариант 1: Фамилия + инициалы
+    const nameParts = student.name.trim().split(/\s+/);
+    if (nameParts.length >= 2) {
+        const lastName = nameParts[0];
+        const initials = nameParts.slice(1)
+            .map(word => word.charAt(0) + '.')
+            .join('');
+        return `${lastName} ${initials}`;
+    }
+
+    // Вариант 2: Ограничение длины
+    if (student.name.length > 20) {
+        return student.name.substring(0, 18) + '...';
+    }
+
+    return student.name;
+},
 
     createSearchResultItem(student) {
         const item = document.createElement('div');
