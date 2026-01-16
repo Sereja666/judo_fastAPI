@@ -67,11 +67,11 @@ async def admin_page_kb(user_telegram_id: int):
         [KeyboardButton(text="📋 Медсправка")]  # Теперь это меню
     ]
 
-    # Проверяем права пользователя через базу данных
-    user_permissions = await get_user_permissions(user_telegram_id)
+    # # Проверяем права пользователя через базу данных
+    # user_permissions = await get_user_permissions(user_telegram_id)
 
-    if user_permissions in [99, 2]:  # Админ
-        kb_list.append([KeyboardButton(text="⚙️ Админ панель")])
+    # if user_permissions in [99, 2]:  # Админ
+    #     kb_list.append([KeyboardButton(text="⚙️ Админ панель")])
 
     return ReplyKeyboardMarkup(
         keyboard=kb_list,
