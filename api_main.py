@@ -17,6 +17,7 @@ from api.tg_membership import router as admin_router
 from api.visits import router as visits_router
 from api.competitions import router as competitions_router
 from api.auth import router as auth_router
+from api.visits_today import router as visits_today_router
 from config import templates
 from logger_config import logger
 
@@ -63,6 +64,7 @@ app.include_router(visits_router, tags=["visits"])
 app.include_router(competitions_router, tags=["competitions"])
 app.include_router(admin_router, tags=["admin"])
 app.include_router(auth_router, prefix="/api/auth", tags=["auth"])  # Оставляем /api/auth для API
+app.include_router(visits_today_router, tags=["visits-today"])
 
 
 

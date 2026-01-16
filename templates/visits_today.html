@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}Посещения сегодня{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="/static/css/visits_today.css">
+<div class="container-fluid p-2">
+    <div class="row justify-content-center">
+        <div class="col-12">
+            <div class="card mobile-card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0 text-center">
+                        <i class="fas fa-clipboard-check me-2"></i>Посещения сегодня
+                    </h4>
+                </div>
+                
+                <div class="card-body p-3">
+                    <!-- Шаг 1: Выбор места -->
+                    <div id="step1" class="visits-step">
+                        <h5 class="text-center mb-4">🏢 Выберите место тренировки</h5>
+                        <div class="d-grid gap-2" id="places-list">
+                            <div class="text-center">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Загрузка...</span>
+                                </div>
+                                <p class="mt-2">Загружаем места тренировок...</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Шаг 2: Выбор времени -->
+                    <div id="step2" class="visits-step d-none">
+                        <div class="d-flex align-items-center mb-3">
+                            <button class="btn btn-outline-secondary btn-sm me-2" onclick="visitsToday.backToStep1()">
+                                <i class="fas fa-arrow-left"></i>
+                            </button>
+                            <h5 class="mb-0" id="place-title"></h5>
+                        </div>
+                        <h6 class="text-center mb-3">🕒 Выберите время тренировки</h6>
+                        <div class="d-grid gap-2" id="trainings-list">
+                            <!-- Тренировки будут здесь -->
+                        </div>
+                    </div>
+                    
+                    <!-- Шаг 3: Выбор студентов -->
+                    <div id="step3" class="visits-step d-none">
+                        <div class="d-flex align-items-center mb-3">
+                            <button class="btn btn-outline-secondary btn-sm me-2" onclick="visitsToday.backToStep2()">
+                                <i class="fas fa-arrow-left"></i>
+                            </button>
+                            <div>
+                                <h5 class="mb-0" id="training-title"></h5>
+                                <small class="text-muted" id="training-time"></small>
+                            </div>
+                        </div>
+                        
+                        <!-- Список студентов -->
+                        <div class="mb-4">
+                            <h6 class="text-center mb-3">
+                                <i class="fas fa-users me-2"></i>Выберите студентов
+                                <span class="badge bg-primary ms-2" id="selected-count">0</span>
+                            </h6>
+                            <div id="students-list" class="students-container">
+                                <!-- Студенты будут здесь -->
+                            </div>
+                        </div>
+                        
+                        <!-- Поиск дополнительного студента -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-user-plus me-2"></i>Добавить ученика вне расписания
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="input-group mb-3">
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="search-student" 
+                                           placeholder="Начните вводить ФИО...">
+                                    <button class="btn btn-outline-primary" type="button" onclick="visitsToday.searchExtraStudent()">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                                <div id="search-results" class="search-results-container"></div>
+                                <div id="extra-students-list" class="extra-students-list mt-3"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Кнопки действий -->
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-success btn-lg" onclick="visitsToday.saveAttendance()">
+                                <i class="fas fa-save me-2"></i>Сохранить посещения
+                            </button>
+                            <button class="btn btn-info" onclick="visitsToday.showAttendanceStatus()">
+                                <i class="fas fa-chart-bar me-2"></i>Показать кто пришел
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно статуса -->
+<div class="modal fade" id="statusModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-chart-bar me-2"></i>Статус посещений
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="status-content">
+                    <!-- Статус будет здесь -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/static/js/visits_today_api.js"></script>
+<script src="/static/js/visits_today_ui.js"></script>
+<script src="/static/js/visits_today_main.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        visitsToday.init();
+    });
+</script>
+{% endblock %}
