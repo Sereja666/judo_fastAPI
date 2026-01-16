@@ -114,14 +114,15 @@
 
     /* Если очень тесно, скрываем год рождения */
     @media (max-width: 400px) {
-        .birth-year {
-            display: none;
+        .students-container {
+            min-width: 300px;
+            overflow-x: auto; /* Горизонтальная прокрутка если не помещается */
         }
-        .student-text {
-            padding-right: 0;
+
+        .student-item {
+            min-width: 280px;
         }
     }
-}
 
 /* ДЛЯ ОЧЕНЬ УЗКИХ ЭКРАНОВ - ГАРАНТИРУЕМ ОДНУ СТРОКУ */
 @media (max-width: 360px) {
