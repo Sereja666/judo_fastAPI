@@ -1,3 +1,16 @@
+const isMobile = {
+    Android: function() {
+        return navigator.userAgent.match(/Android/i);
+    },
+    iOS: function() {
+        return navigator.userAgent.match(/iPhone|iPad|iPod/i);
+    },
+    any: function() {
+        return (isMobile.Android() || isMobile.iOS());
+    }
+};
+
+
 // visits_today_main.js - основная логика приложения
 const visitsToday = {
     // Состояние приложения
@@ -14,6 +27,13 @@ const visitsToday = {
     // Инициализация
     init() {
         console.log('Инициализация системы посещений...');
+        console.log('Мобильное устройство:', isMobile.any() ? 'Да' : 'Нет');
+
+        // Добавляем класс для мобильных
+        if (isMobile.any() || window.innerWidth < 768) {
+            document.body.classList.add('mobile-device');
+        }
+
         this.loadPlaces();
         this.setupEventListeners();
     },

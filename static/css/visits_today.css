@@ -180,3 +180,122 @@
     flex-shrink: 0 !important;
     white-space: nowrap !important;
 }
+
+/* ============================================
+   МОБИЛЬНЫЕ СТИЛИ (ТОЛЬКО ДЛЯ ЭКРАНОВ < 768px)
+   Ничего не трогаем для десктопа!
+============================================ */
+
+/* Стили применяются ТОЛЬКО когда экран уже мобильного размера */
+@media screen and (max-width: 767px) {
+    /* Переопределяем ТОЛЬКО проблемные стили */
+    .student-item {
+        display: flex !important;
+        align-items: center !important;
+        padding: 10px 12px !important;
+        min-height: 44px !important;
+        gap: 10px !important;
+    }
+
+    .student-checkbox {
+        width: 22px !important;
+        height: 22px !important;
+        flex-shrink: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* Самый важный фикс - гарантируем одну строку */
+    .student-info {
+        display: flex !important;
+        align-items: center !important;
+        flex: 1 !important;
+        min-width: 0 !important; /* Критически важно! */
+        overflow: hidden !important;
+        gap: 6px !important;
+    }
+
+    .belt-emoji {
+        font-size: 18px !important;
+        flex-shrink: 0 !important;
+        line-height: 1 !important;
+        margin: 0 !important;
+    }
+
+    .student-text {
+        flex: 1 !important;
+        font-size: 15px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        min-width: 0 !important; /* Критически важно! */
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .birth-year {
+        font-size: 13px !important;
+        flex-shrink: 0 !important;
+        white-space: nowrap !important;
+        margin-left: auto !important; /* Прижимаем к правому краю */
+        padding-left: 8px !important;
+        color: #6c757d !important;
+    }
+}
+
+/* Для очень узких телефонов (iPhone 5, старые Android) */
+@media screen and (max-width: 360px) {
+    .student-item {
+        padding: 8px 10px !important;
+        gap: 8px !important;
+    }
+
+    .belt-emoji {
+        font-size: 16px !important;
+    }
+
+    .student-text {
+        font-size: 14px !important;
+    }
+
+    .birth-year {
+        font-size: 12px !important;
+        padding-left: 6px !important;
+    }
+}
+
+/* Для экстремально узких экранов скрываем год рождения */
+@media screen and (max-width: 320px) {
+    .birth-year {
+        display: none !important;
+    }
+
+    .student-text {
+        padding-right: 0 !important;
+    }
+}
+
+/* Стили применяются ТОЛЬКО когда есть класс .mobile-device */
+body.mobile-device .student-item {
+    display: flex !important;
+    align-items: center !important;
+    padding: 10px 12px !important;
+}
+
+body.mobile-device .student-info {
+    display: flex !important;
+    align-items: center !important;
+    flex: 1 !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+}
+
+body.mobile-device .student-text {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    min-width: 0 !important;
+}
+
+body.mobile-device .birth-year {
+    margin-left: auto !important;
+}
