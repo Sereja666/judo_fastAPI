@@ -4,7 +4,7 @@ from sqlalchemy import create_engine, Column, Integer, String, MetaData, Date, B
     BigInteger, UniqueConstraint
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession, create_async_engine
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
-
+from sqlalchemy.sql import func
 from config import settings
 
 engine = create_engine(settings.db.db_url, connect_args={"options": "-c timezone=Europe/Moscow"})
