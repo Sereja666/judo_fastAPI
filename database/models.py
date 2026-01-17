@@ -392,23 +392,6 @@ class MedicalCertificates(Base):
     processed_date = Column(Date())
 
 
-class UserSportSubscription(Base):
-    __tablename__ = 'user_sport_subscriptions'
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey('tg_notif_user.id', ondelete='CASCADE'), nullable=False)
-    sport_hashtag = Column(String(50), nullable=False)
-    is_active = Column(Boolean, default=True, server_default='true')
-    created_at = Column(DateTime, default=datetime.utcnow, server_default=func.now())
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    # Связь с пользователем
-    user = relationship("Tg_notif_user", back_populates="sport_subscriptions")
-
-    # Уникальный индекс
-    __table_args__ = (
-        UniqueConstraint('user_id', 'sport_hashtag', name='uq_user_sport_hashtag'),
-    )
 
 if __name__ == "__main__":
     Base.metadata.create_all(engine)
