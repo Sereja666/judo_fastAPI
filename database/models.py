@@ -161,6 +161,7 @@ class Prices(Base):
     description = Column(String())
 
 
+
 # Факт оплаты
 class Payment(Base):
     """

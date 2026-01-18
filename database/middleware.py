@@ -174,6 +174,8 @@ class DualAuthMiddleware(BaseHTTPMiddleware):
 
 
 
+
+
 class SimpleCSRFProtection(BaseHTTPMiddleware):
     """
     Простейшая CSRF защита через проверку заголовков Origin/Referer

@@ -4,7 +4,7 @@ from config import templates, settings
 from fastapi import APIRouter, Request, Form, Depends, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_, select, distinct, func
+from sqlalchemy import and_, or_, select
 from typing import Optional, List
 from datetime import datetime
 from database.models import get_db, Students, Sport, Trainers, Prices, Sports_rank, Belt_сolor, MedCertificat_received, \
@@ -108,178 +108,85 @@ async def get_student_data(student_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"Ошибка загрузки данных: {str(e)}")
 
 
-# api/students.py - найдите endpoint для сохранения ученика
-@router.put("/api/student/{student_id}")
+@router.post("/edit-students/update-student")
 async def update_student(
-        student_id: int,
-        request: Request,
-        db: AsyncSession = Depends(get_db_async)
+        student_id: int = Form(...),
+        name: str = Form(...),
+        birthday: Optional[str] = Form(None),
+        sport_discipline: Optional[str] = Form(None),
+        rang: Optional[str] = Form(None),
+        sports_rank: Optional[str] = Form(None),
+        sex: Optional[str] = Form(None),
+        weight: Optional[str] = Form(None),
+        head_trainer_id: Optional[str] = Form(None),
+        second_trainer_id: Optional[str] = Form(None),
+        price: Optional[str] = Form(None),
+        payment_day: Optional[str] = Form(None),
+        classes_remaining: Optional[str] = Form(None),
+        expected_payment_date: Optional[str] = Form(None),
+        telephone: Optional[str] = Form(None),
+        parent1: Optional[str] = Form(None),
+        parent2: Optional[str] = Form(None),
+        date_start: Optional[str] = Form(None),
+        telegram_id: Optional[str] = Form(None),
+        active: Optional[str] = Form(None),
+        db: Session = Depends(get_db)
 ):
     """Обновление данных ученика"""
     try:
-        # Проверяем авторизацию
-        user_info = getattr(request.state, 'user', None)
-        if not user_info or not user_info.get("authenticated"):
-            raise HTTPException(status_code=401, detail="Не авторизован")
+        print(f"Получены данные для student_id: {student_id}")
 
-        # Пробуем получить данные как form-data (обычная форма)
-        form_data = await request.form()
-
-        # Если это не form-data, пробуем как JSON
-        if not form_data:
-            try:
-                data = await request.json()
-            except:
-                data = {}
-        else:
-            data = dict(form_data)
-
-        # Находим ученика
-        student = await db.execute(
-            select(models.Students)
-            .filter(models.Students.id == student_id)
-        )
-        student = student.scalar_one_or_none()
-
+        student = db.query(Students).filter(Students.id == student_id).first()
         if not student:
             raise HTTPException(status_code=404, detail="Ученик не найден")
 
+        # Функция для безопасного преобразования
+        def parse_value(value):
+            if value is None or value == "":
+                return None
+            return value
+
+        def parse_int(value):
+            if value is None or value == "":
+                return None
+            try:
+                return int(value)
+            except (ValueError, TypeError):
+                return None
+
+        def parse_bool(value):
+            return value == "on"
+
         # Обновляем поля
-        update_fields = [
-            'name', 'birthday', 'sport_discipline', 'rang', 'sports_rank',
-            'sex', 'weight', 'head_trainer_id', 'second_trainer_id',
-            'price', 'payment_day', 'classes_remaining', 'expected_payment_date',
-            'telephone', 'parent1', 'parent2', 'date_start', 'telegram_id', 'active'
-        ]
+        student.name = name
+        student.birthday = datetime.fromisoformat(birthday) if birthday else None
+        student.sport_discipline = parse_int(sport_discipline)
+        student.rang = parse_value(rang)
+        student.sports_rank = parse_int(sports_rank)
+        student.sex = parse_value(sex)
+        student.weight = parse_int(weight)
+        student.head_trainer_id = parse_int(head_trainer_id)
+        student.second_trainer_id = parse_int(second_trainer_id)
+        student.price = parse_int(price)
+        student.payment_day = parse_int(payment_day)
+        student.classes_remaining = parse_int(classes_remaining)
+        student.expected_payment_date = datetime.fromisoformat(
+            expected_payment_date).date() if expected_payment_date else None
+        student.telephone = parse_value(telephone)
+        student.parent1 = parse_int(parent1)
+        student.parent2 = parse_int(parent2)
+        student.date_start = datetime.fromisoformat(date_start) if date_start else None
+        student.telegram_id = parse_int(telegram_id)
+        student.active = parse_bool(active)
 
-        for field in update_fields:
-            if field in data:
-                value = data[field]
+        db.commit()
 
-                # Преобразуем типы данных
-                if field in ['price', 'payment_day', 'classes_remaining', 'weight', 'telegram_id']:
-                    if value is not None and value != '':
-                        try:
-                            value = int(value)
-                        except (ValueError, TypeError):
-                            value = None
-                    else:
-                        value = None
-
-                elif field in ['birthday', 'date_start', 'expected_payment_date']:
-                    if value and value != '':
-                        try:
-                            # Преобразуем строку в дату/время
-                            if 'T' in value:
-                                # Формат: YYYY-MM-DDTHH:MM
-                                value = datetime.strptime(value, '%Y-%m-%dT%H:%M')
-                            else:
-                                # Формат: YYYY-MM-DD
-                                value = datetime.strptime(value, '%Y-%m-%d').date()
-                        except:
-                            value = None
-                    else:
-                        value = None
-
-                elif field == 'active':
-                    value = str(value).lower() in ['true', '1', 'yes', 'on']
-
-                setattr(student, field, value)
-
-        # Сохраняем изменения
-        await db.commit()
-        await db.refresh(student)
-
-        return {
-            "success": True,
-            "message": "Данные ученика обновлены",
-            "student_id": student.id,
-            "student_name": student.name
-        }
+        return JSONResponse({"status": "success", "message": "Данные ученика успешно обновлены"})
 
     except Exception as e:
-        logger.error(f"Error updating student: {str(e)}")
-        await db.rollback()
+        db.rollback()
+        logger.error(f"Ошибка при сохранении: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Ошибка обновления: {str(e)}")
-# @router.post("/edit-students/update-student")
-# async def update_student(
-#         student_id: int = Form(...),
-#         name: str = Form(...),
-#         birthday: Optional[str] = Form(None),
-#         sport_discipline: Optional[str] = Form(None),
-#         rang: Optional[str] = Form(None),
-#         sports_rank: Optional[str] = Form(None),
-#         sex: Optional[str] = Form(None),
-#         weight: Optional[str] = Form(None),
-#         head_trainer_id: Optional[str] = Form(None),
-#         second_trainer_id: Optional[str] = Form(None),
-#         price: Optional[str] = Form(None),
-#         payment_day: Optional[str] = Form(None),
-#         classes_remaining: Optional[str] = Form(None),
-#         expected_payment_date: Optional[str] = Form(None),
-#         telephone: Optional[str] = Form(None),
-#         parent1: Optional[str] = Form(None),
-#         parent2: Optional[str] = Form(None),
-#         date_start: Optional[str] = Form(None),
-#         telegram_id: Optional[str] = Form(None),
-#         active: Optional[str] = Form(None),
-#         db: Session = Depends(get_db)
-# ):
-#     """Обновление данных ученика"""
-#     try:
-#         print(f"Получены данные для student_id: {student_id}")
-#
-#         student = db.query(Students).filter(Students.id == student_id).first()
-#         if not student:
-#             raise HTTPException(status_code=404, detail="Ученик не найден")
-#
-#         # Функция для безопасного преобразования
-#         def parse_value(value):
-#             if value is None or value == "":
-#                 return None
-#             return value
-#
-#         def parse_int(value):
-#             if value is None or value == "":
-#                 return None
-#             try:
-#                 return int(value)
-#             except (ValueError, TypeError):
-#                 return None
-#
-#         def parse_bool(value):
-#             return value == "on"
-#
-#         # Обновляем поля
-#         student.name = name
-#         student.birthday = datetime.fromisoformat(birthday) if birthday else None
-#         student.sport_discipline = parse_int(sport_discipline)
-#         student.rang = parse_value(rang)
-#         student.sports_rank = parse_int(sports_rank)
-#         student.sex = parse_value(sex)
-#         student.weight = parse_int(weight)
-#         student.head_trainer_id = parse_int(head_trainer_id)
-#         student.second_trainer_id = parse_int(second_trainer_id)
-#         student.price = parse_int(price)
-#         student.payment_day = parse_int(payment_day)
-#         student.classes_remaining = parse_int(classes_remaining)
-#         student.expected_payment_date = datetime.fromisoformat(
-#             expected_payment_date).date() if expected_payment_date else None
-#         student.telephone = parse_value(telephone)
-#         student.parent1 = parse_int(parent1)
-#         student.parent2 = parse_int(parent2)
-#         student.date_start = datetime.fromisoformat(date_start) if date_start else None
-#         student.telegram_id = parse_int(telegram_id)
-#         student.active = parse_bool(active)
-#
-#         db.commit()
-#
-#         return JSONResponse({"status": "success", "message": "Данные ученика успешно обновлены"})
-#
-#     except Exception as e:
-#         db.rollback()
-#         logger.error(f"Ошибка при сохранении: {str(e)}")
-#         raise HTTPException(status_code=500, detail=f"Ошибка обновления: {str(e)}")
 
 
 @router.post("/edit-students/create-student")
@@ -371,50 +278,6 @@ async def create_student(
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Ошибка создания: {str(e)}")
 
-
-@router.post("/students/update")
-async def update_student_direct(
-        request: Request,
-        db: Session = Depends(get_db)  # Синхронная версия проще для отладки
-):
-    """Упрощенная версия для отладки"""
-    try:
-        print("🔹 /students/update endpoint вызван")
-
-        # Получаем данные
-        try:
-            data = await request.json()
-            print(f"Полученные данные: {data}")
-        except Exception as e:
-            print(f"Ошибка парсинга JSON: {e}")
-            return JSONResponse({"success": False, "error": "Ошибка парсинга JSON"})
-
-        student_id = data.get('student_id')
-        if not student_id:
-            return JSONResponse({"success": False, "error": "Нет student_id"})
-
-        student = db.query(Students).filter(Students.id == student_id).first()
-        if not student:
-            return JSONResponse({"success": False, "error": "Ученик не найден"})
-
-        # Обновляем поля
-        update_fields = ['name', 'telephone', 'weight', 'price', 'payment_day']
-        for field in update_fields:
-            if field in data and data[field] != '':
-                setattr(student, field, data[field])
-
-        db.commit()
-
-        return JSONResponse({
-            "success": True,
-            "message": f"Данные ученика {student.name} обновлены",
-            "student_id": student.id
-        })
-
-    except Exception as e:
-        print(f"Ошибка в /students/update: {str(e)}")
-        db.rollback()
-        return JSONResponse({"success": False, "error": str(e)})
 
 @router.get("/edit-students/get-prices")
 async def get_prices(db: Session = Depends(get_db)):
@@ -516,6 +379,7 @@ async def update_medical_certificate(
 
         if not certificate:
             raise HTTPException(status_code=404, detail="Справка не найдена")
+
 
 
         # Обновляем поля
@@ -1022,21 +886,21 @@ async def process_student_payment(
         request: Request,
         db: AsyncSession = Depends(get_db_async)
 ):
-    """Обработка оплаты для ученика"""
+    """Обработка оплаты для ученика через веб-интерфейс"""
     try:
-        # Проверяем авторизацию
+        # Проверяем авторизацию пользователя
         user_info = getattr(request.state, 'user', None)
         if not user_info or not user_info.get("authenticated"):
             raise HTTPException(status_code=401, detail="Не авторизован")
 
-        # Получаем данные
+        # Получаем данные из запроса
         data = await request.json()
         amount = int(data.get('amount', 0))
 
         if amount <= 0:
             raise HTTPException(status_code=400, detail="Сумма должна быть больше 0")
 
-        # Используем ту же функцию что и в aiogram
+        # Используем асинхронную функцию из db_funk.py
         from db_handler.db_funk import process_payment_via_web
         result = await process_payment_via_web(student_id, amount)
 
@@ -1046,221 +910,22 @@ async def process_student_payment(
                 "message": result["message"],
                 "new_balance": result["new_balance"],
                 "classes_added": result["classes_added"],
-                "next_payment_date": result["next_payment_date"]
+                "next_payment_date": result["next_payment_date"],
+                "student_name": result["student_name"],
+                "price_description": result["price_description"]
             }
         else:
             raise HTTPException(status_code=400, detail=result["error"])
 
     except ValueError:
         raise HTTPException(status_code=400, detail="Неверный формат суммы")
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-# api/students.py - добавьте этот endpoint
-
-@router.post("/api/student/{student_id}/update-balance")
-async def update_student_balance(
-        student_id: int,
-        request: Request,
-        db: AsyncSession = Depends(get_db_async)
-):
-    """Обновление баланса ученика с сохранением логов"""
-    try:
-        # Проверяем авторизацию
-        user_info = getattr(request.state, 'user', None)
-        if not user_info or not user_info.get("authenticated"):
-            return JSONResponse(
-                status_code=401,
-                content={"success": False, "error": "Не авторизован"}
-            )
-
-        user_id = user_info.get("user_id", 0)  # ID пользователя из middleware
-
-        # Получаем данные
-        try:
-            data = await request.json()
-        except Exception as e:
-            return JSONResponse(
-                status_code=400,
-                content={"success": False, "error": f"Неверный формат JSON: {str(e)}"}
-            )
-
-        new_balance = data.get('new_balance')
-        reason = data.get('reason', 'Ручная корректировка')
-
-        if new_balance is None:
-            return JSONResponse(
-                status_code=400,
-                content={"success": False, "error": "Не указан новый баланс"}
-            )
-
-        # Преобразуем в число
-        try:
-            new_balance = int(new_balance)
-        except (ValueError, TypeError):
-            return JSONResponse(
-                status_code=400,
-                content={"success": False, "error": "Баланс должен быть числом"}
-            )
-
-        if new_balance < 0:
-            return JSONResponse(
-                status_code=400,
-                content={"success": False, "error": "Баланс не может быть отрицательным"}
-            )
-
-        # 1. Получаем ученика
-        from database.models import Students
-        result = await db.execute(
-            select(Students).filter(Students.id == student_id)
-        )
-        student = result.scalar_one_or_none()
-
-        if not student:
-            return JSONResponse(
-                status_code=404,
-                content={"success": False, "error": "Ученик не найден"}
-            )
-
-        old_balance = student.classes_remaining or 0
-        difference = new_balance - old_balance
-
-        # 2. Сохраняем в лог (если таблица существует)
-        try:
-            from database.models import BalanceLog
-            balance_log = BalanceLog(
-                student_id=student_id,
-                old_balance=old_balance,
-                new_balance=new_balance,
-                difference=difference,
-                reason=reason,
-                changed_by=user_id
-            )
-            db.add(balance_log)
-        except Exception as e:
-            print(f"Note: Could not save balance log (table might not exist): {str(e)}")
-            # Продолжаем без лога если таблицы нет
-
-        # 3. Обновляем баланс ученика
-        student.classes_remaining = new_balance
-
-        # 4. Если разница большая, обновляем дату оплаты
-        if abs(difference) > 5:
-            try:
-                from database.models import Students_schedule, Schedule
-
-                # Получаем количество дней тренировок в неделю
-                schedule_result = await db.execute(
-                    select(func.count(distinct(Students_schedule.schedule)))
-                    .join(Schedule, Students_schedule.schedule == Schedule.id)
-                    .filter(Students_schedule.student == student_id)
-                )
-                days_per_week = schedule_result.scalar() or 1
-
-                if days_per_week > 0 and new_balance > 0:
-                    weeks_remaining = new_balance / days_per_week
-                    if weeks_remaining < 1:
-                        weeks_remaining = 1
-                    else:
-                        weeks_remaining = ceil(weeks_remaining)
-
-                    new_payment_date = datetime.now().date() + timedelta(days=weeks_remaining * 7 + 3)
-                    student.expected_payment_date = new_payment_date
-                    payment_date_info = f"Дата оплаты обновлена: {new_payment_date.strftime('%d.%m.%Y')}"
-                else:
-                    payment_date_info = "Дата оплаты не изменилась"
-            except Exception as e:
-                print(f"Note: Could not calculate new payment date: {str(e)}")
-                payment_date_info = ""
-        else:
-            payment_date_info = ""
-
-        # 5. Сохраняем изменения
-        await db.commit()
-
-        difference_text = f"({difference:+d})" if difference != 0 else ""
-
-        return {
-            "success": True,
-            "message": f"Баланс обновлен: {old_balance} → {new_balance} {difference_text}",
-            "old_balance": old_balance,
-            "new_balance": new_balance,
-            "difference": difference,
-            "reason": reason,
-            "payment_date_info": payment_date_info,
-            "student_name": student.name
-        }
-
-    except Exception as e:
-        print(f"Error updating balance: {str(e)}")
-        import traceback
-        traceback.print_exc()  # Печатаем полный traceback для отладки
-
-        try:
-            await db.rollback()
-        except:
-            pass
-
-        return JSONResponse(
-            status_code=500,
-            content={"success": False, "error": f"Внутренняя ошибка сервера: {str(e)}"}
-        )
+        logger.error(f"Error processing payment: {str(e)}")
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
-# api/students.py - endpoint для получения логов
-@router.get("/api/student/{student_id}/balance-history")
-async def get_balance_history(
-        student_id: int,
-        request: Request,
-        db: AsyncSession = Depends(get_db_async)
-):
-    """Получение истории изменений баланса ученика"""
-    try:
-        # Проверяем авторизацию
-        user_info = getattr(request.state, 'user', None)
-        if not user_info or not user_info.get("authenticated"):
-            return JSONResponse(
-                status_code=401,
-                content={"success": False, "error": "Не авторизован"}
-            )
-
-        from database.models import BalanceLog
-
-        # Получаем логи
-        logs = await db.execute(
-            select(BalanceLog)
-            .filter(BalanceLog.student_id == student_id)
-            .order_by(BalanceLog.changed_at.desc())
-            .limit(50)
-        )
-        logs_list = logs.scalars().all()
-
-        # Форматируем ответ
-        history = []
-        for log in logs_list:
-            history.append({
-                "id": log.id,
-                "old_balance": log.old_balance,
-                "new_balance": log.new_balance,
-                "difference": log.difference,
-                "reason": log.reason or "Не указана",
-                "changed_at": log.changed_at.strftime("%d.%m.%Y %H:%M"),
-                "changed_by": log.changed_by
-            })
-
-        return {
-            "success": True,
-            "student_id": student_id,
-            "history": history,
-            "total": len(history)
-        }
-
-    except Exception as e:
-        print(f"Error getting balance history: {str(e)}")
-        return JSONResponse(
-            status_code=500,
-            content={"success": False, "error": str(e)}
-        )
 
 @router.get("/api/prices")
 async def get_prices(
@@ -1294,7 +959,7 @@ async def get_prices(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-#  __________________Справки_поБОлезням_______________________________________
+# api/students.py - добавьте эти endpoints
 
 @router.post("/api/student/{student_id}/medical-certificate")
 async def add_medical_certificate(

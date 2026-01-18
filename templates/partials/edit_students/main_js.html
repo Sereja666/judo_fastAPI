@@ -1,63 +1,6 @@
 <!-- templates/partials/edit_students/main_js.html -->
 <script>
     $(document).ready(function() {
-        // ================== ИСПРАВЛЕНИЕ КНОПКИ СОХРАНЕНИЯ ==================
-        console.log('🔧 Инициализация формы редактирования учеников');
-
-        // 1. Создаем или находим кнопку сохранения
-        function initSaveButton() {
-            console.log('🔍 Поиск кнопки сохранения...');
-
-            // Ищем существующую кнопку
-            let saveButton = $('#studentForm button').filter(function() {
-                const text = $(this).text().trim().toLowerCase();
-                return text.includes('сохранить изменения') ||
-                       text.includes('сохранить') ||
-                       $(this).hasClass('btn-primary') ||
-                       $(this).hasClass('btn-lg');
-            }).first();
-
-            // Если кнопка не найдена, создаем новую
-            if (!saveButton.length) {
-                console.log('⚠️ Кнопка не найдена, создаю новую...');
-                saveButton = $(`
-                    <button type="submit" class="btn btn-primary btn-lg" id="mainSaveButton">
-                        <i class="fas fa-save"></i>
-                        Сохранить изменения
-                    </button>
-                `);
-
-                // Добавляем кнопку в форму
-                $('#studentForm').append(saveButton);
-                console.log('✅ Создана новая кнопка сохранения');
-            } else {
-                console.log('✅ Найдена существующая кнопка:', saveButton);
-
-                // Проверяем и добавляем type="submit" если его нет
-                if (!saveButton.attr('type')) {
-                    saveButton.attr('type', 'submit');
-                    console.log('✅ Добавлен type="submit" к кнопке');
-                }
-
-                // Обновляем текст кнопки если нужно
-                const buttonText = saveButton.text().trim().toLowerCase();
-                if (!buttonText.includes('сохранить')) {
-                    saveButton.html('<i class="fas fa-save"></i> Сохранить изменения');
-                    console.log('✅ Обновлен текст кнопки');
-                }
-            }
-
-            // Сохраняем ссылку на кнопку
-            window.saveButtonElement = saveButton[0];
-            return saveButton;
-        }
-
-        // Инициализируем кнопку
-        const saveButton = initSaveButton();
-        console.log('✅ Кнопка сохранения готова:', saveButton);
-
-        // ================== ОСНОВНАЯ ИНИЦИАЛИЗАЦИЯ ==================
-
         // Инициализация Select2 для поиска учеников
         $('#studentSelect').select2({
             language: "ru",
@@ -72,7 +15,7 @@
                 loadStudentData(studentId);
                 $('#studentCard').removeClass('hidden');
                 $('#studentCard h3').text('Карточка ученика');
-                saveButton.html('<i class="fas fa-save"></i> Сохранить изменения');
+                $('#studentForm button[type="submit"]').html('<i class="fas fa-save"></i> Сохранить изменения');
             } else {
                 $('#studentCard').addClass('hidden');
             }
@@ -81,14 +24,7 @@
         // Обработка отправки формы ученика
         $('#studentForm').submit(function(e) {
             e.preventDefault();
-            console.log('🎯 Событие submit формы!');
             updateStudent();
-        });
-
-        // Дополнительный обработчик на кнопку (на всякий случай)
-        saveButton.on('click', function(e) {
-            console.log('🎯 Событие click кнопки!');
-            // Не вызываем preventDefault здесь, чтобы не мешать submit событию
         });
 
         // Обработчик события скрытия модального окна
@@ -106,8 +42,6 @@
             $('#competition_id').prop('disabled', false);
             $('#deleteAwardBtn').addClass('hidden');
         });
-
-        console.log('✅ Все обработчики инициализированы');
     });
 
     // ================== ОСНОВНЫЕ ФУНКЦИИ УЧЕНИКА ==================
@@ -175,6 +109,8 @@
         });
     }
 
+
+
     function loadStudentParents(studentId) {
         console.log('🔄 Загрузка родителей ученика ID:', studentId);
 
@@ -220,11 +156,14 @@
         });
     }
 
+
+
+
     function updateStudent() {
         const formData = new FormData(document.getElementById('studentForm'));
         const studentId = $('#studentId').val();
 
-        console.log('📤 Отправка данных ученика:', Object.fromEntries(formData));
+        console.log('Отправка данных ученика:', Object.fromEntries(formData));
         console.log('Student ID:', studentId);
 
         // Проверяем обязательные поля
@@ -237,12 +176,6 @@
         // Определяем URL и метод в зависимости от того, новый это ученик или существующий
         const url = studentId === 'new' ? '/edit-students/create-student' : '/edit-students/update-student';
         const method = 'POST';
-
-        // Показываем индикатор загрузки
-        const saveButton = $('button[type="submit"]', '#studentForm').first();
-        const originalHTML = saveButton.html();
-        saveButton.html('<i class="fas fa-spinner fa-spin me-1"></i> Сохранение...');
-        saveButton.prop('disabled', true);
 
         fetch(url, {
             method: method,
@@ -264,7 +197,7 @@
                 // После создания нового ученика
                 $('#studentId').val(data.student_id);
                 $('#studentCard h3').text('Карточка ученика');
-                saveButton.html('<i class="fas fa-save"></i> Сохранить изменения');
+                $('#studentForm button[type="submit"]').html('<i class="fas fa-save"></i> Сохранить изменения');
 
                 // Добавляем нового ученика в выпадающий список
                 const newStudentName = $('#name').val();
@@ -282,11 +215,6 @@
         .catch(error => {
             console.error('❌ Ошибка сохранения:', error);
             showMessage('Ошибка сохранения: ' + error.message, 'danger');
-        })
-        .finally(() => {
-            // Восстанавливаем кнопку
-            saveButton.html(originalHTML);
-            saveButton.prop('disabled', false);
         });
     }
 
@@ -353,10 +281,7 @@
         $('#studentCard h3').text('Новый ученик');
 
         // Меняем текст кнопки сохранения
-        const saveButton = $('button[type="submit"]', '#studentForm').first();
-        if (saveButton.length) {
-            saveButton.html('<i class="fas fa-user-plus"></i> Сохранить анкету');
-        }
+        $('#studentForm button[type="submit"]').html('<i class="fas fa-user-plus"></i> Сохранить анкету');
 
         // Скрываем справки и награды для нового ученика
         $('#certificatesContainer').html('<div class="text-muted">Справки будут доступны после сохранения ученика</div>');
@@ -365,25 +290,4 @@
         showMessage('Заполните данные для нового ученика', 'info');
     }
 
-    // Отладочная функция для проверки
-    function debugForm() {
-        console.log('=== ДЕБАГ ФОРМЫ ===');
-        console.log('Форма:', document.getElementById('studentForm'));
-
-        const buttons = $('#studentForm button');
-        console.log('Кнопки в форме:', buttons.length);
-        buttons.each(function(i) {
-            console.log(`${i}:`, $(this).prop('outerHTML'));
-        });
-
-        const submitButtons = $('#studentForm button[type="submit"]');
-        console.log('Кнопки с type="submit":', submitButtons.length);
-
-        const form = document.getElementById('studentForm');
-        const eventListeners = form.getEventListeners ? form.getEventListeners('submit') : 'N/A';
-        console.log('Обработчики submit на форме:', eventListeners);
-    }
-
-    // Вызываем отладку при загрузке (можно удалить позже)
-    setTimeout(debugForm, 1000);
 </script>
