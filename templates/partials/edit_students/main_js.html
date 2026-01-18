@@ -22,10 +22,10 @@
         });
 
         // Обработка отправки формы ученика
-        $('#studentForm').submit(function(e) {
-            e.preventDefault();
-            updateStudent();
-        });
+<!--        $('#studentForm').submit(function(e) {-->
+<!--            e.preventDefault();-->
+<!--            updateStudent();-->
+<!--        });-->
 
         // Обработчик события скрытия модального окна
         $('#certificateModal').on('hidden.bs.modal', function () {
@@ -159,64 +159,68 @@
 
 
 
-    function updateStudent() {
-        const formData = new FormData(document.getElementById('studentForm'));
-        const studentId = $('#studentId').val();
+   function updateStudent() {
+    const formData = new FormData(document.getElementById('studentForm'));
+    const studentId = $('#studentId').val();
 
-        console.log('Отправка данных ученика:', Object.fromEntries(formData));
-        console.log('Student ID:', studentId);
-
-        // Проверяем обязательные поля
-        const name = $('#name').val();
-        if (!name) {
-            showMessage('ФИО ученика обязательно для заполнения', 'danger');
-            return;
-        }
-
-        // Определяем URL и метод в зависимости от того, новый это ученик или существующий
-        const url = studentId === 'new' ? '/edit-students/create-student' : '/edit-students/update-student';
-        const method = 'POST';
-
-        fetch(url, {
-            method: method,
-            body: formData
-        })
-        .then(response => {
-            if (!response.ok) {
-                return response.text().then(text => {
-                    throw new Error(`HTTP error! status: ${response.status}, message: ${text}`);
-                });
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log('✅ Ответ от сервера:', data);
-            showMessage(data.message, 'success');
-
-            if (studentId === 'new') {
-                // После создания нового ученика
-                $('#studentId').val(data.student_id);
-                $('#studentCard h3').text('Карточка ученика');
-                $('#studentForm button[type="submit"]').html('<i class="fas fa-save"></i> Сохранить изменения');
-
-                // Добавляем нового ученика в выпадающий список
-                const newStudentName = $('#name').val();
-                const newStudentId = data.student_id;
-                $('#studentSelect').append(new Option(newStudentName, newStudentId));
-                $('#studentSelect').val(newStudentId).trigger('change');
-            } else {
-                // Обновляем имя в выпадающем списке для существующего ученика
-                const studentSelect = $('#studentSelect');
-                const currentStudentId = $('#studentId').val();
-                const currentStudentName = $('#name').val();
-                studentSelect.find(`option[value="${currentStudentId}"]`).text(currentStudentName);
-            }
-        })
-        .catch(error => {
-            console.error('❌ Ошибка сохранения:', error);
-            showMessage('Ошибка сохранения: ' + error.message, 'danger');
-        });
+    const name = $('#name').val();
+    if (!name) {
+        showMessage('ФИО ученика обязательно для заполнения', 'danger');
+        return;
     }
+
+    const url = studentId === 'new' ? '/edit-students/create-student' : '/edit-students/update-student';
+    const method = 'POST';
+
+    // Показываем индикатор загрузки
+    const submitBtn = $('#studentForm button[type="submit"]');
+    const originalText = submitBtn.html();
+    submitBtn.html('<i class="fas fa-spinner fa-spin me-1"></i> Сохранение...');
+    submitBtn.prop('disabled', true);
+
+    fetch(url, {
+        method: method,
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.text().then(text => {
+                throw new Error(`HTTP error! status: ${response.status}, message: ${text}`);
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('✅ Ответ от сервера:', data);
+        showMessage(data.message, 'success');
+
+        if (studentId === 'new') {
+            $('#studentId').val(data.student_id);
+            $('#studentCard h3').text('Карточка ученика');
+            $('#studentForm button[type="submit"]').html('<i class="fas fa-save"></i> Сохранить изменения');
+
+            // Добавляем нового ученика в выпадающий список
+            const newStudentName = $('#name').val();
+            const newStudentId = data.student_id;
+            $('#studentSelect').append(new Option(newStudentName, newStudentId));
+            $('#studentSelect').val(newStudentId).trigger('change');
+        } else {
+            const studentSelect = $('#studentSelect');
+            const currentStudentId = $('#studentId').val();
+            const currentStudentName = $('#name').val();
+            studentSelect.find(`option[value="${currentStudentId}"]`).text(currentStudentName);
+        }
+    })
+    .catch(error => {
+        console.error('❌ Ошибка сохранения:', error);
+        showMessage('Ошибка сохранения: ' + error.message, 'danger');
+    })
+    .finally(() => {
+        // Восстанавливаем кнопку
+        submitBtn.html(originalText);
+        submitBtn.prop('disabled', false);
+    });
+}
 
     function showMessage(text, type) {
         $('#message').html(`
