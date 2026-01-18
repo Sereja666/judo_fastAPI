@@ -5,12 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="ee547eef-2e63-46d4-8d9a-feffb711966c" name="Changes" comment="редактирование количеста занятий">
+      <change afterPath="$PROJECT_DIR$/static/js/student_form.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/students.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/students.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/database/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/database/models.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/static/js/manual_balance.js" beforeDir="false" afterPath="$PROJECT_DIR$/static/js/manual_balance.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/partials/edit_students/payment.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/partials/edit_students/payment.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/partials/modals/manual_balance_modal.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/partials/modals/manual_balance_modal.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/edit_students.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/edit_students.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -251,30 +248,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1741959141895</updated>
-    </task>
-    <task id="LOCAL-00160" summary="мероприятия - проверка на справки">
-      <option name="closed" value="true" />
-      <created>1767525829693</created>
-      <option name="number" value="00160" />
-      <option name="presentableId" value="LOCAL-00160" />
-      <option name="project" value="LOCAL" />
-      <updated>1767525829693</updated>
-    </task>
-    <task id="LOCAL-00161" summary="переношу панель &quot;РОдители_ТГ&quot;">
-      <option name="closed" value="true" />
-      <created>1768216307931</created>
-      <option name="number" value="00161" />
-      <option name="presentableId" value="LOCAL-00161" />
-      <option name="project" value="LOCAL" />
-      <updated>1768216307931</updated>
-    </task>
-    <task id="LOCAL-00162" summary="переношу панель &quot;РОдители_ТГ&quot;">
-      <option name="closed" value="true" />
-      <created>1768242153724</created>
-      <option name="number" value="00162" />
-      <option name="presentableId" value="LOCAL-00162" />
-      <option name="project" value="LOCAL" />
-      <updated>1768242153724</updated>
     </task>
     <task id="LOCAL-00163" summary="переношу панель &quot;РОдители_ТГ&quot;">
       <option name="closed" value="true" />
@@ -644,7 +617,31 @@
       <option name="project" value="LOCAL" />
       <updated>1768772661174</updated>
     </task>
-    <option name="localTasksCounter" value="209" />
+    <task id="LOCAL-00209" summary="редактирование количеста занятий">
+      <option name="closed" value="true" />
+      <created>1768773543500</created>
+      <option name="number" value="00209" />
+      <option name="presentableId" value="LOCAL-00209" />
+      <option name="project" value="LOCAL" />
+      <updated>1768773543500</updated>
+    </task>
+    <task id="LOCAL-00210" summary="редактирование количеста занятий">
+      <option name="closed" value="true" />
+      <created>1768773717877</created>
+      <option name="number" value="00210" />
+      <option name="presentableId" value="LOCAL-00210" />
+      <option name="project" value="LOCAL" />
+      <updated>1768773717877</updated>
+    </task>
+    <task id="LOCAL-00211" summary="редактирование количеста занятий">
+      <option name="closed" value="true" />
+      <created>1768774116798</created>
+      <option name="number" value="00211" />
+      <option name="presentableId" value="LOCAL-00211" />
+      <option name="project" value="LOCAL" />
+      <updated>1768774116798</updated>
+    </task>
+    <option name="localTasksCounter" value="212" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
