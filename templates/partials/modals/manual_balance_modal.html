@@ -1,4 +1,4 @@
-<!-- templates/partials/modals/manual_balance_modal.html -->
+<!-- templates/partials/modals/manual_balance_modal.html - упрощенная версия -->
 <div class="modal fade" id="manualBalanceModal" tabindex="-1" aria-labelledby="manualBalanceModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -11,11 +11,11 @@
             </div>
             <div class="modal-body">
                 <div id="manualBalanceAlert" class="alert d-none" role="alert"></div>
-                
+
                 <form id="manualBalanceForm">
                     <input type="hidden" id="manualBalanceStudentId" name="student_id">
                     <input type="hidden" id="currentBalanceValue" name="current_balance">
-                    
+
                     <div class="mb-3">
                         <label for="studentBalanceInfo" class="form-label fw-bold">
                             <i class="fas fa-user-graduate me-1"></i>
@@ -29,55 +29,28 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="mb-3">
                         <label for="newBalance" class="form-label fw-bold">
                             <i class="fas fa-calculator me-1"></i>
                             Новый баланс занятий
                         </label>
                         <div class="input-group input-group-lg">
-                            <input type="number" class="form-control" id="newBalance" name="new_balance" 
+                            <input type="number" class="form-control" id="newBalance" name="new_balance"
                                    min="0" max="1000" required>
                             <span class="input-group-text">занятий</span>
                         </div>
                         <div class="form-text">Установите точное количество оставшихся занятий</div>
                     </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">
-                            <i class="fas fa-bolt me-1"></i>
-                            Быстрое изменение
-                        </label>
-                        <div class="d-flex flex-wrap gap-2 mb-2">
-                            <button type="button" class="btn btn-outline-primary quick-balance-btn" data-change="-10">
-                                -10
-                            </button>
-                            <button type="button" class="btn btn-outline-primary quick-balance-btn" data-change="-5">
-                                -5
-                            </button>
-                            <button type="button" class="btn btn-outline-primary quick-balance-btn" data-change="-1">
-                                -1
-                            </button>
-                            <button type="button" class="btn btn-outline-primary quick-balance-btn" data-change="+1">
-                                +1
-                            </button>
-                            <button type="button" class="btn btn-outline-primary quick-balance-btn" data-change="+5">
-                                +5
-                            </button>
-                            <button type="button" class="btn btn-outline-primary quick-balance-btn" data-change="+10">
-                                +10
-                            </button>
-                        </div>
-                        <div class="form-text">Нажмите для быстрого изменения текущего значения</div>
-                    </div>
-                    
+
                     <div class="mb-3">
                         <label for="balanceReason" class="form-label fw-bold">
                             <i class="fas fa-sticky-note me-1"></i>
                             Причина изменения (опционально)
                         </label>
-                        <textarea class="form-control" id="balanceReason" name="balance_reason" 
-                                  rows="2" placeholder="Например: Корректировка после проверки"></textarea>
+                        <textarea class="form-control" id="balanceReason" name="balance_reason"
+                                  rows="2" placeholder="Например: Корректировка после проверки, возврат после болезни, ошибка в начислении и т.д."></textarea>
+                        <div class="form-text">Эта информация будет сохранена в истории изменений</div>
                     </div>
                     
                     <div id="balancePreview" class="card border-warning mb-3 d-none">

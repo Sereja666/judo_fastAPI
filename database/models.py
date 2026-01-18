@@ -175,6 +175,23 @@ class Payment(Base):
     payment_date = Column(Date())
 
 
+class BalanceLog(Base):
+    """Логи изменений баланса занятий"""
+    __tablename__ = 'balance_log'
+    __table_args__ = {'schema': schema}
+
+    id = Column(Integer(), primary_key=True, autoincrement=True)
+    student_id = Column(Integer(), ForeignKey(f'{schema}.student.id'))
+    old_balance = Column(Integer())
+    new_balance = Column(Integer())
+    difference = Column(Integer())  # new_balance - old_balance
+    reason = Column(String())  # Причина изменения
+    changed_by = Column(Integer())  # ID пользователя, который изменил
+    changed_at = Column(DateTime(), default=func.now())
+    # Связи
+    student = relationship("Students", backref="balance_logs")
+
+
 # Расписание
 class Schedule(Base):
     """
@@ -361,7 +378,7 @@ class MedCertificat_type(Base):
     name_cert = Column(String())
 
 
-# Факт оплаты
+# Факт получения справки
 
 class MedCertificat_received(Base):
     """

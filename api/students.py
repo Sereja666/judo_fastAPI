@@ -1020,14 +1020,13 @@ async def process_student_payment(
 
 # api/students.py - добавьте этот endpoint
 
-# api/students.py - исправленный endpoint
 @router.post("/api/student/{student_id}/update-balance")
 async def update_student_balance(
         student_id: int,
         request: Request,
         db: AsyncSession = Depends(get_db_async)
 ):
-    """Ручное обновление баланса занятий"""
+    """Обновление баланса ученика с сохранением логов"""
     try:
         # Проверяем авторизацию
         user_info = getattr(request.state, 'user', None)
@@ -1037,22 +1036,27 @@ async def update_student_balance(
                 content={"success": False, "error": "Не авторизован"}
             )
 
-        # Пробуем получить JSON данные
+        user_id = user_info.get("user_id")  # ID пользователя из middleware
+
+        # Получаем данные
         try:
             data = await request.json()
-        except json.JSONDecodeError:
+        except:
             return JSONResponse(
                 status_code=400,
                 content={"success": False, "error": "Неверный формат JSON"}
             )
 
         new_balance = data.get('new_balance')
+        reason = data.get('reason', 'Ручная корректировка')
+
         if new_balance is None:
             return JSONResponse(
                 status_code=400,
                 content={"success": False, "error": "Не указан новый баланс"}
             )
 
+        # Преобразуем в число
         try:
             new_balance = int(new_balance)
         except (ValueError, TypeError):
@@ -1067,10 +1071,10 @@ async def update_student_balance(
                 content={"success": False, "error": "Баланс не может быть отрицательным"}
             )
 
-        # Получаем текущие данные ученика
+        # Получаем ученика
+        from database.models import Students
         student = await db.execute(
-            select(models.Students)
-            .filter(models.Students.id == student_id)
+            select(Students).filter(Students.id == student_id)
         )
         student = student.scalar_one_or_none()
 
@@ -1081,23 +1085,36 @@ async def update_student_balance(
             )
 
         old_balance = student.classes_remaining or 0
+        difference = new_balance - old_balance
+
+        # Сохраняем в лог
+        from database.models import BalanceLog
+        balance_log = BalanceLog(
+            student_id=student_id,
+            old_balance=old_balance,
+            new_balance=new_balance,
+            difference=difference,
+            reason=reason,
+            changed_by=user_id or 0  # 0 если пользователь не определен
+        )
+        db.add(balance_log)
 
         # Обновляем баланс
         student.classes_remaining = new_balance
 
-        # Если баланс сильно изменился, обновляем дату оплаты
+        # Если разница большая, обновляем дату оплаты
         from datetime import datetime, timedelta
         from math import ceil
 
-        if abs(new_balance - old_balance) > 5:
-            # Получаем расписание студента
-            schedule_data = await db.execute(
-                select(func.count(distinct(models.Students_schedule.schedule)))
-                .join(models.Schedule, models.Students_schedule.schedule == models.Schedule.id)
-                .filter(models.Students_schedule.student == student_id)
+        if abs(difference) > 5:
+            # Получаем количество дней тренировок в неделю
+            from database.models import Students_schedule, Schedule
+            schedule_count = await db.execute(
+                select(func.count(distinct(Students_schedule.schedule)))
+                .join(Schedule, Students_schedule.schedule == Schedule.id)
+                .filter(Students_schedule.student == student_id)
             )
-
-            days_per_week = schedule_data.scalar() or 1
+            days_per_week = schedule_count.scalar() or 1
 
             if days_per_week > 0 and new_balance > 0:
                 weeks_remaining = new_balance / days_per_week
@@ -1116,7 +1133,6 @@ async def update_student_balance(
 
         await db.commit()
 
-        difference = new_balance - old_balance
         difference_text = f"({difference:+d})" if difference != 0 else ""
 
         return {
@@ -1124,19 +1140,78 @@ async def update_student_balance(
             "message": f"Баланс обновлен: {old_balance} → {new_balance} {difference_text}",
             "old_balance": old_balance,
             "new_balance": new_balance,
+            "difference": difference,
+            "reason": reason,
             "payment_date_info": payment_date_info,
-            "student_name": student.name
+            "student_name": student.name,
+            "log_id": balance_log.id
         }
 
     except Exception as e:
-        logger.error(f"Error updating balance: {str(e)}")
+        print(f"Error updating balance: {str(e)}")
         try:
             await db.rollback()
         except:
             pass
         return JSONResponse(
             status_code=500,
-            content={"success": False, "error": "Внутренняя ошибка сервера"}
+            content={"success": False, "error": f"Внутренняя ошибка сервера: {str(e)}"}
+        )
+
+
+# api/students.py - endpoint для получения логов
+@router.get("/api/student/{student_id}/balance-history")
+async def get_balance_history(
+        student_id: int,
+        request: Request,
+        db: AsyncSession = Depends(get_db_async)
+):
+    """Получение истории изменений баланса ученика"""
+    try:
+        # Проверяем авторизацию
+        user_info = getattr(request.state, 'user', None)
+        if not user_info or not user_info.get("authenticated"):
+            return JSONResponse(
+                status_code=401,
+                content={"success": False, "error": "Не авторизован"}
+            )
+
+        from database.models import BalanceLog
+
+        # Получаем логи
+        logs = await db.execute(
+            select(BalanceLog)
+            .filter(BalanceLog.student_id == student_id)
+            .order_by(BalanceLog.changed_at.desc())
+            .limit(50)
+        )
+        logs_list = logs.scalars().all()
+
+        # Форматируем ответ
+        history = []
+        for log in logs_list:
+            history.append({
+                "id": log.id,
+                "old_balance": log.old_balance,
+                "new_balance": log.new_balance,
+                "difference": log.difference,
+                "reason": log.reason or "Не указана",
+                "changed_at": log.changed_at.strftime("%d.%m.%Y %H:%M"),
+                "changed_by": log.changed_by
+            })
+
+        return {
+            "success": True,
+            "student_id": student_id,
+            "history": history,
+            "total": len(history)
+        }
+
+    except Exception as e:
+        print(f"Error getting balance history: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "error": str(e)}
         )
 
 @router.get("/api/prices")
