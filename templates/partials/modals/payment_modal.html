@@ -2,7 +2,7 @@
 <div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header bg-success text-white">
+            <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title" id="paymentModalLabel">
                     <i class="fas fa-credit-card me-2"></i>
                     Обработка оплаты
@@ -14,7 +14,6 @@
 
                 <form id="paymentForm">
                     <input type="hidden" id="paymentStudentId" name="student_id">
-                    <input type="hidden" id="currentBalance" name="current_balance">
 
                     <div class="row mb-4">
                         <div class="col-md-6">
@@ -24,10 +23,10 @@
                                     Сумма оплаты (руб.)
                                 </label>
                                 <div class="input-group">
-                                    <span class="input-group-text bg-light">₽</span>
                                     <input type="number" class="form-control form-control-lg" id="amount" name="amount"
                                            min="100" max="100000" step="100" required
-                                           placeholder="Введите сумму">
+                                           placeholder="Введите сумму" style="font-size: 1.2rem;">
+                                    <span class="input-group-text bg-light" style="font-size: 1.2rem;">₽</span>
                                 </div>
                                 <div class="form-text">Сумма будет автоматически сопоставлена с тарифом</div>
                             </div>
@@ -35,15 +34,13 @@
                         <div class="col-md-6">
                             <div class="card bg-light h-100">
                                 <div class="card-body">
-                                    <h6 class="card-title text-muted mb-2">
-                                        <i class="fas fa-user-graduate me-1"></i>
+                                    <h6 class="card-title text-muted">
+                                        <i class="fas fa-info-circle me-1"></i>
                                         Информация об ученике
                                     </h6>
-                                    <div id="studentPaymentInfo">
-                                        <div class="text-center py-3">
-                                            <div class="spinner-border spinner-border-sm text-primary" role="status">
-                                                <span class="visually-hidden">Загрузка...</span>
-                                            </div>
+                                    <div id="studentPaymentInfo" class="text-center">
+                                        <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                            <span class="visually-hidden">Загрузка...</span>
                                         </div>
                                     </div>
                                 </div>
@@ -52,12 +49,17 @@
                     </div>
 
                     <div class="mb-4">
-                        <label class="form-label fw-bold mb-3">
+                        <label class="form-label fw-bold">
                             <i class="fas fa-list me-1"></i>
                             Доступные тарифы:
                         </label>
                         <div id="availablePrices" class="row g-3">
                             <!-- Тарифы будут загружены динамически -->
+                            <div class="col-12 text-center">
+                                <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                    <span class="visually-hidden">Загрузка...</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -89,3 +91,6 @@
         </div>
     </div>
 </div>
+
+<!-- Скрытая форма для CSRF токена -->
+<input type="hidden" id="csrf_token" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">

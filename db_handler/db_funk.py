@@ -1,7 +1,7 @@
 
 from math import ceil
 from config import settings
-
+from datetime import datetime, timedelta
 from logger_config import logger
 import asyncpg
 
@@ -411,3 +411,124 @@ async def get_student_certificates(student_id: int):
     """
 
     return await execute_raw_sql(query, student_id)
+
+
+
+async def process_payment_via_web(student_id: int, amount: int) -> dict:
+    """
+    Обрабатывает оплату для ученика через веб-интерфейс
+    Возвращает словарь с результатом операции
+    """
+    try:
+        # Получаем информацию об ученике
+        student_data = await execute_raw_sql(
+            """SELECT id, name, classes_remaining, price 
+            FROM public.student 
+            WHERE id = $1 AND active = true;""",
+            student_id
+        )
+
+        if not student_data:
+            return {"success": False, "error": "Ученик не найден"}
+
+        student = student_data[0]
+        old_price_id = student['price']
+
+        # Ищем цену в таблице price
+        price_data = await execute_raw_sql(
+            "SELECT id, price, classes_in_price, description FROM public.price WHERE price = $1;",
+            amount
+        )
+
+        if not price_data:
+            return {"success": False, "error": f"Тариф с суммой {amount} руб. не найден"}
+
+        price = price_data[0]
+        price_id = price['id']
+        classes_to_add = price['classes_in_price'] or 0
+
+        # Текущий баланс
+        current_balance = student['classes_remaining'] if student['classes_remaining'] is not None else 0
+        new_balance = current_balance + classes_to_add
+
+        # Рассчитываем новую дату оплаты
+        from datetime import datetime, timedelta
+        from math import ceil
+
+        # Получаем расписание студента
+        schedule_data = await execute_raw_sql(
+            """SELECT COUNT(DISTINCT ss.schedule) as training_days_per_week
+            FROM public.student_schedule ss
+            JOIN public.schedule sched ON ss.schedule = sched.id
+            WHERE ss.student = $1""",
+            student_id
+        )
+
+        days_per_week = schedule_data[0]['training_days_per_week'] if schedule_data and schedule_data[0][
+            'training_days_per_week'] else 1
+
+        # Рассчитываем дату следующей оплаты
+        if days_per_week > 0 and new_balance > 0:
+            weeks_remaining = new_balance / days_per_week
+            if weeks_remaining < 1:
+                weeks_remaining = 1
+            else:
+                weeks_remaining = ceil(weeks_remaining)
+
+            new_payment_date = datetime.now().date() + timedelta(days=weeks_remaining * 7 + 3)
+        else:
+            new_payment_date = datetime.now().date() + timedelta(days=30)
+
+        # Начинаем транзакцию
+        # 1. Добавляем запись в payment
+        payment_result = await execute_raw_sql(
+            """INSERT INTO public.payment 
+                (student_id, price_id, payment_amount, payment_date) 
+            VALUES ($1, $2, $3, CURRENT_DATE) 
+            RETURNING id;""",
+            student_id, price_id, amount
+        )
+
+        if not payment_result:
+            return {"success": False, "error": "Ошибка при записи платежа"}
+
+        # 2. Обновляем баланс занятий, price_id и дату оплаты у ученика
+        await execute_raw_sql(
+            "UPDATE public.student SET classes_remaining = $1, price = $2, expected_payment_date = $3 WHERE id = $4;",
+            new_balance, price_id, new_payment_date, student_id
+        )
+
+        # Получаем информацию о старом тарифе для сравнения
+        old_price_info = None
+        if old_price_id:
+            old_price_data = await execute_raw_sql(
+                "SELECT price, description FROM public.price WHERE id = $1;",
+                old_price_id
+            )
+            if old_price_data:
+                old_price_info = old_price_data[0]
+
+        # Формируем информацию об изменении тарифа
+        price_change_info = ""
+        if old_price_info and old_price_id != price_id:
+            price_change_info = f"Изменен тариф: {old_price_info['description']} ({old_price_info['price']} руб.) → {price['description']} ({price['price']} руб.)"
+        elif old_price_id == price_id:
+            price_change_info = f"Тариф остался прежним: {price['description']} ({price['price']} руб.)"
+        else:
+            price_change_info = f"Установлен тариф: {price['description']} ({price['price']} руб.)"
+
+        return {
+            "success": True,
+            "student_name": student['name'],
+            "amount": amount,
+            "price_description": price['description'],
+            "classes_added": classes_to_add,
+            "new_balance": new_balance,
+            "next_payment_date": new_payment_date.strftime("%d.%m.%Y"),
+            "price_change_info": price_change_info,
+            "message": f"Оплата успешно обработана! Добавлено {classes_to_add} занятий."
+        }
+
+    except Exception as e:
+        logger.error(f"Error processing payment via web: {str(e)}")
+        return {"success": False, "error": f"Системная ошибка: {str(e)}"}

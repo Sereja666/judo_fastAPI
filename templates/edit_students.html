@@ -61,46 +61,84 @@
 
 <!-- JavaScript для родителей -->
 {% include "partials/edit_students/parents_js.html" %}
+
+
+<!-- JavaScript для оплаты -->
+<script src="/static/js/payment.js"></script>
 {% endblock %}
 
 {% block styles %}
 <style>
-.hidden {
-    display: none !important;
-}
+    .hidden {
+        display: none !important;
+    }
 
-.card.border-danger {
-    border: 2px solid #dc3545 !important;
-}
+    .card.border-danger {
+        border: 2px solid #dc3545 !important;
+    }
 
-.badge.text-success {
-    background-color: #d1e7dd;
-    color: #0f5132;
-}
+    .badge.text-success {
+        background-color: #d1e7dd;
+        color: #0f5132;
+    }
 
-.badge.text-danger {
-    background-color: #f8d7da;
-    color: #721c24;
-}
+    .badge.text-danger {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
 
-.student-card.hidden {
-    display: none;
-}
+    .student-card.hidden {
+        display: none;
+    }
 
-/* Стили для модального окна */
-.modal-header {
-    background-color: #f8f9fa;
-    border-bottom: 1px solid #dee2e6;
-}
+    /* Стили для модального окна */
+    .modal-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+    }
 
-.modal-footer {
-    border-top: 1px solid #dee2e6;
-}
+    .modal-footer {
+        border-top: 1px solid #dee2e6;
+    }
 
-/* Увеличим немного кнопку редактирования */
-.btn-sm {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.875rem;
-}
+    /* Увеличим немного кнопку редактирования */
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+        /* Анимация для изменяемых полей */
+    .highlight {
+        animation: highlight 1s ease-in-out;
+        background-color: rgba(60, 179, 113, 0.2) !important;
+        border-color: var(--superset-success) !important;
+    }
+
+    @keyframes highlight {
+        0% { background-color: rgba(60, 179, 113, 0.2); }
+        50% { background-color: rgba(60, 179, 113, 0.4); }
+        100% { background-color: rgba(60, 179, 113, 0.2); }
+    }
+
+    /* Стили для модального окна оплаты */
+    .price-item {
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .price-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .price-item.selected {
+        border-color: #3CB371 !important;
+        background-color: rgba(60, 179, 113, 0.05);
+    }
+
+    /* Стили для сообщений */
+    #paymentPreview {
+        border-left: 4px solid #3CB371;
+    }
+</style>
 </style>
 {% endblock %}

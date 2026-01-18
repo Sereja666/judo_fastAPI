@@ -1,15 +1,22 @@
+from app_notif import models
 from config import templates, settings
 # api/students.py
 from fastapi import APIRouter, Request, Form, Depends, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_
+from sqlalchemy import and_, or_, select
 from typing import Optional, List
 from datetime import datetime
 from database.models import get_db, Students, Sport, Trainers, Prices, Sports_rank, Belt_сolor, MedCertificat_received, \
-    MedCertificat_type, Competition_student, Сompetition, Students_parents, Tg_notif_user
+    MedCertificat_type, Competition_student, Сompetition, Students_parents, Tg_notif_user, get_db_async
 from config import templates
+from db_handler.db_funk import get_user_permissions, process_payment_via_web
 from logger_config import logger
+from fastapi import APIRouter, Request, HTTPException, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from typing import List, Dict, Any
+
 
 router = APIRouter()
 
@@ -866,3 +873,85 @@ async def remove_parent(relation_id: int, db: Session = Depends(get_db)):
         db.rollback()
         logger.error(f"❌ Ошибка при удалении связи: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Ошибка удаления связи: {str(e)}")
+
+
+# ----------------Оплаты---------------------
+# api/students.py - добавьте этот endpoint
+
+@router.post("/api/student/{student_id}/process-payment")
+async def process_student_payment(
+        student_id: int,
+        request: Request,
+        db: AsyncSession = Depends(get_db_async)
+):
+    """Обработка оплаты для ученика через веб-интерфейс"""
+    try:
+        # Проверяем авторизацию пользователя
+        user_info = getattr(request.state, 'user', None)
+        if not user_info or not user_info.get("authenticated"):
+            raise HTTPException(status_code=401, detail="Не авторизован")
+
+        # Получаем данные из запроса
+        data = await request.json()
+        amount = int(data.get('amount', 0))
+
+        if amount <= 0:
+            raise HTTPException(status_code=400, detail="Сумма должна быть больше 0")
+
+        # Используем асинхронную функцию из db_funk.py
+        from db_handler.db_funk import process_payment_via_web
+        result = await process_payment_via_web(student_id, amount)
+
+        if result["success"]:
+            return {
+                "success": True,
+                "message": result["message"],
+                "new_balance": result["new_balance"],
+                "classes_added": result["classes_added"],
+                "next_payment_date": result["next_payment_date"],
+                "student_name": result["student_name"],
+                "price_description": result["price_description"]
+            }
+        else:
+            raise HTTPException(status_code=400, detail=result["error"])
+
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Неверный формат суммы")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error processing payment: {str(e)}")
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+
+# api/students.py - добавьте этот endpoint
+@router.get("/api/prices")
+async def get_prices(
+        request: Request,
+        db: AsyncSession = Depends(get_db_async)
+):
+    """Получение списка всех тарифов"""
+    try:
+        # Проверяем авторизацию
+        user_info = getattr(request.state, 'user', None)
+        if not user_info or not user_info.get("authenticated"):
+            raise HTTPException(status_code=401, detail="Не авторизован")
+
+        # Получаем список тарифов
+        prices = await db.execute(
+            select(models.Prices).order_by(models.Prices.price)
+        )
+        price_list = prices.scalars().all()
+
+        return [
+            {
+                "id": p.id,
+                "price": p.price,
+                "classes_in_price": p.classes_in_price,
+                "description": p.description or f"Тариф {p.id}"
+            }
+            for p in price_list
+        ]
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

@@ -1,16 +1,20 @@
+import json
 from fastapi import Request, HTTPException
 from fastapi.responses import RedirectResponse
 import httpx
-from urllib.parse import urlencode
+import secrets
+from urllib.parse import urlencode, urlparse
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 from logger_config import logger
-from typing import Optional, Dict, Any
-
+from typing import Optional, Dict, Any, Set, List
 # Импортируем функции для обычной авторизации
 from database.auth import get_current_user_from_token
 from database.models import get_db_async
 import jwt
+
+
+
 
 
 class DualAuthMiddleware(BaseHTTPMiddleware):
@@ -166,3 +170,91 @@ class DualAuthMiddleware(BaseHTTPMiddleware):
     def _create_login_redirect(self, request: Request) -> RedirectResponse:
         """Редирект на страницу выбора входа"""
         return RedirectResponse(url="/choose-login")
+
+
+
+
+class SimpleCSRFProtection(BaseHTTPMiddleware):
+    """
+    Простейшая CSRF защита через проверку заголовков Origin/Referer
+    НЕ читает тело запроса, поэтому не мешает другим обработчикам
+    """
+
+    def __init__(self, app):
+        super().__init__(app)
+        self.safe_methods = {"GET", "HEAD", "OPTIONS"}
+        self.exempt_paths = {
+            "/api/auth/",
+            "/health",
+            "/static/",
+            "/debug/",
+            "/auth/callback"
+        }
+        self.allowed_domains = [
+            "localhost:8000",
+            "127.0.0.1:8000",
+            "srm-1legion.ru",  # Ваш домен
+            "superset.srm-1legion.ru"  # Superset домен если нужно
+        ]
+
+    async def dispatch(self, request: Request, call_next):
+        # Проверяем только опасные методы
+        if request.method in {"POST", "PUT", "PATCH", "DELETE"}:
+            # Пропускаем исключенные пути
+            path = request.url.path
+            if not any(path.startswith(exempt) for exempt in self.exempt_paths):
+                if not self._is_safe_request(request):
+                    raise HTTPException(
+                        status_code=403,
+                        detail="Запрос заблокирован по соображениям безопасности"
+                    )
+
+        return await call_next(request)
+
+    def _is_safe_request(self, request: Request) -> bool:
+        """Проверяет, что запрос пришел с доверенного домена"""
+
+        # 1. Проверяем Origin заголовок
+        origin = request.headers.get("origin")
+        if origin:
+            origin = origin.rstrip('/').lower()
+            for domain in self.allowed_domains:
+                if domain in origin:
+                    return True
+
+        # 2. Проверяем Referer заголовок
+        referer = request.headers.get("referer")
+        if referer:
+            try:
+                parsed = urlparse(referer.lower())
+                hostname = parsed.hostname
+                if parsed.port:
+                    hostname = f"{hostname}:{parsed.port}"
+
+                for domain in self.allowed_domains:
+                    if domain == hostname:
+                        return True
+            except:
+                pass
+
+        # 3. Разрешаем запросы из Postman, curl и т.д. (для тестирования)
+        user_agent = request.headers.get("user-agent", "").lower()
+        if any(keyword in user_agent for keyword in [
+            "postman", "insomnia", "curl", "python",
+            "wget", "httpie", "swagger"
+        ]):
+            return True
+
+        # 4. Для API можно разрешить запросы с токеном в заголовке
+        # (если у вас JWT аутентификация)
+        auth_header = request.headers.get("authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            return True
+
+        # 5. Логируем подозрительные запросы
+        print(f"⚠️  Подозрительный запрос: {request.method} {request.url.path}")
+        print(f"    Origin: {origin}")
+        print(f"    Referer: {referer}")
+        print(f"    User-Agent: {user_agent[:100]}")
+
+        return False

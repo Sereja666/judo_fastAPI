@@ -7,12 +7,14 @@ import httpx
 
 # Импортируем упрощенный middleware
 from database.middleware import DualAuthMiddleware
+from database.middleware import SimpleCSRFProtection
 from config import settings
 
 # Импортируем роутеры
 from api.students import router as students_router
 from api.schedule import router as schedule_router
 from api.trainers import router as trainers_router
+
 from api.tg_membership import router as admin_router
 from api.visits import router as visits_router
 from api.competitions import router as competitions_router
@@ -22,7 +24,7 @@ from config import templates
 from logger_config import logger
 
 app = FastAPI(title="Student Management System")
-
+app.add_middleware(SimpleCSRFProtection)
 # Монтируем статические файлы
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
