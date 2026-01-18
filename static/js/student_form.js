@@ -46,7 +46,7 @@ const response = await fetch('/students/update', {  // Измените URL
     },
     body: JSON.stringify(data)
 });
-
+// static/js/student_form.js
 class StudentFormManager {
     constructor() {
         console.log('StudentFormManager инициализирован');
@@ -73,12 +73,12 @@ class StudentFormManager {
             this.form.addEventListener('submit', (e) => {
                 console.log('Форма отправлена!');
                 e.preventDefault();
-                this.saveStudent();
+                this.saveStudent(e);
             });
         }
     }
 
-    async saveStudent() {
+    async saveStudent(event) {  // Добавляем async здесь
         console.log('Начинаю сохранение...');
 
         const formData = new FormData(this.form);
@@ -105,7 +105,10 @@ class StudentFormManager {
             // Преобразуем FormData в объект для JSON
             const data = {};
             formData.forEach((value, key) => {
-                data[key] = value;
+                // Пропускаем пустые значения
+                if (value !== '') {
+                    data[key] = value;
+                }
             });
 
             console.log('Отправляю данные:', data);
@@ -129,7 +132,7 @@ class StudentFormManager {
                 try {
                     const errorData = await response.json();
                     console.log('Ошибка от сервера:', errorData);
-                    errorDetail = errorData.detail || errorDetail;
+                    errorDetail = errorData.detail || errorData.message || errorDetail;
                 } catch (e) {
                     const text = await response.text();
                     console.log('Текст ошибки:', text);
@@ -186,3 +189,4 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM загружен, инициализирую StudentFormManager');
     window.studentFormManager = new StudentFormManager();
 });
+
