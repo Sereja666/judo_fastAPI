@@ -129,9 +129,12 @@ class StudentUpdate(BaseModel):
 async def update_student(student_data: StudentUpdate, db: Session = Depends(get_db)):
     """Обновление данных ученика"""
     try:
-        print(f"Получены данные для student_id: {student_data.student_id}")
-        print(f"Данные: {student_data.dict()}")
-        
+        # print(f"Получены данные для student_id: {student_data.student_id}")
+        # print(f"Данные: {student_data.dict()}")
+        logger.info(f"🔹 Получен запрос на обновление ученика {student_id}")
+        # Логируем headers
+        headers = dict(request.headers)
+        logger.info(f"Заголовки запроса: {headers}")
         student = db.query(Students).filter(Students.id == student_data.student_id).first()
         if not student:
             raise HTTPException(status_code=404, detail="Ученик не найден")

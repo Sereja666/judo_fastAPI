@@ -1,4 +1,44 @@
 // static/js/student_form.js
+
+async function saveStudent() {
+    console.log('Начинаю сохранение...');
+
+    // Проверка: выводим все данные формы
+    const formData = new FormData(this.form);
+    console.log('FormData entries:');
+    for (let [key, value] of formData.entries()) {
+        console.log(`${key}: ${value}`);
+    }
+
+    const studentId = formData.get('student_id');
+    console.log('Student ID:', studentId);
+
+    if (!studentId) {
+        alert('Сначала выберите ученика');
+        return;
+    }
+
+    // Пробуем сначала простой запрос
+    console.log('Отправляю тестовый запрос...');
+    try {
+        // Простой тестовый запрос
+        const testResponse = await fetch(`/api/student/${studentId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ test: 'data' })
+        });
+
+        console.log('Статус тестового запроса:', testResponse.status);
+        console.log('Текст ответа:', await testResponse.text());
+
+    } catch (error) {
+        console.error('Ошибка тестового запроса:', error);
+    }
+}
+
 class StudentFormManager {
     constructor() {
         console.log('StudentFormManager инициализирован');
