@@ -190,6 +190,8 @@ class SimpleCSRFProtection(BaseHTTPMiddleware):
             "/debug/",
             "/auth/callback",
             "/api/student/",  # ← Добавьте это
+            "/student/",  # ← Добавьте это
+            "/students/update",  # ← И это
         }
         self.allowed_domains = [
             "localhost:8000",

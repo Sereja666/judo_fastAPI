@@ -199,6 +199,18 @@ async def root(request: Request):
     })
 
 
+@app.get("/debug/form-test")
+async def debug_form_test():
+    return {"status": "ok", "message": "Form test endpoint works"}
+
+@app.post("/debug/form-test")
+async def debug_form_test_post(request: Request):
+    try:
+        data = await request.json()
+        return {"status": "ok", "received": data, "message": "POST received"}
+    except:
+        return {"status": "error", "message": "No JSON data"}
+
 if __name__ == "__main__":
     import uvicorn
 

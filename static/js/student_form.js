@@ -1,52 +1,4 @@
 // static/js/student_form.js
-
-async function saveStudent() {
-    console.log('Начинаю сохранение...');
-
-    // Проверка: выводим все данные формы
-    const formData = new FormData(this.form);
-    console.log('FormData entries:');
-    for (let [key, value] of formData.entries()) {
-        console.log(`${key}: ${value}`);
-    }
-
-    const studentId = formData.get('student_id');
-    console.log('Student ID:', studentId);
-
-    if (!studentId) {
-        alert('Сначала выберите ученика');
-        return;
-    }
-
-    // Пробуем сначала простой запрос
-    console.log('Отправляю тестовый запрос...');
-    try {
-        // Простой тестовый запрос
-        const testResponse = await fetch(`/api/student/${studentId}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({ test: 'data' })
-        });
-
-        console.log('Статус тестового запроса:', testResponse.status);
-        console.log('Текст ответа:', await testResponse.text());
-
-    } catch (error) {
-        console.error('Ошибка тестового запроса:', error);
-    }
-}
-
-const response = await fetch('/students/update', {  // Измените URL
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(data)
-});
-// static/js/student_form.js
 class StudentFormManager {
     constructor() {
         console.log('StudentFormManager инициализирован');
@@ -78,7 +30,7 @@ class StudentFormManager {
         }
     }
 
-    async saveStudent(event) {  // Добавляем async здесь
+    async saveStudent(event) {
         console.log('Начинаю сохранение...');
 
         const formData = new FormData(this.form);
@@ -112,17 +64,67 @@ class StudentFormManager {
             });
 
             console.log('Отправляю данные:', data);
-            console.log('URL:', `/api/student/${studentId}`);
 
-            // Используем PUT endpoint для обновления ученика
-            const response = await fetch(`/api/student/${studentId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify(data)
-            });
+            // ПРОБУЕМ РАЗНЫЕ ENDPOINTS ПО ОЧЕРЕДИ
+            const endpoints = [
+                `/api/student/${studentId}`,  // PUT запрос
+                `/students/update`            // POST запрос
+            ];
+
+            let response;
+            let lastError;
+
+            // Пробуем PUT запрос
+            console.log('Пробую PUT запрос к:', endpoints[0]);
+            try {
+                response = await fetch(endpoints[0], {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                console.log('PUT запрос - статус:', response.status);
+
+                if (response.ok) {
+                    console.log('✅ PUT запрос успешен!');
+                } else {
+                    console.log('⚠️ PUT запрос неуспешен, пробую POST...');
+                    throw new Error(`PUT: ${response.status}`);
+                }
+
+            } catch (error) {
+                console.log('PUT запрос ошибка:', error.message);
+                lastError = error;
+
+                // Пробуем POST запрос
+                console.log('Пробую POST запрос к:', endpoints[1]);
+                data.student_id = studentId;  // Добавляем student_id в данные для POST
+
+                try {
+                    response = await fetch(endpoints[1], {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify(data)
+                    });
+
+                    console.log('POST запрос - статус:', response.status);
+
+                } catch (postError) {
+                    console.error('POST запрос ошибка:', postError);
+                    lastError = postError;
+                    response = null;
+                }
+            }
+
+            if (!response) {
+                throw new Error('Не удалось отправить запрос: ' + (lastError?.message || 'Неизвестная ошибка'));
+            }
 
             console.log('Статус ответа:', response.status);
             console.log('Статус текста:', response.statusText);
@@ -189,4 +191,3 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM загружен, инициализирую StudentFormManager');
     window.studentFormManager = new StudentFormManager();
 });
-

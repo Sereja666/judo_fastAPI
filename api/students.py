@@ -372,6 +372,50 @@ async def create_student(
         raise HTTPException(status_code=500, detail=f"Ошибка создания: {str(e)}")
 
 
+@router.post("/students/update")
+async def update_student_direct(
+        request: Request,
+        db: Session = Depends(get_db)  # Синхронная версия проще для отладки
+):
+    """Упрощенная версия для отладки"""
+    try:
+        print("🔹 /students/update endpoint вызван")
+
+        # Получаем данные
+        try:
+            data = await request.json()
+            print(f"Полученные данные: {data}")
+        except Exception as e:
+            print(f"Ошибка парсинга JSON: {e}")
+            return JSONResponse({"success": False, "error": "Ошибка парсинга JSON"})
+
+        student_id = data.get('student_id')
+        if not student_id:
+            return JSONResponse({"success": False, "error": "Нет student_id"})
+
+        student = db.query(Students).filter(Students.id == student_id).first()
+        if not student:
+            return JSONResponse({"success": False, "error": "Ученик не найден"})
+
+        # Обновляем поля
+        update_fields = ['name', 'telephone', 'weight', 'price', 'payment_day']
+        for field in update_fields:
+            if field in data and data[field] != '':
+                setattr(student, field, data[field])
+
+        db.commit()
+
+        return JSONResponse({
+            "success": True,
+            "message": f"Данные ученика {student.name} обновлены",
+            "student_id": student.id
+        })
+
+    except Exception as e:
+        print(f"Ошибка в /students/update: {str(e)}")
+        db.rollback()
+        return JSONResponse({"success": False, "error": str(e)})
+
 @router.get("/edit-students/get-prices")
 async def get_prices(db: Session = Depends(get_db)):
     """Получение списка всех цен"""

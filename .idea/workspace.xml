@@ -4,11 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ee547eef-2e63-46d4-8d9a-feffb711966c" name="Changes" comment="редактирование количеста занятий111">
+    <list default="true" id="ee547eef-2e63-46d4-8d9a-feffb711966c" name="Changes" comment="чиню сохранить">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/students.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/students.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api_main.py" beforeDir="false" afterPath="$PROJECT_DIR$/api_main.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/database/middleware.py" beforeDir="false" afterPath="$PROJECT_DIR$/database/middleware.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/static/js/student_form.js" beforeDir="false" afterPath="$PROJECT_DIR$/static/js/student_form.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/student_edit.py" beforeDir="false" afterPath="$PROJECT_DIR$/student_edit.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -247,30 +248,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1741959141895</updated>
-    </task>
-    <task id="LOCAL-00150" summary="фикс отправки заявлений">
-      <option name="closed" value="true" />
-      <created>1766417761353</created>
-      <option name="number" value="00150" />
-      <option name="presentableId" value="LOCAL-00150" />
-      <option name="project" value="LOCAL" />
-      <updated>1766417761353</updated>
-    </task>
-    <task id="LOCAL-00151" summary="фикс отправки заявлений">
-      <option name="closed" value="true" />
-      <created>1766419103079</created>
-      <option name="number" value="00151" />
-      <option name="presentableId" value="LOCAL-00151" />
-      <option name="project" value="LOCAL" />
-      <updated>1766419103079</updated>
-    </task>
-    <task id="LOCAL-00152" summary="фикс отправки заявлений">
-      <option name="closed" value="true" />
-      <created>1766419629608</created>
-      <option name="number" value="00152" />
-      <option name="presentableId" value="LOCAL-00152" />
-      <option name="project" value="LOCAL" />
-      <updated>1766419629608</updated>
     </task>
     <task id="LOCAL-00153" summary="фикс отправки заявлений">
       <option name="closed" value="true" />
@@ -640,7 +617,31 @@
       <option name="project" value="LOCAL" />
       <updated>1768775706367</updated>
     </task>
-    <option name="localTasksCounter" value="199" />
+    <task id="LOCAL-00199" summary="чиню сохранить">
+      <option name="closed" value="true" />
+      <created>1768776856125</created>
+      <option name="number" value="00199" />
+      <option name="presentableId" value="LOCAL-00199" />
+      <option name="project" value="LOCAL" />
+      <updated>1768776856125</updated>
+    </task>
+    <task id="LOCAL-00200" summary="чиню сохранить">
+      <option name="closed" value="true" />
+      <created>1768777166807</created>
+      <option name="number" value="00200" />
+      <option name="presentableId" value="LOCAL-00200" />
+      <option name="project" value="LOCAL" />
+      <updated>1768777166807</updated>
+    </task>
+    <task id="LOCAL-00201" summary="чиню сохранить">
+      <option name="closed" value="true" />
+      <created>1768777344093</created>
+      <option name="number" value="00201" />
+      <option name="presentableId" value="LOCAL-00201" />
+      <option name="project" value="LOCAL" />
+      <updated>1768777344093</updated>
+    </task>
+    <option name="localTasksCounter" value="202" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -655,7 +656,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="мидлваре для авторизации" />
     <MESSAGE value="убираю лишнее" />
     <MESSAGE value="обновил Base" />
     <MESSAGE value="Добавляю в анкету ученика НАГРАДЫ" />
@@ -680,6 +680,7 @@
     <MESSAGE value="страница авторизации - правки" />
     <MESSAGE value="красивости, правки" />
     <MESSAGE value="редактирование количеста занятий111" />
-    <option name="LAST_COMMIT_MESSAGE" value="редактирование количеста занятий111" />
+    <MESSAGE value="чиню сохранить" />
+    <option name="LAST_COMMIT_MESSAGE" value="чиню сохранить" />
   </component>
 </project>
