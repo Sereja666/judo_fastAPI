@@ -49,6 +49,7 @@
 {% include "partials/modals/certificate_modal.html" %}
 {% include "partials/modals/award_modal.html" %}
 {% include "partials/modals/parent_modal.html" %}
+{% include "partials/modals/manual_balance_modal.html" %}
 {% endblock %}
 
 {% block scripts %}
@@ -67,8 +68,11 @@
 
 <!-- JavaScript для оплаты -->
 <script src="/static/js/payment.js"></script>
+<script src="/static/js/manual_balance.js"></script>
 <!-- JavaScript для справок по болезни -->
 <script src="/static/js/medical_certificates.js"></script>
+
+
 {% endblock %}
 
 {% block styles %}

@@ -4,7 +4,7 @@ from config import templates, settings
 from fastapi import APIRouter, Request, Form, Depends, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_, select
+from sqlalchemy import and_, or_, select, distinct, func
 from typing import Optional, List
 from datetime import datetime
 from database.models import get_db, Students, Sport, Trainers, Prices, Sports_rank, Belt_сolor, MedCertificat_received, \
@@ -924,6 +924,93 @@ async def process_student_payment(
         raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
+# api/students.py - добавьте этот endpoint
+
+@router.post("/api/student/{student_id}/update-balance")
+async def update_student_balance(
+        student_id: int,
+        request: Request,
+        db: AsyncSession = Depends(get_db_async)
+):
+    """Ручное обновление баланса занятий"""
+    try:
+        # Проверяем авторизацию
+        user_info = getattr(request.state, 'user', None)
+        if not user_info or not user_info.get("authenticated"):
+            raise HTTPException(status_code=401, detail="Не авторизован")
+
+        data = await request.json()
+        new_balance = int(data.get('new_balance', 0))
+
+        if new_balance < 0:
+            raise HTTPException(status_code=400, detail="Баланс не может быть отрицательным")
+
+        # Получаем текущие данные ученика
+        student = await db.execute(
+            select(models.Students)
+            .filter(models.Students.id == student_id)
+        )
+        student = student.scalar_one_or_none()
+
+        if not student:
+            raise HTTPException(status_code=404, detail="Ученик не найден")
+
+        old_balance = student.classes_remaining or 0
+
+        # Обновляем баланс
+        student.classes_remaining = new_balance
+
+        # Если баланс сильно изменился, обновляем дату оплаты
+        from datetime import datetime, timedelta
+        from math import ceil
+
+        if abs(new_balance - old_balance) > 5:
+            # Получаем расписание студента
+            schedule_data = await db.execute(
+                select(func.count(distinct(models.Students_schedule.schedule)))
+                .join(models.Schedule, models.Students_schedule.schedule == models.Schedule.id)
+                .filter(models.Students_schedule.student == student_id)
+            )
+
+            days_per_week = schedule_data.scalar() or 1
+
+            if days_per_week > 0 and new_balance > 0:
+                weeks_remaining = new_balance / days_per_week
+                if weeks_remaining < 1:
+                    weeks_remaining = 1
+                else:
+                    weeks_remaining = ceil(weeks_remaining)
+
+                new_payment_date = datetime.now().date() + timedelta(days=weeks_remaining * 7 + 3)
+                student.expected_payment_date = new_payment_date
+                payment_date_info = f"Дата оплаты обновлена: {new_payment_date.strftime('%d.%m.%Y')}"
+            else:
+                payment_date_info = "Дата оплата не изменилась"
+        else:
+            payment_date_info = ""
+
+        await db.commit()
+
+        difference = new_balance - old_balance
+        difference_text = f"({difference:+d})" if difference != 0 else ""
+
+        return {
+            "success": True,
+            "message": f"Баланс обновлен: {old_balance} → {new_balance} {difference_text}",
+            "old_balance": old_balance,
+            "new_balance": new_balance,
+            "payment_date_info": payment_date_info,
+            "student_name": student.name
+        }
+
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Неверный формат числа")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating balance: {str(e)}")
+        await db.rollback()
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 @router.get("/api/prices")
 async def get_prices(
@@ -957,7 +1044,7 @@ async def get_prices(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# api/students.py - добавьте эти endpoints
+#  __________________Справки_поБОлезням_______________________________________
 
 @router.post("/api/student/{student_id}/medical-certificate")
 async def add_medical_certificate(

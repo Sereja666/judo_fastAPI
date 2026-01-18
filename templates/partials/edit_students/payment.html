@@ -5,7 +5,7 @@
         Оплата и занятия
     </h5>
 
-    <!-- Кнопка для открытия модального окна оплаты -->
+    <!-- Кнопки для управления -->
     <div class="mb-4">
         <div class="d-flex flex-wrap gap-3">
             <button type="button" class="btn btn-success btn-lg" id="openPaymentModal">
@@ -16,6 +16,11 @@
             <button type="button" class="btn btn-info btn-lg" id="openMedicalCertModal">
                 <i class="fas fa-file-medical me-2"></i>
                 Справка по болезни
+            </button>
+
+            <button type="button" class="btn btn-warning btn-lg" id="manualBalanceEdit">
+                <i class="fas fa-edit me-2"></i>
+                Ручное редактирование баланса
             </button>
 
             <div class="ms-auto">
@@ -62,13 +67,16 @@
             </label>
             <div class="input-group input-group-lg">
                 <input type="number" class="form-control" id="classes_remaining" name="classes_remaining"
-                       min="0" readonly style="font-size: 1.2rem; font-weight: bold;">
+                       min="0" style="font-size: 1.2rem; font-weight: bold;">
                 <span class="input-group-text">
                     <i class="fas fa-dumbbell" id="balanceIcon"></i>
                 </span>
             </div>
             <div class="mt-1">
                 <small class="text-muted" id="balanceStatus"></small>
+                <div class="form-text">
+                    Можно редактировать вручную. Для массового изменения используйте кнопки выше.
+                </div>
             </div>
         </div>
 
@@ -78,8 +86,7 @@
                 Следующая оплата
             </label>
             <div class="input-group input-group-lg">
-                <input type="date" class="form-control" id="expected_payment_date" name="expected_payment_date"
-                       readonly>
+                <input type="date" class="form-control" id="expected_payment_date" name="expected_payment_date">
                 <span class="input-group-text">
                     <i class="fas fa-clock" id="dateIcon"></i>
                 </span>
@@ -99,15 +106,16 @@
             <input type="datetime-local" class="form-control" id="date_start" name="date_start">
         </div>
 
-        <!--        <div class="col-md-6 mb-3">-->
-        <!--            <label for="payment_day" class="form-label fw-bold">-->
-        <!--                <i class="fas fa-calendar-day me-1"></i>-->
-        <!--                День месяца для оплаты-->
-        <!--            </label>-->
-        <!--            <input type="number" class="form-control" id="payment_day" name="payment_day" min="1" max="31">-->
-        <!--        </div>-->
+        <div class="col-md-6 mb-3">
+            <label for="payment_day" class="form-label fw-bold">
+                <i class="fas fa-calendar-day me-1"></i>
+                День месяца для оплаты
+            </label>
+            <input type="number" class="form-control" id="payment_day" name="payment_day" min="1" max="31">
+        </div>
     </div>
 </div>
 
-<!-- Подключаем модальное окно оплаты -->
+<!-- Подключаем модальные окна -->
 {% include "partials/modals/payment_modal.html" %}
+{% include "partials/modals/medical_certificate_modal.html" %}
