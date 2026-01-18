@@ -42,8 +42,8 @@ class StudentFormManager {
             console.log(`${key}: ${value}`);
         }
 
-        if (!studentId) {
-            alert('Сначала выберите ученика');
+        if (!studentId || studentId === 'new') {
+            alert('Для сохранения сначала выберите существующего ученика или создайте нового через кнопку "Создать нового ученика"');
             return;
         }
 
@@ -54,7 +54,6 @@ class StudentFormManager {
         submitBtn.disabled = true;
 
         try {
-            // Используем FormData напрямую (не преобразуем в JSON)
             const url = `/edit-students/update-student`;
 
             console.log('Отправляю POST запрос на:', url);
@@ -87,6 +86,16 @@ class StudentFormManager {
             // Показываем сообщение об успехе
             this.showMessage('success', result.message || 'Данные ученика успешно сохранены');
 
+            // Обновляем имя в выпадающем списке
+            const studentSelect = document.getElementById('studentSelect');
+            const currentStudentName = document.getElementById('name').value;
+            if (studentSelect) {
+                const option = studentSelect.querySelector(`option[value="${studentId}"]`);
+                if (option) {
+                    option.textContent = currentStudentName;
+                }
+            }
+
         } catch (error) {
             console.error('Ошибка сохранения:', error);
             this.showMessage('danger', `Ошибка сохранения: ${error.message}`);
@@ -102,7 +111,7 @@ class StudentFormManager {
         console.log(`Показываю сообщение [${type}]:`, text);
 
         if (!this.messageContainer) {
-            console.warn('Контейнер для сообщений не найдена');
+            console.warn('Контейнер для сообщений не найден');
             return;
         }
 
@@ -117,8 +126,7 @@ class StudentFormManager {
         setTimeout(() => {
             const alert = this.messageContainer.querySelector('.alert');
             if (alert) {
-                const bsAlert = new bootstrap.Alert(alert);
-                bsAlert.close();
+                alert.remove();
             }
         }, 5000);
     }
