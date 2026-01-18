@@ -110,7 +110,6 @@ async def get_student_data(student_id: int, db: Session = Depends(get_db)):
 
 # api/students.py - найдите endpoint для сохранения ученика
 @router.put("/api/student/{student_id}")
-@router.post("/api/student/{student_id}")
 async def update_student(
         student_id: int,
         request: Request,
@@ -978,21 +977,21 @@ async def process_student_payment(
         request: Request,
         db: AsyncSession = Depends(get_db_async)
 ):
-    """Обработка оплаты для ученика через веб-интерфейс"""
+    """Обработка оплаты для ученика"""
     try:
-        # Проверяем авторизацию пользователя
+        # Проверяем авторизацию
         user_info = getattr(request.state, 'user', None)
         if not user_info or not user_info.get("authenticated"):
             raise HTTPException(status_code=401, detail="Не авторизован")
 
-        # Получаем данные из запроса
+        # Получаем данные
         data = await request.json()
         amount = int(data.get('amount', 0))
 
         if amount <= 0:
             raise HTTPException(status_code=400, detail="Сумма должна быть больше 0")
 
-        # Используем асинхронную функцию из db_funk.py
+        # Используем ту же функцию что и в aiogram
         from db_handler.db_funk import process_payment_via_web
         result = await process_payment_via_web(student_id, amount)
 
@@ -1002,21 +1001,15 @@ async def process_student_payment(
                 "message": result["message"],
                 "new_balance": result["new_balance"],
                 "classes_added": result["classes_added"],
-                "next_payment_date": result["next_payment_date"],
-                "student_name": result["student_name"],
-                "price_description": result["price_description"]
+                "next_payment_date": result["next_payment_date"]
             }
         else:
             raise HTTPException(status_code=400, detail=result["error"])
 
     except ValueError:
         raise HTTPException(status_code=400, detail="Неверный формат суммы")
-    except HTTPException:
-        raise
     except Exception as e:
-        logger.error(f"Error processing payment: {str(e)}")
-        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
-
+        raise HTTPException(status_code=500, detail=str(e))
 
 # api/students.py - добавьте этот endpoint
 
