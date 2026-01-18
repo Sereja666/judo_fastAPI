@@ -7,22 +7,25 @@
 
     <!-- Кнопка для открытия модального окна оплаты -->
     <div class="mb-4">
-        <div class="d-flex justify-content-between align-items-center">
-            <div>
-                <button type="button" class="btn btn-success btn-lg" id="openPaymentModal">
-                    <i class="fas fa-credit-card me-2"></i>
-                    Обработать оплату
-                </button>
-                <div id="paymentStatus" class="mt-2 small text-muted"></div>
-            </div>
+        <div class="d-flex flex-wrap gap-3">
+            <button type="button" class="btn btn-success btn-lg" id="openPaymentModal">
+                <i class="fas fa-credit-card me-2"></i>
+                Обработать оплату
+            </button>
 
-            <div class="text-end">
+            <button type="button" class="btn btn-info btn-lg" id="openMedicalCertModal">
+                <i class="fas fa-file-medical me-2"></i>
+                Справка по болезни
+            </button>
+
+            <div class="ms-auto">
                 <div class="badge bg-info text-white p-2">
                     <i class="fas fa-calendar-day me-1"></i>
                     День оплаты: <span id="paymentDayDisplay">--</span>
                 </div>
             </div>
         </div>
+        <div id="paymentStatus" class="mt-2 small text-muted"></div>
     </div>
 
     <div class="row">
@@ -75,7 +78,8 @@
                 Следующая оплата
             </label>
             <div class="input-group input-group-lg">
-                <input type="date" class="form-control" id="expected_payment_date" name="expected_payment_date" readonly>
+                <input type="date" class="form-control" id="expected_payment_date" name="expected_payment_date"
+                       readonly>
                 <span class="input-group-text">
                     <i class="fas fa-clock" id="dateIcon"></i>
                 </span>
@@ -95,13 +99,13 @@
             <input type="datetime-local" class="form-control" id="date_start" name="date_start">
         </div>
 
-<!--        <div class="col-md-6 mb-3">-->
-<!--            <label for="payment_day" class="form-label fw-bold">-->
-<!--                <i class="fas fa-calendar-day me-1"></i>-->
-<!--                День месяца для оплаты-->
-<!--            </label>-->
-<!--            <input type="number" class="form-control" id="payment_day" name="payment_day" min="1" max="31">-->
-<!--        </div>-->
+        <!--        <div class="col-md-6 mb-3">-->
+        <!--            <label for="payment_day" class="form-label fw-bold">-->
+        <!--                <i class="fas fa-calendar-day me-1"></i>-->
+        <!--                День месяца для оплаты-->
+        <!--            </label>-->
+        <!--            <input type="number" class="form-control" id="payment_day" name="payment_day" min="1" max="31">-->
+        <!--        </div>-->
     </div>
 </div>
 

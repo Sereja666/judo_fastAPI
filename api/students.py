@@ -924,7 +924,7 @@ async def process_student_payment(
         raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
 
-# api/students.py - добавьте этот endpoint
+
 @router.get("/api/prices")
 async def get_prices(
         request: Request,
@@ -955,3 +955,108 @@ async def get_prices(
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# api/students.py - добавьте эти endpoints
+
+@router.post("/api/student/{student_id}/medical-certificate")
+async def add_medical_certificate(
+        student_id: int,
+        request: Request,
+        db: AsyncSession = Depends(get_db_async)
+):
+    """Добавление справки по болезни"""
+    try:
+        # Проверяем авторизацию
+        user_info = getattr(request.state, 'user', None)
+        if not user_info or not user_info.get("authenticated"):
+            raise HTTPException(status_code=401, detail="Не авторизован")
+
+        data = await request.json()
+        start_date = data.get('start_date')
+        end_date = data.get('end_date')
+
+        if not start_date or not end_date:
+            raise HTTPException(status_code=400, detail="Не указаны даты")
+
+        # Используем функцию из db_funk.py
+        from db_handler.db_funk import process_medical_certificate
+        result = await process_medical_certificate(student_id, start_date, end_date)
+
+        if result["success"]:
+            return {
+                "success": True,
+                "message": result["message"],
+                "new_balance": result["new_balance"],
+                "missed_classes": result["missed_classes"],
+                "start_date": result["start_date"],
+                "end_date": result["end_date"]
+            }
+        else:
+            raise HTTPException(status_code=400, detail=result["error"])
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error adding medical certificate: {str(e)}")
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+
+@router.get("/api/student/{student_id}/medical-certificates")
+async def get_medical_certificates(
+        student_id: int,
+        request: Request,
+        db: AsyncSession = Depends(get_db_async)
+):
+    """Получение списка справок по болезни ученика"""
+    try:
+        # Проверяем авторизацию
+        user_info = getattr(request.state, 'user', None)
+        if not user_info or not user_info.get("authenticated"):
+            raise HTTPException(status_code=401, detail="Не авторизован")
+
+        from db_handler.db_funk import get_student_medical_certificates
+        certificates = await get_student_medical_certificates(student_id)
+
+        return {
+            "success": True,
+            "certificates": certificates
+        }
+
+    except Exception as e:
+        logger.error(f"Error getting medical certificates: {str(e)}")
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
+
+
+@router.delete("/api/student/{student_id}/medical-certificate/{certificate_id}")
+async def delete_medical_certificate_endpoint(
+        student_id: int,
+        certificate_id: int,
+        request: Request,
+        db: AsyncSession = Depends(get_db_async)
+):
+    """Удаление справки по болезни"""
+    try:
+        # Проверяем авторизацию
+        user_info = getattr(request.state, 'user', None)
+        if not user_info or not user_info.get("authenticated"):
+            raise HTTPException(status_code=401, detail="Не авторизован")
+
+        from db_handler.db_funk import delete_medical_certificate
+        result = await delete_medical_certificate(certificate_id, student_id)
+
+        if result["success"]:
+            return {
+                "success": True,
+                "message": result["message"],
+                "new_balance": result["new_balance"],
+                "classes_removed": result["classes_removed"]
+            }
+        else:
+            raise HTTPException(status_code=400, detail=result["error"])
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting medical certificate: {str(e)}")
+        raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")

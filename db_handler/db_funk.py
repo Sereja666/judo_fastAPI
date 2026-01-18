@@ -532,3 +532,211 @@ async def process_payment_via_web(student_id: int, amount: int) -> dict:
     except Exception as e:
         logger.error(f"Error processing payment via web: {str(e)}")
         return {"success": False, "error": f"Системная ошибка: {str(e)}"}
+
+
+# db_funk.py - добавьте эти функции
+
+async def process_medical_certificate(student_id: int, start_date: str, end_date: str) -> dict:
+    """
+    Обрабатывает справку по болезни и возвращает пропущенные занятия
+    Формат дат: 'DD.MM.YYYY'
+    """
+    try:
+
+        # Преобразуем даты
+        start_date_dt = datetime.strptime(start_date, '%d.%m.%Y').date()
+        end_date_dt = datetime.strptime(end_date, '%d.%m.%Y').date()
+
+        if start_date_dt > end_date_dt:
+            return {"success": False, "error": "Дата начала не может быть позже даты окончания"}
+
+        # Получаем информацию об ученике
+        student_data = await execute_raw_sql(
+            """SELECT id, name, classes_remaining 
+            FROM public.student 
+            WHERE id = $1 AND active = true;""",
+            student_id
+        )
+
+        if not student_data:
+            return {"success": False, "error": "Ученик не найден"}
+
+        student = student_data[0]
+        current_balance = student['classes_remaining'] if student['classes_remaining'] is not None else 0
+
+        # Рассчитываем количество пропущенных занятий
+        missed_classes_result = await calculate_missed_classes(student_id, start_date_dt, end_date_dt)
+
+        if not missed_classes_result["success"]:
+            return missed_classes_result
+
+        missed_classes = missed_classes_result["missed_classes"]
+
+        if missed_classes == 0:
+            return {"success": False, "error": "За указанный период у ученика не было запланированных занятий"}
+
+        # Обновляем баланс ученика
+        new_balance = current_balance + missed_classes
+
+        await execute_raw_sql(
+            "UPDATE public.student SET classes_remaining = $1 WHERE id = $2;",
+            new_balance, student_id
+        )
+
+        # Записываем информацию о справке в историю
+        await execute_raw_sql(
+            """INSERT INTO public.medical_certificates 
+                (student_id, start_date, end_date, missed_classes, added_classes, processed_date) 
+            VALUES ($1, $2, $3, $4, $5, CURRENT_DATE);""",
+            student_id, start_date_dt, end_date_dt, missed_classes, missed_classes
+        )
+
+        return {
+            "success": True,
+            "student_name": student['name'],
+            "start_date": start_date,
+            "end_date": end_date,
+            "missed_classes": missed_classes,
+            "classes_added": missed_classes,
+            "new_balance": new_balance,
+            "message": f"Справка обработана! Возвращено {missed_classes} занятий"
+        }
+
+    except ValueError as e:
+        return {"success": False, "error": f"Неверный формат даты: {str(e)}"}
+    except Exception as e:
+        logger.error(f"Error processing medical certificate: {str(e)}")
+        return {"success": False, "error": f"Системная ошибка: {str(e)}"}
+
+
+async def calculate_missed_classes(student_id: int, start_date, end_date) -> dict:
+    """Рассчитывает количество пропущенных занятий за период болезни"""
+    try:
+
+
+        # Получаем расписание ученика
+        schedule_data = await execute_raw_sql(
+            """SELECT DISTINCT sched.day_week, sched.time_start
+            FROM public.student_schedule ss
+            JOIN public.schedule sched ON ss.schedule = sched.id
+            WHERE ss.student = $1;""",
+            student_id
+        )
+
+        if not schedule_data:
+            return {"success": False, "error": "У ученика нет расписания", "missed_classes": 0}
+
+        weekdays_ru_to_int = {
+            'понедельник': 0,
+            'вторник': 1,
+            'среда': 2,
+            'четверг': 3,
+            'пятница': 4,
+            'суббота': 5,
+            'воскресенье': 6
+        }
+
+        student_weekdays = [weekdays_ru_to_int[row['day_week']] for row in schedule_data]
+
+        missed_classes = 0
+        current_date = start_date
+
+        while current_date <= end_date:
+            if current_date.weekday() in student_weekdays:
+                missed_classes += 1
+            current_date += timedelta(days=1)
+
+        return {
+            "success": True,
+            "missed_classes": missed_classes,
+            "schedule_days": len(schedule_data)
+        }
+
+    except Exception as e:
+        logger.error(f"Error calculating missed classes: {str(e)}")
+        return {"success": False, "error": f"Ошибка расчета пропущенных занятий: {str(e)}", "missed_classes": 0}
+
+
+async def get_student_medical_certificates(student_id: int):
+    """Получает список медицинских справок ученика"""
+    try:
+        certificates = await execute_raw_sql(
+            """SELECT 
+                id,
+                TO_CHAR(start_date, 'DD.MM.YYYY') as start_date,
+                TO_CHAR(end_date, 'DD.MM.YYYY') as end_date,
+                missed_classes,
+                added_classes,
+                TO_CHAR(processed_date, 'DD.MM.YYYY') as processed_date
+            FROM public.medical_certificates 
+            WHERE student_id = $1
+            ORDER BY start_date DESC;""",
+            student_id
+        )
+
+        return certificates
+    except Exception as e:
+        logger.error(f"Error getting medical certificates: {str(e)}")
+        return []
+
+
+async def delete_medical_certificate(certificate_id: int, student_id: int) -> dict:
+    """
+    Удаляет справку по болезни и корректирует баланс
+    """
+    try:
+        # Получаем данные о справке
+        cert_data = await execute_raw_sql(
+            """SELECT missed_classes, added_classes 
+            FROM public.medical_certificates 
+            WHERE id = $1 AND student_id = $2;""",
+            certificate_id, student_id
+        )
+
+        if not cert_data:
+            return {"success": False, "error": "Справка не найдена"}
+
+        cert = cert_data[0]
+        classes_to_remove = cert['added_classes'] or cert['missed_classes'] or 0
+
+        if classes_to_remove <= 0:
+            return {"success": False, "error": "Некорректное количество занятий в справке"}
+
+        # Получаем текущий баланс ученика
+        student_data = await execute_raw_sql(
+            "SELECT classes_remaining FROM public.student WHERE id = $1;",
+            student_id
+        )
+
+        if not student_data:
+            return {"success": False, "error": "Ученик не найден"}
+
+        current_balance = student_data[0]['classes_remaining'] or 0
+
+        # Проверяем, что баланс не уйдет в минус
+        new_balance = current_balance - classes_to_remove
+        if new_balance < 0:
+            return {"success": False, "error": "Нельзя удалить справку: баланс уйдет в отрицательное значение"}
+
+        # Обновляем баланс
+        await execute_raw_sql(
+            "UPDATE public.student SET classes_remaining = $1 WHERE id = $2;",
+            new_balance, student_id
+        )
+
+        # Удаляем справку
+        await execute_raw_sql(
+            "DELETE FROM public.medical_certificates WHERE id = $1;",
+            certificate_id
+        )
+
+        return {
+            "success": True,
+            "message": f"Справка удалена. С баланса снято {classes_to_remove} занятий",
+            "classes_removed": classes_to_remove,
+            "new_balance": new_balance
+        }
+
+    except Exception as e:
+        logger.error(f"Error deleting medical certificate: {str(e)}")
+        return {"success": False, "error": f"Системная ошибка: {str(e)}"}

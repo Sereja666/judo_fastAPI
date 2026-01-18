@@ -1,0 +1,123 @@
+<!-- templates/partials/modals/medical_certificate_modal.html -->
+<div class="modal fade" id="medicalCertificateModal" tabindex="-1" aria-labelledby="medicalCertificateModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="medicalCertificateModalLabel">
+                    <i class="fas fa-file-medical me-2"></i>
+                    Справка по болезни
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="medicalCertAlert" class="alert d-none" role="alert"></div>
+
+                <!-- Форма для добавления справки -->
+                <div id="medicalCertFormSection">
+                    <form id="medicalCertForm">
+                        <input type="hidden" id="medicalCertStudentId" name="student_id">
+
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="certStartDate" class="form-label fw-bold">
+                                        <i class="fas fa-calendar-plus me-1"></i>
+                                        Дата начала болезни
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control datepicker" id="certStartDate"
+                                               placeholder="ДД.ММ.ГГГГ" pattern="\d{2}\.\d{2}\.\d{4}">
+                                        <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                                    </div>
+                                    <div class="form-text">Например: 15.11.2023</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="certEndDate" class="form-label fw-bold">
+                                        <i class="fas fa-calendar-minus me-1"></i>
+                                        Дата окончания болезни
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control datepicker" id="certEndDate"
+                                               placeholder="ДД.ММ.ГГГГ" pattern="\d{2}\.\d{2}\.\d{4}">
+                                        <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                                    </div>
+                                    <div class="form-text">Например: 22.11.2023</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card bg-light mb-3">
+                            <div class="card-body">
+                                <h6 class="card-title text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Информация
+                                </h6>
+                                <p class="card-text small">
+                                    Система автоматически рассчитает количество пропущенных занятий
+                                    на основе расписания ученика и вернет их на баланс.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div id="certPreview" class="card border-info mb-3 d-none">
+                            <div class="card-header bg-info text-white">
+                                <i class="fas fa-calculator me-1"></i>
+                                Предварительный расчет
+                            </div>
+                            <div class="card-body">
+                                <div id="certPreviewText" class="text-center">
+                                    <div class="spinner-border spinner-border-sm" role="status">
+                                        <span class="visually-hidden">Загрузка...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Список существующих справок -->
+                <div id="medicalCertListSection" class="mt-4" style="display: none;">
+                    <h6 class="section-title">
+                        <i class="fas fa-history me-1"></i>
+                        История справок
+                    </h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover" id="medicalCertTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Период болезни</th>
+                                    <th>Пропущено занятий</th>
+                                    <th>Дата обработки</th>
+                                    <th>Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody id="medicalCertTableBody">
+                                <!-- Данные будут загружены динамически -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="noCertificates" class="text-center text-muted py-3">
+                        <i class="fas fa-file-medical fa-2x mb-2"></i>
+                        <p>Нет зарегистрированных справок</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>
+                    Закрыть
+                </button>
+                <button type="button" class="btn btn-info" id="addMedicalCert">
+                    <i class="fas fa-plus me-1"></i>
+                    Добавить справку
+                </button>
+                <button type="button" class="btn btn-outline-info" id="showCertHistory">
+                    <i class="fas fa-history me-1"></i>
+                    История справок
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

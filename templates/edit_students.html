@@ -44,6 +44,8 @@
 <div id="message" class="mt-3"></div>
 
 <!-- Модальные окна -->
+{% include "partials/modals/payment_modal.html" %}
+{% include "partials/modals/medical_certificate_modal.html" %}
 {% include "partials/modals/certificate_modal.html" %}
 {% include "partials/modals/award_modal.html" %}
 {% include "partials/modals/parent_modal.html" %}
@@ -65,6 +67,8 @@
 
 <!-- JavaScript для оплаты -->
 <script src="/static/js/payment.js"></script>
+<!-- JavaScript для справок по болезни -->
+<script src="/static/js/medical_certificates.js"></script>
 {% endblock %}
 
 {% block styles %}
@@ -139,6 +143,28 @@
     #paymentPreview {
         border-left: 4px solid #3CB371;
     }
-</style>
+
+.highlight-red {
+    animation: highlightRed 1s ease-in-out;
+    background-color: rgba(255, 107, 107, 0.2) !important;
+    border-color: var(--superset-danger) !important;
+}
+
+@keyframes highlightRed {
+    0% { background-color: rgba(255, 107, 107, 0.2); }
+    50% { background-color: rgba(255, 107, 107, 0.4); }
+    100% { background-color: rgba(255, 107, 107, 0.2); }
+}
+
+/* Стили для модального окна справок */
+.datepicker {
+    text-align: center;
+    font-family: monospace;
+}
+
+.datepicker::placeholder {
+    color: #999;
+    font-style: italic;
+}
 </style>
 {% endblock %}
