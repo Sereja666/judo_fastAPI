@@ -39,6 +39,14 @@ async function saveStudent() {
     }
 }
 
+const response = await fetch('/students/update', {  // Измените URL
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data)
+});
+
 class StudentFormManager {
     constructor() {
         console.log('StudentFormManager инициализирован');

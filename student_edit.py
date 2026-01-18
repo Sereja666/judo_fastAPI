@@ -100,6 +100,30 @@ async def get_student_data(student_id: int, db: Session = Depends(get_db)):
     return JSONResponse(student_data)
 
 
+@router.post("/students/update")  # Без /api в начале
+async def update_student_direct(
+        request: Request,
+        db: Session = Depends(get_db)
+):
+    try:
+        data = await request.json()
+        student_id = data.get('student_id')
+
+        if not student_id:
+            return JSONResponse({"success": False, "error": "Нет student_id"})
+
+        student = db.query(Students).filter(Students.id == student_id).first()
+        if not student:
+            return JSONResponse({"success": False, "error": "Ученик не найден"})
+
+        # Обновите поля...
+
+        db.commit()
+        return JSONResponse({"success": True, "message": "Сохранено"})
+
+    except Exception as e:
+        db.rollback()
+        return JSONResponse({"success": False, "error": str(e)})
     
 # Добавьте модель для валидации данных
 class StudentUpdate(BaseModel):
