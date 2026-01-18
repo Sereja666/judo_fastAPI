@@ -6,44 +6,6 @@
 {% block content %}
 <h1>Редактирование данных учеников</h1>
 
-<script>
-// Включим отладку
-console.log = function(...args) {
-    const timestamp = new Date().toISOString().split('T')[1].slice(0, -1);
-    const logLine = `[${timestamp}] ${args.join(' ')}`;
-
-    // Отправляем в консоль браузера
-    if (window.originalConsoleLog) {
-        window.originalConsoleLog.apply(console, args);
-    }
-
-    // Также показываем на странице
-    const debugDiv = document.getElementById('debugConsole') || (function() {
-        const div = document.createElement('div');
-        div.id = 'debugConsole';
-        div.style.position = 'fixed';
-        div.style.bottom = '0';
-        div.style.right = '0';
-        div.style.width = '400px';
-        div.style.height = '200px';
-        div.style.backgroundColor = 'rgba(0,0,0,0.8)';
-        div.style.color = '#0f0';
-        div.style.fontFamily = 'monospace';
-        div.style.fontSize = '12px';
-        div.style.padding = '10px';
-        div.style.overflow = 'auto';
-        div.style.zIndex = '9999';
-        document.body.appendChild(div);
-        return div;
-    })();
-
-    debugDiv.innerHTML += logLine + '<br>';
-    debugDiv.scrollTop = debugDiv.scrollHeight;
-};
-
-// Сохраняем оригинальную console.log
-window.originalConsoleLog = console.log;
-</script>
 <!-- Блок выбора ученика -->
 {% include "partials/edit_students/student_selection.html" %}
 
@@ -111,6 +73,7 @@ window.originalConsoleLog = console.log;
 <script src="/static/js/medical_certificates.js"></script>
 
 <script src="/static/js/student_form.js"></script>
+
 
 {% endblock %}
 
