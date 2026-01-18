@@ -473,6 +473,7 @@ async def update_medical_certificate(
         if not certificate:
             raise HTTPException(status_code=404, detail="Справка не найдена")
 
+
         # Обновляем поля
         if cert_id:
             certificate.cert_id = cert_id

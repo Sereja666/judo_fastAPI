@@ -191,7 +191,6 @@ class BalanceLog(Base):
     # Связи
     student = relationship("Students", backref="balance_logs")
 
-
 # Расписание
 class Schedule(Base):
     """
@@ -378,7 +377,7 @@ class MedCertificat_type(Base):
     name_cert = Column(String())
 
 
-# Факт получения справки
+# Факт оплаты
 
 class MedCertificat_received(Base):
     """
