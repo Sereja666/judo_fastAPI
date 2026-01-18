@@ -68,15 +68,19 @@
             <div class="input-group input-group-lg">
                 <input type="number" class="form-control" id="classes_remaining" name="classes_remaining"
                        min="0" style="font-size: 1.2rem; font-weight: bold;">
+                <button class="btn btn-success" type="button" id="saveBalanceBtn" title="Сохранить баланс">
+                    <i class="fas fa-save"></i>
+                </button>
                 <span class="input-group-text">
-                    <i class="fas fa-dumbbell" id="balanceIcon"></i>
-                </span>
+            <i class="fas fa-dumbbell" id="balanceIcon"></i>
+        </span>
             </div>
             <div class="mt-1">
                 <small class="text-muted" id="balanceStatus"></small>
                 <div class="form-text">
-                    Можно редактировать вручную. Для массового изменения используйте кнопки выше.
+                    Измените значение и нажмите <i class="fas fa-save"></i> для сохранения
                 </div>
+                <div id="balanceSaveStatus" class="small"></div>
             </div>
         </div>
 

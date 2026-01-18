@@ -10,391 +10,169 @@ class PaymentManager {
 
     initialize() {
         this.setupEventListeners();
+        this.setupBalanceSaveListener();
     }
 
-    setupEventListeners() {
-        // Кнопка открытия модального окна
-        document.addEventListener('click', (e) => {
-            if (e.target.id === 'openPaymentModal' || e.target.closest('#openPaymentModal')) {
-                this.openPaymentModal();
-            }
-        });
+    setupBalanceSaveListener() {
+        // Кнопка сохранения баланса
+        const saveBalanceBtn = document.getElementById('saveBalanceBtn');
+        if (saveBalanceBtn) {
+            saveBalanceBtn.addEventListener('click', () => this.saveCurrentBalance());
+        }
 
-        // Подтверждение оплаты
-        document.addEventListener('click', (e) => {
-            if (e.target.id === 'confirmPayment' || e.target.closest('#confirmPayment')) {
-                this.processPayment();
-            }
-        });
+        // Автосохранение при потере фокуса (опционально)
+        const balanceInput = document.getElementById('classes_remaining');
+        if (balanceInput) {
+            balanceInput.addEventListener('blur', (e) => {
+                const newValue = parseInt(e.target.value) || 0;
+                const oldValue = this.currentBalance;
 
-        // Изменение суммы
-        const amountInput = document.getElementById('amount');
-        if (amountInput) {
-            amountInput.addEventListener('input', (e) => {
-                this.updatePreview(e.target.value);
-                this.updateConfirmButton();
+                // Сохраняем если значение изменилось
+                if (newValue !== oldValue && Math.abs(newValue - oldValue) > 0) {
+                    setTimeout(() => this.saveCurrentBalance(), 500);
+                }
             });
         }
     }
 
-    openPaymentModal() {
-        const studentId = document.getElementById('studentId').value;
+    async saveCurrentBalance() {
+        const balanceInput = document.getElementById('classes_remaining');
+        const studentId = document.getElementById('studentId')?.value;
+        const saveBtn = document.getElementById('saveBalanceBtn');
+
         if (!studentId) {
-            alert('Сначала выберите ученика');
+            this.showBalanceStatus('Сначала выберите ученика', 'danger');
             return;
         }
 
-        this.currentStudentId = studentId;
-        this.currentStudentName = document.getElementById('name').value;
-        this.currentBalance = parseInt(document.getElementById('classes_remaining').value) || 0;
+        const newBalance = parseInt(balanceInput.value) || 0;
 
-        document.getElementById('paymentStudentId').value = studentId;
-        document.getElementById('currentBalance').value = this.currentBalance;
-        document.getElementById('amount').value = '';
-        document.getElementById('confirmPayment').disabled = true;
-
-        // Обновляем информацию об ученике
-        this.updateStudentInfo();
-
-        // Загружаем доступные тарифы
-        this.loadPrices();
-
-        // Сбрасываем предпросмотр
-        document.getElementById('paymentPreview').classList.add('d-none');
-
-        // Показываем модальное окно
-        const modal = new bootstrap.Modal(document.getElementById('paymentModal'));
-        modal.show();
-    }
-
-    updateStudentInfo() {
-        const infoDiv = document.getElementById('studentPaymentInfo');
-        const currentDate = new Date().toLocaleDateString('ru-RU');
-        const nextPayment = document.getElementById('expected_payment_date').value;
-
-        let nextPaymentText = 'не установлена';
-        if (nextPayment) {
-            const date = new Date(nextPayment);
-            nextPaymentText = date.toLocaleDateString('ru-RU');
-        }
-
-        infoDiv.innerHTML = `
-            <div class="text-start">
-                <p class="mb-1"><strong>${this.currentStudentName}</strong></p>
-                <p class="mb-1 small">Текущий баланс: <span class="badge ${this.currentBalance > 5 ? 'bg-success' : this.currentBalance > 0 ? 'bg-warning' : 'bg-danger'}">
-                    ${this.currentBalance} занятий
-                </span></p>
-                <p class="mb-0 small">След. оплата: ${nextPaymentText}</p>
-                <p class="mb-0 small text-muted">Сегодня: ${currentDate}</p>
-            </div>
-        `;
-    }
-
-    async loadPrices() {
-        try {
-            // Получаем список тарифов из скрытого поля или API
-            const priceSelect = document.getElementById('price');
-            if (priceSelect && priceSelect.options) {
-                this.availablePrices = [];
-                for (let option of priceSelect.options) {
-                    if (option.value) {
-                        this.availablePrices.push({
-                            id: option.value,
-                            price: option.getAttribute('data-price-amount'),
-                            classes_in_price: option.getAttribute('data-classes-count') || 0,
-                            description: option.text.split(' - ')[0]
-                        });
-                    }
-                }
-                this.renderPrices();
-            }
-        } catch (error) {
-            console.error('Error loading prices:', error);
-            this.showAlert('Ошибка загрузки тарифов', 'danger');
-        }
-    }
-
-    renderPrices() {
-        const container = document.getElementById('availablePrices');
-        if (!container) return;
-
-        if (!this.availablePrices.length) {
-            container.innerHTML = '<div class="col-12 text-center text-muted">Нет доступных тарифов</div>';
+        if (newBalance < 0) {
+            this.showBalanceStatus('Баланс не может быть отрицательным', 'danger');
             return;
         }
 
-        // Сортируем по цене
-        this.availablePrices.sort((a, b) => a.price - b.price);
+        // Запоминаем старое значение для отката
+        const oldBalance = this.currentBalance;
 
-        const html = this.availablePrices.map(price => `
-            <div class="col-md-6">
-                <div class="card price-item border-light h-100"
-                     data-price="${price.price}"
-                     data-id="${price.id}"
-                     style="cursor: pointer; transition: all 0.3s;"
-                     onclick="window.paymentManager.selectPrice(this)">
-                    <div class="card-body text-center p-3">
-                        <h5 class="card-title text-primary mb-1">${price.price} ₽</h5>
-                        <p class="card-text mb-1"><small>${price.description || 'Тариф'}</small></p>
-                        <p class="card-text mb-0">
-                            <span class="badge bg-light text-dark">
-                                <i class="fas fa-dumbbell me-1"></i>
-                                ${price.classes_in_price || 0} занятий
-                            </span>
-                        </p>
-                    </div>
-                </div>
-            </div>
-        `).join('');
-
-        container.innerHTML = html;
-    }
-
-    selectPrice(element) {
-        // Сбрасываем выделение у всех тарифов
-        document.querySelectorAll('.price-item').forEach(item => {
-            item.classList.remove('selected');
-            item.style.borderColor = '';
-            item.style.backgroundColor = '';
-        });
-
-        // Выделяем выбранный тариф
-        element.classList.add('selected');
-        element.style.borderColor = '#3CB371';
-        element.style.borderWidth = '2px';
-        element.style.backgroundColor = 'rgba(60, 179, 113, 0.05)';
-
-        // Устанавливаем сумму
-        const price = element.dataset.price;
-        document.getElementById('amount').value = price;
-
-        this.updatePreview(price);
-        this.updateConfirmButton();
-    }
-
-    updatePreview(amount) {
-        if (!amount || amount <= 0) {
-            document.getElementById('paymentPreview').classList.add('d-none');
-            return;
+        // Визуальная обратная связь
+        if (saveBtn) {
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            saveBtn.disabled = true;
+            saveBtn.classList.remove('btn-success');
+            saveBtn.classList.add('btn-warning');
         }
 
-        // Находим соответствующий тариф
-        const price = this.availablePrices.find(p => p.price == amount);
-        let previewText = '';
-
-        if (price) {
-            const newBalance = this.currentBalance + (parseInt(price.classes_in_price) || 0);
-            const today = new Date();
-            const nextDate = new Date(today);
-            nextDate.setDate(today.getDate() + 30); // +30 дней для примера
-            const nextPaymentDate = nextDate.toLocaleDateString('ru-RU');
-
-            previewText = `
-                <div class="text-start">
-                    <div class="row align-items-center mb-2">
-                        <div class="col-6">
-                            <h6 class="mb-0">${price.description || 'Тариф'}</h6>
-                        </div>
-                        <div class="col-6 text-end">
-                            <span class="badge bg-primary">${price.price} ₽</span>
-                        </div>
-                    </div>
-                    <hr class="my-2">
-                    <div class="row">
-                        <div class="col-6">
-                            <div class="mb-2">
-                                <small class="text-muted">Текущий баланс:</small><br>
-                                <span class="badge bg-secondary">${this.currentBalance} занятий</span>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="mb-2">
-                                <small class="text-muted">Добавляется:</small><br>
-                                <span class="badge bg-success">+${price.classes_in_price || 0} занятий</span>
-                            </div>
-                        </div>
-                    </div>
-                    <hr class="my-2">
-                    <div class="text-center">
-                        <p class="mb-1"><small class="text-muted">Новый баланс:</small></p>
-                        <h4 class="text-success mb-1">${newBalance} занятий</h4>
-                        <p class="mb-0 small text-muted">Следующая оплата: ≈ ${nextPaymentDate}</p>
-                    </div>
-                </div>
-            `;
-        } else {
-            previewText = `
-                <div class="text-center">
-                    <div class="alert alert-warning mb-0">
-                        <i class="fas fa-exclamation-triangle me-1"></i>
-                        Сумма ${amount} ₽ не соответствует ни одному тарифу
-                        <div class="mt-1 small">Занятия будут добавлены вручную</div>
-                    </div>
-                </div>
-            `;
-        }
-
-        document.getElementById('previewText').innerHTML = previewText;
-        document.getElementById('paymentPreview').classList.remove('d-none');
-    }
-
-    updateConfirmButton() {
-        const amount = document.getElementById('amount').value;
-        const confirmBtn = document.getElementById('confirmPayment');
-        confirmBtn.disabled = !amount || amount <= 0;
-    }
-
-    async processPayment() {
-        const amount = document.getElementById('amount').value;
-        const studentId = this.currentStudentId;
-
-        if (!amount || amount <= 0) {
-            this.showAlert('Введите корректную сумму', 'danger');
-            return;
-        }
-
-        const confirmBtn = document.getElementById('confirmPayment');
-        const originalText = confirmBtn.innerHTML;
-        confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Обработка...';
-        confirmBtn.disabled = true;
+        this.showBalanceStatus('Сохранение...', 'info');
 
         try {
-            const response = await fetch(`/api/student/${studentId}/process-payment`, {
+            const response = await fetch(`/api/student/${studentId}/update-balance`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
                 },
-                body: JSON.stringify({ amount: parseInt(amount) })
+                body: JSON.stringify({
+                    new_balance: newBalance,
+                    reason: 'Ручное изменение в интерфейсе'
+                })
             });
 
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.detail || 'Ошибка сервера');
+            // Проверяем, что ответ JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const text = await response.text();
+                console.error('Non-JSON response:', text.substring(0, 200));
+
+                // Пробуем разобрать как текст
+                if (text.includes('Internal Server Error')) {
+                    throw new Error('Внутренняя ошибка сервера');
+                } else if (text.includes('CSRF')) {
+                    throw new Error('Ошибка безопасности. Обновите страницу.');
+                } else {
+                    throw new Error('Сервер вернул некорректный ответ');
+                }
             }
 
             const result = await response.json();
 
-            if (result.success) {
-                // Обновляем данные на странице
-                this.updateStudentData(result);
-
-                // Показываем сообщение об успехе
-                this.showAlert(result.message, 'success');
-
-                // Закрываем модальное окно через 2 секунды
-                setTimeout(() => {
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('paymentModal'));
-                    modal.hide();
-
-                    // Показываем уведомление
-                    this.showSuccessToast(result);
-                }, 2000);
-            } else {
-                throw new Error(result.error || 'Ошибка при обработке оплаты');
+            if (!response.ok) {
+                // Если endpoint вернул ошибку в JSON
+                throw new Error(result.error || result.detail || `Ошибка ${response.status}`);
             }
+
+            if (result.success) {
+                // Успешно сохранено
+                this.currentBalance = newBalance;
+
+                // Обновляем статус
+                this.updateBalanceStatus(newBalance);
+                this.showBalanceStatus(result.message, 'success');
+
+                // Анимация успеха
+                if (saveBtn) {
+                    saveBtn.innerHTML = '<i class="fas fa-check"></i>';
+                    saveBtn.classList.remove('btn-warning');
+                    saveBtn.classList.add('btn-success');
+
+                    // Возвращаем обычный вид через 2 секунды
+                    setTimeout(() => {
+                        if (saveBtn) {
+                            saveBtn.innerHTML = '<i class="fas fa-save"></i>';
+                            saveBtn.disabled = false;
+                        }
+                    }, 2000);
+                }
+
+                // Показываем тост
+                this.showBalanceChangeToast(result);
+
+            } else {
+                throw new Error(result.error || 'Неизвестная ошибка');
+            }
+
         } catch (error) {
-            this.showAlert(error.message, 'danger');
-        } finally {
-            confirmBtn.innerHTML = '<i class="fas fa-check me-1"></i> Подтвердить оплату';
-            this.updateConfirmButton();
+            console.error('Save balance error:', error);
+
+            // Восстанавливаем старое значение
+            balanceInput.value = oldBalance;
+
+            // Показываем ошибку
+            this.showBalanceStatus(`Ошибка: ${error.message}`, 'danger');
+
+            // Восстанавливаем кнопку
+            if (saveBtn) {
+                saveBtn.innerHTML = '<i class="fas fa-save"></i>';
+                saveBtn.disabled = false;
+                saveBtn.classList.remove('btn-warning');
+                saveBtn.classList.add('btn-success');
+            }
         }
     }
 
-    updateStudentData(paymentResult) {
-        // Обновляем остаток занятий
-        const balanceInput = document.getElementById('classes_remaining');
-        if (balanceInput) {
-            balanceInput.value = paymentResult.new_balance;
+    showBalanceStatus(message, type = 'info') {
+        const statusDiv = document.getElementById('balanceSaveStatus');
+        if (!statusDiv) return;
 
-            // Анимация
-            balanceInput.classList.add('highlight');
-            setTimeout(() => balanceInput.classList.remove('highlight'), 1000);
+        const colors = {
+            'success': 'text-success',
+            'danger': 'text-danger',
+            'warning': 'text-warning',
+            'info': 'text-info'
+        };
 
-            // Обновляем статус
-            this.updateBalanceStatus(paymentResult.new_balance);
-        }
+        statusDiv.className = `small ${colors[type] || 'text-muted'}`;
+        statusDiv.innerHTML = `<i class="fas fa-info-circle me-1"></i>${message}`;
 
-        // Обновляем тариф если нужно
-        const priceSelect = document.getElementById('price');
-        if (priceSelect) {
-            // Можно обновить выбранный тариф на основе paymentResult.price_description
-        }
-
-        // Обновляем дату следующей оплаты
-        const dateInput = document.getElementById('expected_payment_date');
-        if (dateInput && paymentResult.next_payment_date) {
-            const [day, month, year] = paymentResult.next_payment_date.split('.');
-            dateInput.value = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-
-            // Обновляем статус даты
-            this.updateDateStatus(dateInput.value);
+        // Автоматически скрываем через 5 секунд если не ошибка
+        if (type !== 'danger') {
+            setTimeout(() => {
+                statusDiv.innerHTML = '';
+            }, 5000);
         }
     }
 
-    updateBalanceStatus(balance) {
-        const statusDiv = document.getElementById('balanceStatus');
-        const icon = document.getElementById('balanceIcon');
-
-        if (balance > 10) {
-            statusDiv.innerHTML = '<span class="text-success"><i class="fas fa-check me-1"></i> Достаточно занятий</span>';
-            icon.className = 'fas fa-check-circle text-success';
-        } else if (balance > 3) {
-            statusDiv.innerHTML = '<span class="text-warning"><i class="fas fa-exclamation me-1"></i> Заканчиваются занятия</span>';
-            icon.className = 'fas fa-exclamation-circle text-warning';
-        } else if (balance > 0) {
-            statusDiv.innerHTML = '<span class="text-danger"><i class="fas fa-exclamation-triangle me-1"></i> Мало занятий</span>';
-            icon.className = 'fas fa-exclamation-triangle text-danger';
-        } else {
-            statusDiv.innerHTML = '<span class="text-danger"><i class="fas fa-times me-1"></i> Нет занятий</span>';
-            icon.className = 'fas fa-times-circle text-danger';
-        }
-    }
-
-    updateDateStatus(dateString) {
-        const statusDiv = document.getElementById('dateStatus');
-        const icon = document.getElementById('dateIcon');
-
-        if (!dateString) {
-            statusDiv.innerHTML = '<span class="text-muted">Дата не установлена</span>';
-            icon.className = 'fas fa-clock text-muted';
-            return;
-        }
-
-        const date = new Date(dateString);
-        const today = new Date();
-        const diffDays = Math.ceil((date - today) / (1000 * 60 * 60 * 24));
-
-        if (diffDays > 14) {
-            statusDiv.innerHTML = `<span class="text-success">Оплата через ${diffDays} дней</span>`;
-            icon.className = 'fas fa-calendar-check text-success';
-        } else if (diffDays > 7) {
-            statusDiv.innerHTML = `<span class="text-warning">Оплата через ${diffDays} дней</span>`;
-            icon.className = 'fas fa-clock text-warning';
-        } else if (diffDays > 0) {
-            statusDiv.innerHTML = `<span class="text-danger">Оплата через ${diffDays} дней</span>`;
-            icon.className = 'fas fa-exclamation-triangle text-danger';
-        } else if (diffDays === 0) {
-            statusDiv.innerHTML = '<span class="text-danger">Оплата сегодня!</span>';
-            icon.className = 'fas fa-exclamation-circle text-danger';
-        } else {
-            statusDiv.innerHTML = `<span class="text-danger">Просрочена на ${Math.abs(diffDays)} дней</span>`;
-            icon.className = 'fas fa-calendar-times text-danger';
-        }
-    }
-
-    showAlert(message, type = 'danger') {
-        const alertDiv = document.getElementById('paymentAlert');
-        alertDiv.innerHTML = `
-            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        `;
-        alertDiv.classList.remove('d-none');
-    }
-
-    showSuccessToast(result) {
-        // Создаем контейнер для тостов если его нет
+    showBalanceChangeToast(result) {
         let toastContainer = document.getElementById('toastContainer');
         if (!toastContainer) {
             toastContainer = document.createElement('div');
@@ -403,36 +181,46 @@ class PaymentManager {
             document.body.appendChild(toastContainer);
         }
 
-        const toastId = 'payment-toast-' + Date.now();
+        const toastId = 'balance-change-toast-' + Date.now();
+        const difference = result.new_balance - result.old_balance;
+
         const toastHTML = `
             <div id="${toastId}" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
                 <div class="toast-header bg-success text-white">
                     <strong class="me-auto">
-                        <i class="fas fa-check-circle me-2"></i>
-                        Оплата успешна
+                        <i class="fas fa-save me-2"></i>
+                        Баланс сохранен
                     </strong>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
                 </div>
                 <div class="toast-body">
                     <div class="mb-2">
-                        <strong>${result.student_name}</strong>
+                        <strong>${result.student_name || 'Ученик'}</strong>
                     </div>
                     <div class="row small">
-                        <div class="col-6">Сумма:</div>
-                        <div class="col-6 text-end"><strong>${result.amount} ₽</strong></div>
+                        <div class="col-6">Старое значение:</div>
+                        <div class="col-6 text-end"><span class="badge bg-secondary">${result.old_balance}</span></div>
                     </div>
                     <div class="row small">
-                        <div class="col-6">Добавлено:</div>
-                        <div class="col-6 text-end"><span class="badge bg-success">+${result.classes_added} занятий</span></div>
-                    </div>
-                    <div class="row small">
-                        <div class="col-6">Новый баланс:</div>
+                        <div class="col-6">Новое значение:</div>
                         <div class="col-6 text-end"><strong>${result.new_balance} занятий</strong></div>
                     </div>
+                    ${difference !== 0 ? `
+                    <div class="row small">
+                        <div class="col-6">Изменение:</div>
+                        <div class="col-6 text-end">
+                            <span class="badge ${difference > 0 ? 'bg-success' : 'bg-danger'}">
+                                ${difference > 0 ? '+' : ''}${difference}
+                            </span>
+                        </div>
+                    </div>
+                    ` : ''}
+                    ${result.payment_date_info ? `
                     <hr class="my-1">
                     <div class="text-center small text-muted">
-                        Следующая оплата: ${result.next_payment_date}
+                        ${result.payment_date_info}
                     </div>
+                    ` : ''}
                 </div>
             </div>
         `;
@@ -441,11 +229,10 @@ class PaymentManager {
 
         const toastElement = document.getElementById(toastId);
         const toast = new bootstrap.Toast(toastElement, {
-            delay: 5000
+            delay: 4000
         });
         toast.show();
 
-        // Удаляем тост после скрытия
         toastElement.addEventListener('hidden.bs.toast', () => {
             toastElement.remove();
         });
