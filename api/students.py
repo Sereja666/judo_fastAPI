@@ -1036,15 +1036,15 @@ async def update_student_balance(
                 content={"success": False, "error": "Не авторизован"}
             )
 
-        user_id = user_info.get("user_id")  # ID пользователя из middleware
+        user_id = user_info.get("user_id", 0)  # ID пользователя из middleware
 
         # Получаем данные
         try:
             data = await request.json()
-        except:
+        except Exception as e:
             return JSONResponse(
                 status_code=400,
-                content={"success": False, "error": "Неверный формат JSON"}
+                content={"success": False, "error": f"Неверный формат JSON: {str(e)}"}
             )
 
         new_balance = data.get('new_balance')
@@ -1071,12 +1071,12 @@ async def update_student_balance(
                 content={"success": False, "error": "Баланс не может быть отрицательным"}
             )
 
-        # Получаем ученика
+        # 1. Получаем ученика
         from database.models import Students
-        student = await db.execute(
+        result = await db.execute(
             select(Students).filter(Students.id == student_id)
         )
-        student = student.scalar_one_or_none()
+        student = result.scalar_one_or_none()
 
         if not student:
             return JSONResponse(
@@ -1087,50 +1087,57 @@ async def update_student_balance(
         old_balance = student.classes_remaining or 0
         difference = new_balance - old_balance
 
-        # Сохраняем в лог
-        from database.models import BalanceLog
-        balance_log = BalanceLog(
-            student_id=student_id,
-            old_balance=old_balance,
-            new_balance=new_balance,
-            difference=difference,
-            reason=reason,
-            changed_by=user_id or 0  # 0 если пользователь не определен
-        )
-        db.add(balance_log)
+        # 2. Сохраняем в лог (если таблица существует)
+        try:
+            from database.models import BalanceLog
+            balance_log = BalanceLog(
+                student_id=student_id,
+                old_balance=old_balance,
+                new_balance=new_balance,
+                difference=difference,
+                reason=reason,
+                changed_by=user_id
+            )
+            db.add(balance_log)
+        except Exception as e:
+            print(f"Note: Could not save balance log (table might not exist): {str(e)}")
+            # Продолжаем без лога если таблицы нет
 
-        # Обновляем баланс
+        # 3. Обновляем баланс ученика
         student.classes_remaining = new_balance
 
-        # Если разница большая, обновляем дату оплаты
-        from datetime import datetime, timedelta
-        from math import ceil
-
+        # 4. Если разница большая, обновляем дату оплаты
         if abs(difference) > 5:
-            # Получаем количество дней тренировок в неделю
-            from database.models import Students_schedule, Schedule
-            schedule_count = await db.execute(
-                select(func.count(distinct(Students_schedule.schedule)))
-                .join(Schedule, Students_schedule.schedule == Schedule.id)
-                .filter(Students_schedule.student == student_id)
-            )
-            days_per_week = schedule_count.scalar() or 1
+            try:
+                from database.models import Students_schedule, Schedule
 
-            if days_per_week > 0 and new_balance > 0:
-                weeks_remaining = new_balance / days_per_week
-                if weeks_remaining < 1:
-                    weeks_remaining = 1
+                # Получаем количество дней тренировок в неделю
+                schedule_result = await db.execute(
+                    select(func.count(distinct(Students_schedule.schedule)))
+                    .join(Schedule, Students_schedule.schedule == Schedule.id)
+                    .filter(Students_schedule.student == student_id)
+                )
+                days_per_week = schedule_result.scalar() or 1
+
+                if days_per_week > 0 and new_balance > 0:
+                    weeks_remaining = new_balance / days_per_week
+                    if weeks_remaining < 1:
+                        weeks_remaining = 1
+                    else:
+                        weeks_remaining = ceil(weeks_remaining)
+
+                    new_payment_date = datetime.now().date() + timedelta(days=weeks_remaining * 7 + 3)
+                    student.expected_payment_date = new_payment_date
+                    payment_date_info = f"Дата оплаты обновлена: {new_payment_date.strftime('%d.%m.%Y')}"
                 else:
-                    weeks_remaining = ceil(weeks_remaining)
-
-                new_payment_date = datetime.now().date() + timedelta(days=weeks_remaining * 7 + 3)
-                student.expected_payment_date = new_payment_date
-                payment_date_info = f"Дата оплаты обновлена: {new_payment_date.strftime('%d.%m.%Y')}"
-            else:
-                payment_date_info = "Дата оплаты не изменилась"
+                    payment_date_info = "Дата оплаты не изменилась"
+            except Exception as e:
+                print(f"Note: Could not calculate new payment date: {str(e)}")
+                payment_date_info = ""
         else:
             payment_date_info = ""
 
+        # 5. Сохраняем изменения
         await db.commit()
 
         difference_text = f"({difference:+d})" if difference != 0 else ""
@@ -1143,16 +1150,19 @@ async def update_student_balance(
             "difference": difference,
             "reason": reason,
             "payment_date_info": payment_date_info,
-            "student_name": student.name,
-            "log_id": balance_log.id
+            "student_name": student.name
         }
 
     except Exception as e:
         print(f"Error updating balance: {str(e)}")
+        import traceback
+        traceback.print_exc()  # Печатаем полный traceback для отладки
+
         try:
             await db.rollback()
         except:
             pass
+
         return JSONResponse(
             status_code=500,
             content={"success": False, "error": f"Внутренняя ошибка сервера: {str(e)}"}
