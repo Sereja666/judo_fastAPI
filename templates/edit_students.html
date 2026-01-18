@@ -112,61 +112,6 @@ window.originalConsoleLog = console.log;
 
 <script src="/static/js/student_form.js"></script>
 
-<script>
-// Простой обработчик формы
-document.addEventListener('DOMContentLoaded', function() {
-    const form = document.getElementById('studentForm');
-    if (!form) {
-        console.error('Форма не найдена!');
-        return;
-    }
-
-    console.log('Форма найдена, добавляю обработчик');
-
-    form.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        console.log('Форма отправлена!');
-
-        const submitBtn = this.querySelector('button[type="submit"]');
-        const originalText = submitBtn.innerHTML;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Сохранение...';
-        submitBtn.disabled = true;
-
-        try {
-            const formData = new FormData(this);
-
-            // Показываем что отправляем
-            console.log('Данные формы:');
-            for (let [key, value] of formData.entries()) {
-                console.log(`${key}: ${value}`);
-            }
-
-            // Пробуем оба endpoint
-            const studentId = formData.get('student_id');
-            const response = await fetch(`/edit-students/update-student`, {
-                method: 'POST',
-                body: formData
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
-
-            const result = await response.json();
-            console.log('Результат:', result);
-
-            alert('Сохранено успешно!');
-
-        } catch (error) {
-            console.error('Ошибка:', error);
-            alert('Ошибка сохранения: ' + error.message);
-        } finally {
-            submitBtn.innerHTML = originalText;
-            submitBtn.disabled = false;
-        }
-    });
-});
-</script>
 {% endblock %}
 
 {% block styles %}
