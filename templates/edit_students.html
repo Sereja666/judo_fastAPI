@@ -1,11 +1,67 @@
+<!-- templates/edit_students.html -->
+{% extends "base.html" %}
+
+{% block title %}Редактирование данных учеников{% endblock %}
+
+{% block content %}
+<h1>Редактирование данных учеников</h1>
+
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="mb-0">Выбор ученика</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <label for="studentSelect" class="form-label">Выберите ученика:</label>
+                <select id="studentSelect" class="form-select" required>
+                    <option value="">-- Выберите ученика --</option>
+                    {% for student in students %}
+                    <option value="{{ student.id }}">{{ student.name }}</option>
+                    {% endfor %}
+                </select>
+                <div class="form-text">Начните вводить имя для поиска</div>
+            </div>
+            <div class="col-md-6 d-flex align-items-center">
+                <button type="button" class="btn btn-success btn-create-student" onclick="createNewStudent()">
+                    <i class="fas fa-plus"></i>
+                    Создать нового ученика
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="studentCard" class="card student-card mt-4 hidden">
+    <div class="card-header">
+        <h5 class="mb-0">Карточка ученика</h5>
+    </div>
+    <div class="card-body">
+        <!-- Основная форма ученика -->
+        {% include "partials/edit_students/student_form.html" %}
+    </div>
+</div>
+
+<div id="message" class="mt-3"></div>
+
+<!-- Модальные окна -->
+{% include "partials/modals/certificate_modal.html" %}
+{% include "partials/modals/award_modal.html" %}
+{% include "partials/modals/parent_modal.html" %}
+{% include "partials/modals/payment_modal.html" %}
+{% include "partials/modals/manual_balance_modal.html" %}
+{% include "partials/modals/medical_certificate_modal.html" %}
+
+{% endblock %}
+
 {% block scripts %}
 <!-- Основной JavaScript -->
 {% include "partials/edit_students/main_js.html" %}
 
-<!-- Простой JavaScript для сохранения (как в visits_today) -->
+<!-- Простой JavaScript для сохранения -->
 <script src="/static/js/save_student.js"></script>
 
-<!-- Остальные скрипты -->
+<!-- Дополнительные модули -->
 {% include "partials/edit_students/certificates_js.html" %}
 {% include "partials/edit_students/awards_js.html" %}
 {% include "partials/edit_students/parents_js.html" %}
@@ -13,28 +69,49 @@
 <script src="/static/js/manual_balance.js"></script>
 <script src="/static/js/medical_certificates.js"></script>
 
-<!-- УДАЛИТЕ старый student_form.js -->
-<!-- <script src="/static/js/student_form.js"></script> -->
-
 <script>
-    // Дополнительная проверка
+    // Дополнительная инициализация
     document.addEventListener('DOMContentLoaded', function() {
         console.log('✅ Страница редактирования учеников загружена');
         console.log('✅ Функция saveStudentChanges доступна:', typeof saveStudentChanges);
-
-        // Тестовая кнопка для проверки
-        const testBtn = document.createElement('button');
-        testBtn.className = 'btn btn-warning btn-sm mt-2';
-        testBtn.innerHTML = '<i class="fas fa-bug"></i> Тест сохранения';
-        testBtn.onclick = function() {
-            console.log('🔧 Тестовая кнопка работает!');
-            alert('JavaScript работает! Теперь пробуем основную кнопку.');
-        };
-
-        const card = document.querySelector('.student-card');
-        if (card) {
-            card.appendChild(testBtn);
-        }
     });
+
+    // Функция создания нового ученика
+    function createNewStudent() {
+        // Скрываем карточку
+        document.getElementById('studentCard').classList.add('hidden');
+
+        // Сбрасываем форму
+        const form = document.getElementById('studentForm');
+        if (form) form.reset();
+
+        // Устанавливаем ID как 'new'
+        const studentIdInput = document.getElementById('studentId');
+        if (studentIdInput) studentIdInput.value = 'new';
+
+        // Снимаем выбранного ученика
+        const select = document.getElementById('studentSelect');
+        if (select) select.value = '';
+
+        // Устанавливаем текущую дату
+        const now = new Date();
+        const localDateTime = now.toISOString().slice(0, 16);
+        const dateStartInput = document.getElementById('date_start');
+        if (dateStartInput) dateStartInput.value = localDateTime;
+
+        // Устанавливаем активный статус
+        const activeInput = document.getElementById('active');
+        if (activeInput) activeInput.checked = true;
+
+        // Показываем карточку
+        document.getElementById('studentCard').classList.remove('hidden');
+        document.querySelector('#studentCard .card-header h5').textContent = 'Новый ученик';
+
+        // Меняем текст кнопки сохранения
+        const saveBtn = document.querySelector('button[onclick="saveStudentChanges()"]');
+        if (saveBtn) {
+            saveBtn.innerHTML = '<i class="fas fa-user-plus"></i> Создать ученика';
+        }
+    }
 </script>
 {% endblock %}

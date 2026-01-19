@@ -129,7 +129,45 @@ function showStudentMessage(text, type) {
         }
     }, 5000);
 }
+function resetForm() {
+    if (confirm('Вы уверены, что хотите сбросить все изменения?')) {
+        const form = document.getElementById('studentForm');
+        if (form) {
+            form.reset();
+            showStudentMessage('Форма сброшена', 'info');
+        }
+    }
+}
+// Добавьте в конец save_student.js
+function openPaymentModal() {
+    const studentId = document.getElementById('studentId').value;
+    if (!studentId || studentId === 'new') {
+        alert('Сначала выберите или создайте ученика');
+        return;
+    }
+    // Здесь код для открытия модального окна оплаты
+    console.log('Открытие модального окна оплаты для ученика', studentId);
+}
 
+function openMedicalCertificateModal() {
+    const studentId = document.getElementById('studentId').value;
+    if (!studentId || studentId === 'new') {
+        alert('Сначала выберите или создайте ученика');
+        return;
+    }
+    // Здесь код для открытия модального окна справок
+    console.log('Открытие модального окна справок для ученика', studentId);
+}
+
+function openManualBalanceModal() {
+    const studentId = document.getElementById('studentId').value;
+    if (!studentId || studentId === 'new') {
+        alert('Сначала выберите или создайте ученика');
+        return;
+    }
+    // Здесь код для открытия модального окна ручного баланса
+    console.log('Открытие модального окна ручного баланса для ученика', studentId);
+}
 // Экспортируем для глобального доступа
 window.saveStudentChanges = saveStudentChanges;
 window.showStudentMessage = showStudentMessage;

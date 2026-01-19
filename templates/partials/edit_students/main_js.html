@@ -1,55 +1,105 @@
 <!-- templates/partials/edit_students/main_js.html -->
 <script>
-    $(document).ready(function() {
-        // ТОЛЬКО загрузка данных и Select2
-        $('#studentSelect').select2({
-            language: "ru",
-            placeholder: "Начните вводить имя ученика",
-            allowClear: true
-        });
+    // Ждем полной загрузки jQuery
+    function waitForjQuery() {
+        if (typeof window.jQuery === 'undefined') {
+            // jQuery еще не загружен, ждем
+            console.log('⏳ Ожидаю загрузку jQuery...');
+            setTimeout(waitForjQuery, 100);
+        } else {
+            // jQuery загружен, инициализируем
+            console.log('✅ jQuery загружен, версия:', $.fn.jquery);
+            initializePage();
+        }
+    }
 
-        // ТОЛЬКО загрузка данных при выборе
-        $('#studentSelect').change(function() {
-            const studentId = $(this).val();
-            if (studentId) {
-                loadStudentData(studentId);
-                $('#studentCard').removeClass('hidden');
-            } else {
-                $('#studentCard').addClass('hidden');
-            }
-        });
-    });
+    // Запускаем проверку при загрузке DOM
+    document.addEventListener('DOMContentLoaded', waitForjQuery);
 
-    // ТОЛЬКО функция загрузки данных
-    function loadStudentData(studentId) {
-        console.log('🔄 Загрузка данных ученика ID:', studentId);
+    function initializePage() {
+        console.log('🔄 Инициализация страницы редактирования учеников');
 
-        $.get(`/edit-students/get-student-data/${studentId}`, function(student) {
-            console.log('✅ Получены данные ученика:', student);
+        // Теперь безопасно используем $
+        $(function() {
+            console.log('✅ jQuery ready событие сработало');
 
-            // Просто заполняем поля - ничего больше!
-            $('#studentId').val(student.id);
-            $('#name').val(student.name || '');
-            $('#birthday').val(student.birthday ? student.birthday.split('T')[0] : '');
-            // ... остальные поля
-            $('#active').prop('checked', student.active !== false);
+            // Select2
+            $('#studentSelect').select2({
+                language: "ru",
+                placeholder: "Начните вводить имя ученика",
+                allowClear: true
+            }).on('change', function() {
+                const studentId = $(this).val();
+                console.log('Выбран ученик ID:', studentId);
 
-            // Загружаем связанные данные
-            loadStudentParents(studentId);
-            loadMedicalCertificates(studentId);
-            loadAwards(studentId);
+                if (studentId) {
+                    loadStudentData(studentId);
+                    $('#studentCard').removeClass('hidden');
+                } else {
+                    $('#studentCard').addClass('hidden');
+                }
+            });
 
-        }).fail(function(error) {
-            console.error('❌ Ошибка загрузки данных ученика:', error);
-            showMessage('Ошибка загрузки данных', 'danger');
+            console.log('✅ Select2 инициализирован');
         });
     }
 
+    // Остальные функции остаются без изменений
+    function loadStudentData(studentId) {
+        console.log('🔄 Загрузка данных ученика ID:', studentId);
+
+        // Используем fetch вместо $.get для надежности
+        fetch(`/edit-students/get-student-data/${studentId}`)
+            .then(response => {
+                if (!response.ok) throw new Error('Ошибка сети');
+                return response.json();
+            })
+            .then(student => {
+                console.log('✅ Получены данные ученика');
+
+                // Заполняем форму данными ученика
+                document.getElementById('studentId').value = student.id;
+                document.getElementById('name').value = student.name || '';
+                document.getElementById('birthday').value = student.birthday ? student.birthday.split('T')[0] : '';
+                document.getElementById('sport_discipline').value = student.sport_discipline || '';
+                document.getElementById('rang').value = student.rang || '';
+                document.getElementById('sports_rank').value = student.sports_rank || '';
+                document.getElementById('sex').value = student.sex || '';
+                document.getElementById('weight').value = student.weight || '';
+                document.getElementById('telephone').value = student.telephone || '';
+                document.getElementById('head_trainer_id').value = student.head_trainer_id || '';
+                document.getElementById('second_trainer_id').value = student.second_trainer_id || '';
+                document.getElementById('price').value = student.price || '';
+                document.getElementById('payment_day').value = student.payment_day || '';
+                document.getElementById('classes_remaining').value = student.classes_remaining || '';
+                document.getElementById('expected_payment_date').value = student.expected_payment_date ? student.expected_payment_date.split('T')[0] : '';
+                document.getElementById('parent1').value = student.parent1 || '';
+                document.getElementById('parent2').value = student.parent2 || '';
+                document.getElementById('date_start').value = student.date_start ? student.date_start.replace('Z', '').substring(0, 16) : '';
+                document.getElementById('telegram_id').value = student.telegram_id || '';
+                document.getElementById('active').checked = student.active !== false;
+
+                // Загружаем связанные данные
+                if (typeof loadStudentParents === 'function') loadStudentParents(studentId);
+                if (typeof loadMedicalCertificates === 'function') loadMedicalCertificates(studentId);
+                if (typeof loadAwards === 'function') loadAwards(studentId);
+
+            })
+            .catch(error => {
+                console.error('❌ Ошибка загрузки данных ученика:', error);
+                showMessage('Ошибка загрузки данных ученика', 'danger');
+            });
+    }
+
     function showMessage(text, type) {
-        $('#message').html(`
-            <div class="alert alert-${type}">
-                ${text}
-            </div>
-        `);
+        const messageDiv = document.getElementById('message');
+        if (messageDiv) {
+            messageDiv.innerHTML = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    ${text}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+        }
     }
 </script>
