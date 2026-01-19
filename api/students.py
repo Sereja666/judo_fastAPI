@@ -183,6 +183,7 @@ async def update_student(
 
         return JSONResponse({"status": "success", "message": "Данные ученика успешно обновлены"})
 
+
     except Exception as e:
         db.rollback()
         logger.error(f"Ошибка при сохранении: {str(e)}")

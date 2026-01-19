@@ -190,6 +190,7 @@ class StudentFormManager {
             </div>
         `;
 
+
         // Автоматически скрыть через 5 секунд
         setTimeout(() => {
             const alert = this.messageContainer.querySelector('.alert');

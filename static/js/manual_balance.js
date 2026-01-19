@@ -427,6 +427,7 @@ function showBalanceHistoryModal(history) {
         </div>
     `;
 
+
     // Удаляем старую модалку если есть
     const oldModal = document.getElementById('historyModal');
     if (oldModal) oldModal.remove();

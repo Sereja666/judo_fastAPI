@@ -139,6 +139,7 @@ const visitsTodayUI = {
         return parts[0] || '';
     },
 
+
     formatStudentName(fullName) {
     if (!fullName) return '';
 

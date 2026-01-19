@@ -38,6 +38,7 @@ const visitsToday = {
         this.setupEventListeners();
     },
 
+
     // Настройка обработчиков событий
     setupEventListeners() {
         const searchInput = document.getElementById('search-student');

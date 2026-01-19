@@ -39,6 +39,7 @@ const visitsToday = {
         searchTimeout: null
     },
 
+
     init() {
         console.log('Инициализация системы посещений...');
         this.loadPlaces();
