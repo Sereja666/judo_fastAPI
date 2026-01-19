@@ -1,26 +1,19 @@
 <!-- templates/partials/edit_students/main_js.html -->
 <script>
-    // Ждем полной загрузки jQuery
-    function waitForjQuery() {
-        if (typeof window.jQuery === 'undefined') {
-            // jQuery еще не загружен, ждем
-            console.log('⏳ Ожидаю загрузку jQuery...');
-            setTimeout(waitForjQuery, 100);
-        } else {
-            // jQuery загружен, инициализируем
-            console.log('✅ jQuery загружен, версия:', $.fn.jquery);
-            initializePage();
-        }
-    }
-
-    // Запускаем проверку при загрузке DOM
-    document.addEventListener('DOMContentLoaded', waitForjQuery);
-
-    function initializePage() {
+    // Ждем полной загрузки DOM
+    document.addEventListener('DOMContentLoaded', function() {
         console.log('🔄 Инициализация страницы редактирования учеников');
 
-        // Теперь безопасно используем $
-        $(function() {
+        // Проверяем, что jQuery загружен
+        if (typeof window.jQuery === 'undefined') {
+            console.error('❌ jQuery не загружен');
+            return;
+        }
+
+        console.log('✅ jQuery загружен, версия:', $.fn.jquery);
+
+        // Инициализация Select2 после полной загрузки DOM
+        $(document).ready(function() {
             console.log('✅ jQuery ready событие сработало');
 
             // Select2
@@ -42,9 +35,9 @@
 
             console.log('✅ Select2 инициализирован');
         });
-    }
+    });
 
-    // Остальные функции остаются без изменений
+    // Функция загрузки данных ученика с проверками
     function loadStudentData(studentId) {
         console.log('🔄 Загрузка данных ученика ID:', studentId);
 
@@ -55,34 +48,103 @@
                 return response.json();
             })
             .then(student => {
-                console.log('✅ Получены данные ученика');
+                console.log('✅ Получены данные ученика:', student);
 
-                // Заполняем форму данными ученика
-                document.getElementById('studentId').value = student.id;
-                document.getElementById('name').value = student.name || '';
-                document.getElementById('birthday').value = student.birthday ? student.birthday.split('T')[0] : '';
-                document.getElementById('sport_discipline').value = student.sport_discipline || '';
-                document.getElementById('rang').value = student.rang || '';
-                document.getElementById('sports_rank').value = student.sports_rank || '';
-                document.getElementById('sex').value = student.sex || '';
-                document.getElementById('weight').value = student.weight || '';
-                document.getElementById('telephone').value = student.telephone || '';
-                document.getElementById('head_trainer_id').value = student.head_trainer_id || '';
-                document.getElementById('second_trainer_id').value = student.second_trainer_id || '';
-                document.getElementById('price').value = student.price || '';
-                document.getElementById('payment_day').value = student.payment_day || '';
-                document.getElementById('classes_remaining').value = student.classes_remaining || '';
-                document.getElementById('expected_payment_date').value = student.expected_payment_date ? student.expected_payment_date.split('T')[0] : '';
-                document.getElementById('parent1').value = student.parent1 || '';
-                document.getElementById('parent2').value = student.parent2 || '';
-                document.getElementById('date_start').value = student.date_start ? student.date_start.replace('Z', '').substring(0, 16) : '';
-                document.getElementById('telegram_id').value = student.telegram_id || '';
-                document.getElementById('active').checked = student.active !== false;
+                // Список полей для заполнения
+                const fields = {
+                    'studentId': student.id,
+                    'name': student.name || '',
+                    'birthday': student.birthday ? student.birthday.split('T')[0] : '',
+                    'sport_discipline': student.sport_discipline || '',
+                    'rang': student.rang || '',
+                    'sports_rank': student.sports_rank || '',
+                    'sex': student.sex || '',
+                    'weight': student.weight || '',
+                    'telephone': student.telephone || '',
+                    'head_trainer_id': student.head_trainer_id || '',
+                    'second_trainer_id': student.second_trainer_id || '',
+                    'price': student.price || '',
+                    'payment_day': student.payment_day || '',
+                    'classes_remaining': student.classes_remaining || '',
+                    'expected_payment_date': student.expected_payment_date ? student.expected_payment_date.split('T')[0] : '',
+                    'parent1': student.parent1 || '',
+                    'parent2': student.parent2 || '',
+                    'telegram_id': student.telegram_id || ''
+                };
 
-                // Загружаем связанные данные
-                if (typeof loadStudentParents === 'function') loadStudentParents(studentId);
-                if (typeof loadMedicalCertificates === 'function') loadMedicalCertificates(studentId);
-                if (typeof loadAwards === 'function') loadAwards(studentId);
+                // Заполняем поля с проверкой их существования
+                for (const [fieldId, value] of Object.entries(fields)) {
+                    const element = document.getElementById(fieldId);
+                    if (element) {
+                        if (element.type === 'checkbox') {
+                            element.checked = value === true || value === 'true' || value === 'on';
+                        } else {
+                            element.value = value;
+                        }
+                    } else {
+                        console.warn(`⚠️ Элемент ${fieldId} не найден`);
+                    }
+                }
+
+                // Обрабатываем особые поля
+                const dateStartElement = document.getElementById('date_start');
+                if (dateStartElement && student.date_start) {
+                    dateStartElement.value = student.date_start.replace('Z', '').substring(0, 16);
+                }
+
+                const activeElement = document.getElementById('active');
+                if (activeElement) {
+                    activeElement.checked = student.active !== false;
+                }
+
+                // Обновляем информацию о цене
+                if (student.price) {
+                    const priceSelect = document.getElementById('price');
+                    if (priceSelect) {
+                        const selectedOption = priceSelect.querySelector(`option[value="${student.price}"]`);
+                        if (selectedOption) {
+                            const priceAmount = selectedOption.dataset.priceAmount;
+                            const classesCount = selectedOption.dataset.classesCount;
+
+                            const priceInfo = document.getElementById('priceInfo');
+                            if (priceInfo) {
+                                let infoText = '';
+                                if (priceAmount) infoText += `Стоимость: ${priceAmount} руб. `;
+                                if (classesCount) infoText += `Занятий в тарифе: ${classesCount}`;
+                                priceInfo.textContent = infoText;
+                            }
+                        }
+                    }
+                }
+
+                // Загружаем связанные данные (если функции существуют)
+                setTimeout(() => {
+                    if (typeof loadStudentParents === 'function') {
+                        try {
+                            loadStudentParents(studentId);
+                        } catch (e) {
+                            console.warn('Функция loadStudentParents недоступна:', e);
+                        }
+                    }
+
+                    if (typeof loadMedicalCertificates === 'function') {
+                        try {
+                            loadMedicalCertificates(studentId);
+                        } catch (e) {
+                            console.warn('Функция loadMedicalCertificates недоступна:', e);
+                        }
+                    }
+
+                    if (typeof loadAwards === 'function') {
+                        try {
+                            loadAwards(studentId);
+                        } catch (e) {
+                            console.warn('Функция loadAwards недоступна:', e);
+                        }
+                    }
+                }, 100);
+
+                console.log('✅ Данные ученика успешно загружены');
 
             })
             .catch(error => {
