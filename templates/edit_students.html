@@ -1,180 +1,40 @@
-<!-- templates/edit_students.html -->
-{% extends "base.html" %}
-
-{% block title %}Редактирование данных учеников{% endblock %}
-
-{% block content %}
-<h1>Редактирование данных учеников</h1>
-
-<!-- Блок выбора ученика -->
-{% include "partials/edit_students/student_selection.html" %}
-
-<!-- Карточка ученика -->
-<div id="studentCard" class="student-card hidden">
-    <h3>Карточка ученика</h3>
-    <form id="studentForm">
-        <input type="hidden" id="studentId" name="student_id">
-
-        <!-- Основная информация -->
-        {% include "partials/edit_students/basic_info.html" %}
-
-        <!-- Тренеры -->
-        {% include "partials/edit_students/trainers.html" %}
-
-        <!-- Оплата -->
-        {% include "partials/edit_students/payment.html" %}
-
-        <!-- Медицинские справки -->
-        {% include "partials/edit_students/medical_certificates.html" %}
-
-        <!-- Награды и достижения -->
-        {% include "partials/edit_students/awards.html" %}
-
-        <!-- Дополнительно -->
-        {% include "partials/edit_students/additional_info.html" %}
-
-
-
-
-        <button type="submit" class="btn btn-primary btn-lg">
-            <i class="fas fa-save"></i>
-            Сохранить изменения
-        </button>
-        <a href="/" class="btn btn-secondary">← Назад к расписанию</a>
-    </form>
-</div>
-
-<div id="message" class="mt-3"></div>
-
-<!-- Модальные окна -->
-{% include "partials/modals/payment_modal.html" %}
-{% include "partials/modals/medical_certificate_modal.html" %}
-{% include "partials/modals/certificate_modal.html" %}
-{% include "partials/modals/award_modal.html" %}
-{% include "partials/modals/parent_modal.html" %}
-{% include "partials/modals/manual_balance_modal.html" %}
-{% endblock %}
-
 {% block scripts %}
 <!-- Основной JavaScript -->
 {% include "partials/edit_students/main_js.html" %}
 
-<!-- JavaScript для медицинских справок -->
+<!-- Простой JavaScript для сохранения (как в visits_today) -->
+<script src="/static/js/save_student.js"></script>
+
+<!-- Остальные скрипты -->
 {% include "partials/edit_students/certificates_js.html" %}
-
-<!-- JavaScript для наград -->
 {% include "partials/edit_students/awards_js.html" %}
-
-<!-- JavaScript для родителей -->
 {% include "partials/edit_students/parents_js.html" %}
-
-
-<!-- JavaScript для оплаты -->
 <script src="/static/js/payment.js"></script>
 <script src="/static/js/manual_balance.js"></script>
-<!-- JavaScript для справок по болезни -->
 <script src="/static/js/medical_certificates.js"></script>
 
-<script src="/static/js/student_form.js"></script>
+<!-- УДАЛИТЕ старый student_form.js -->
+<!-- <script src="/static/js/student_form.js"></script> -->
 
+<script>
+    // Дополнительная проверка
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('✅ Страница редактирования учеников загружена');
+        console.log('✅ Функция saveStudentChanges доступна:', typeof saveStudentChanges);
 
-{% endblock %}
+        // Тестовая кнопка для проверки
+        const testBtn = document.createElement('button');
+        testBtn.className = 'btn btn-warning btn-sm mt-2';
+        testBtn.innerHTML = '<i class="fas fa-bug"></i> Тест сохранения';
+        testBtn.onclick = function() {
+            console.log('🔧 Тестовая кнопка работает!');
+            alert('JavaScript работает! Теперь пробуем основную кнопку.');
+        };
 
-{% block styles %}
-<style>
-    .hidden {
-        display: none !important;
-    }
-
-    .card.border-danger {
-        border: 2px solid #dc3545 !important;
-    }
-
-    .badge.text-success {
-        background-color: #d1e7dd;
-        color: #0f5132;
-    }
-
-    .badge.text-danger {
-        background-color: #f8d7da;
-        color: #721c24;
-    }
-
-    .student-card.hidden {
-        display: none;
-    }
-
-    /* Стили для модального окна */
-    .modal-header {
-        background-color: #f8f9fa;
-        border-bottom: 1px solid #dee2e6;
-    }
-
-    .modal-footer {
-        border-top: 1px solid #dee2e6;
-    }
-
-    /* Увеличим немного кнопку редактирования */
-    .btn-sm {
-        padding: 0.25rem 0.5rem;
-        font-size: 0.875rem;
-    }
-        /* Анимация для изменяемых полей */
-    .highlight {
-        animation: highlight 1s ease-in-out;
-        background-color: rgba(60, 179, 113, 0.2) !important;
-        border-color: var(--superset-success) !important;
-    }
-
-    @keyframes highlight {
-        0% { background-color: rgba(60, 179, 113, 0.2); }
-        50% { background-color: rgba(60, 179, 113, 0.4); }
-        100% { background-color: rgba(60, 179, 113, 0.2); }
-    }
-
-    /* Стили для модального окна оплаты */
-    .price-item {
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-
-    .price-item:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    }
-
-    .price-item.selected {
-        border-color: #3CB371 !important;
-        background-color: rgba(60, 179, 113, 0.05);
-    }
-
-    /* Стили для сообщений */
-    #paymentPreview {
-        border-left: 4px solid #3CB371;
-    }
-
-.highlight-red {
-    animation: highlightRed 1s ease-in-out;
-    background-color: rgba(255, 107, 107, 0.2) !important;
-    border-color: var(--superset-danger) !important;
-}
-
-@keyframes highlightRed {
-    0% { background-color: rgba(255, 107, 107, 0.2); }
-    50% { background-color: rgba(255, 107, 107, 0.4); }
-    100% { background-color: rgba(255, 107, 107, 0.2); }
-}
-
-/* Стили для модального окна справок */
-.datepicker {
-    text-align: center;
-    font-family: monospace;
-}
-
-.datepicker::placeholder {
-    color: #999;
-    font-style: italic;
-}
-</style>
-
+        const card = document.querySelector('.student-card');
+        if (card) {
+            card.appendChild(testBtn);
+        }
+    });
+</script>
 {% endblock %}
