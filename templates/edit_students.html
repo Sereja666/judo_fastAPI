@@ -12,7 +12,7 @@
 <!-- Карточка ученика -->
 <div id="studentCard" class="student-card hidden">
     <h3>Карточка ученика</h3>
-    <form id="studentForm">
+    <form id="studentForm" onsubmit="saveStudentChanges(); return false;">
         <input type="hidden" id="studentId" name="student_id">
 
         <!-- Основная информация -->
@@ -33,10 +33,10 @@
         <!-- Дополнительно -->
         {% include "partials/edit_students/additional_info.html" %}
 
-        <button type="submit" class="btn btn-primary btn-lg">
-            <i class="fas fa-save"></i>
-            Сохранить изменения
-        </button>
+         <button type="submit" class="btn btn-primary btn-lg">
+        <i class="fas fa-save"></i>
+        Сохранить изменения
+    </button>
         <a href="/" class="btn btn-secondary">← Назад к расписанию</a>
     </form>
 </div>
